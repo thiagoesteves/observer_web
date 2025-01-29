@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content={get_csrf_token()} />
+
+    <title>{assigns[:page_title] || "Undefined"}</title>
+    <style phx-track-static nonce={@csp_nonces.style}>
+      <%= raw(render("app.css")) %>
+    </style>
+  </head>
+
+  <body class="min-h-screen antialiased bg-gray-200 dark:bg-gray-950 text-gray-900 dark:text-gray-100  transition duration-200 ease-out">
+    {@inner_content}
+  </body>
+
+  <script phx-track-static type="text/javascript" nonce={@csp_nonces.script}>
+    <%= raw(render("app.js")) %>
+  </script>
+</html>
