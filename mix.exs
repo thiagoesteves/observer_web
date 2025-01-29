@@ -1,14 +1,22 @@
 defmodule TracingWeb.MixProject do
   use Mix.Project
 
+  @source_url "https://github.com/thiagoesteves/tracing_web"
+  @version "0.0.0"
+
   def project do
     [
       app: :tracing_web,
-      version: "0.1.0",
-      elixir: "~> 1.14",
+      version: @version,
+      name: "Tracing Web",
+      description: "Dashboard for Tracing applications using erlang debugger",
+      docs: docs(),
+      elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
+      package: package(),
+      docs: docs(),
       deps: deps()
     ]
   end
@@ -27,6 +35,28 @@ defmodule TracingWeb.MixProject do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
+  defp package do
+    [
+      maintainers: ["Thiago Esteves"],
+      licenses: ["Apache-2.0"],
+      files: ~w(lib priv .formatter.exs mix.exs README* CHANGELOG* LICENSE*),
+      links: %{
+        Website: "https://deployex.pro",
+        Changelog: "#{@source_url}/blob/main/CHANGELOG.md",
+        GitHub: @source_url
+      }
+    ]
+  end
+
+  defp docs do
+    [
+      main: "overview",
+      source_ref: "v#{@version}",
+      formatters: ["html"],
+      api_reference: false
+    ]
+  end
+
   # Specifies your project dependencies.
   #
   # Type `mix help deps` for examples and options.
@@ -40,13 +70,6 @@ defmodule TracingWeb.MixProject do
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
-      {:heroicons,
-       github: "tailwindlabs/heroicons",
-       tag: "v2.1.1",
-       sparse: "optimized",
-       app: false,
-       compile: false,
-       depth: 1},
       {:swoosh, "~> 1.5"},
       {:finch, "~> 0.13"},
       {:telemetry_metrics, "~> 1.0"},
@@ -54,7 +77,8 @@ defmodule TracingWeb.MixProject do
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
-      {:bandit, "~> 1.2"}
+      {:bandit, "~> 1.2"},
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false}
     ]
   end
 

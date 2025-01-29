@@ -1,3 +1,5 @@
+[![Hex.pm Version](http://img.shields.io/hexpm/v/tracing_web.svg?style=flat)](https://hex.pm/packages/tracing_web)
+
 # TracingWeb
 
 To start your Phoenix server:
