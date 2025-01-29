@@ -1,0 +1,13 @@
+<meta name="live-transport" content={@live_transport} />
+<meta name="live-path" content={@live_path} />
+
+<main class="p-4 min-h-screen flex flex-col">
+  <header class="flex items-center mb-2">
+    <div class="md:w-84 mr-3">
+      <.logo />
+    </div>
+
+    <.nav socket={@socket} page={@page.name} />
+  </header>
+  {@inner_content} <.footer />
+</main>
