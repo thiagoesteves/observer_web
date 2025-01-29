@@ -7,59 +7,36 @@
 # General application configuration
 import Config
 
-config :tracing_web,
-  generators: [timestamp_type: :utc_datetime]
+if config_env() == :dev do
+  config :esbuild,
+    version: "0.17.11",
+    default: [
+      args: ~w(
+        assets/js/app.js
+        --bundle
+        --minify
+        --outdir=priv/static/
+      )
+    ]
 
-# Configures the endpoint
-config :tracing_web, TracingWebWeb.Endpoint,
-  url: [host: "localhost"],
-  adapter: Bandit.PhoenixAdapter,
-  render_errors: [
-    formats: [html: TracingWebWeb.ErrorHTML, json: TracingWebWeb.ErrorJSON],
-    layout: false
-  ],
-  pubsub_server: TracingWeb.PubSub,
-  live_view: [signing_salt: "v8zDhJ5N"]
-
-# Configures the mailer
-#
-# By default it uses the "Local" adapter which stores the emails
-# locally. You can see the emails in your browser, at "/dev/mailbox".
-#
-# For production it's recommended to configure a different adapter
-# at the `config/runtime.exs`.
-config :tracing_web, TracingWeb.Mailer, adapter: Swoosh.Adapters.Local
-
-# Configure esbuild (the version is required)
-config :esbuild,
-  version: "0.17.11",
-  tracing_web: [
-    args:
-      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
-    cd: Path.expand("../assets", __DIR__),
-    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
-  ]
-
-# Configure tailwind (the version is required)
-config :tailwind,
-  version: "3.4.0",
-  tracing_web: [
-    args: ~w(
-      --config=tailwind.config.js
-      --input=css/app.css
-      --output=../priv/static/assets/app.css
-    ),
-    cd: Path.expand("../assets", __DIR__)
-  ]
+  config :tailwind,
+    version: "3.4.0",
+    default: [
+      args: ~w(
+        --config=tailwind.config.js
+        --minify
+        --input=css/app.css
+        --output=../priv/static/app.css
+      ),
+      cd: Path.expand("../assets", __DIR__)
+    ]
+end
 
 # Configures Elixir's Logger
-config :logger, :console,
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
+config :logger, level: :warning
+config :logger, :console, format: "[$level] $message\n"
 
-# Use Jason for JSON parsing in Phoenix
-config :phoenix, :json_library, Jason
+config :phoenix, stacktrace_depth: 20
 
-# Import environment specific config. This must remain at the bottom
-# of this file so it overrides the configuration defined above.
-import_config "#{config_env()}.exs"
+# Rpc Adapter
+config :tracing_web, TracingWeb.Rpc, adapter: TracingWeb.Rpc.Local

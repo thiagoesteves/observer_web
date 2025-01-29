@@ -33,5 +33,11 @@ tracing_web-*.tar
 
 # In case you use Node.js/npm, you want to ignore these.
 npm-debug.log
-/assets/node_modules/
+/assets/node_modules
+
+# Ignore compiled css/js
+priv/static/*
+
+# Ignore local .db files
+/priv/*.db*
 

@@ -1,0 +1,29 @@
+defmodule Tracing.Web.Authentication do
+  @moduledoc false
+
+  import Phoenix.Component
+  import Phoenix.LiveView
+
+  alias Tracing.Web.Resolver
+
+  def on_mount(:default, _params, session, socket) do
+    %{"tracing" => _tracing, "resolver" => resolver, "user" => user} = session
+
+    # Add any configuration here
+    conf = nil
+    socket = assign(socket, conf: conf, user: user)
+
+    case Resolver.call_with_fallback(resolver, :resolve_access, [user]) do
+      {:forbidden, path} ->
+        socket =
+          socket
+          |> put_flash(:error, "Access forbidden")
+          |> redirect(to: path)
+
+        {:halt, socket}
+
+      _ ->
+        {:cont, socket}
+    end
+  end
+end

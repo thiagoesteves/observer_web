@@ -1,0 +1,15 @@
+<meta name="live-transport" content={@live_transport} />
+<meta name="live-path" content={@live_path} />
+
+<main class="p-4 min-h-screen flex flex-col">
+  <%= if Phoenix.Flash.get(@flash, :info) do %>
+    <.notify flash={@flash} />
+  <% end %>
+
+  <header class="flex items-center">
+    <%!-- <div class="md:w-84 mr-3">
+      <.logo />
+    </div> --%>
+  </header>
+  {@inner_content} <.footer />
+</main>

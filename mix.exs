@@ -11,13 +11,21 @@ defmodule TracingWeb.MixProject do
       name: "Tracing Web",
       description: "Dashboard for Tracing applications using erlang debugger",
       docs: docs(),
-      elixir: "~> 1.15",
+      elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       package: package(),
       docs: docs(),
-      deps: deps()
+      deps: deps(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.cobertura": :test
+      ]
     ]
   end
 
@@ -38,7 +46,7 @@ defmodule TracingWeb.MixProject do
   defp package do
     [
       maintainers: ["Thiago Esteves"],
-      licenses: ["Apache-2.0"],
+      licenses: ["MIT"],
       files: ~w(lib priv .formatter.exs mix.exs README* CHANGELOG* LICENSE*),
       links: %{
         Website: "https://deployex.pro",
@@ -62,23 +70,30 @@ defmodule TracingWeb.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.7.12"},
-      {:phoenix_html, "~> 4.0"},
-      {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:phoenix_live_view, "~> 0.20.2"},
-      {:floki, ">= 0.30.0", only: :test},
-      {:phoenix_live_dashboard, "~> 0.8.3"},
-      {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
-      {:tailwind, "~> 0.2", runtime: Mix.env() == :dev},
-      {:swoosh, "~> 1.5"},
-      {:finch, "~> 0.13"},
-      {:telemetry_metrics, "~> 1.0"},
-      {:telemetry_poller, "~> 1.0"},
-      {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
-      {:dns_cluster, "~> 0.1.1"},
-      {:bandit, "~> 1.2"},
-      {:ex_doc, "~> 0.34", only: :dev, runtime: false}
+      {:phoenix, "~> 1.7.18"},
+      {:phoenix_html, "~> 4.2"},
+      {:phoenix_live_view, "~> 1.0.3"},
+      {:phoenix_pubsub, "~> 2.1"},
+
+      # Dev Server
+      {:bandit, "~> 1.5", only: :dev},
+      {:esbuild, "~> 0.8", only: :dev, runtime: false},
+      {:faker, "~> 0.17", only: :dev},
+      {:phoenix_live_reload, "~> 1.2", only: :dev},
+      {:tailwind, "~> 0.2", only: :dev, runtime: false},
+
+      # Tooling
+      {:credo, "~> 1.7", only: [:test, :dev], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:floki, "~> 0.33", only: [:test, :dev]},
+      {:mox, "~> 1.0", only: :test},
+      {:excoveralls, "~> 0.18", only: :test},
+      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
+
+      # Docs and Publishing
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false},
+      {:makeup_diff, "~> 0.1", only: :dev, runtime: false}
     ]
   end
 
@@ -90,14 +105,23 @@ defmodule TracingWeb.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      setup: ["deps.get", "assets.setup", "assets.build"],
-      "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["tailwind tracing_web", "esbuild tracing_web"],
-      "assets.deploy": [
-        "tailwind tracing_web --minify",
-        "esbuild tracing_web --minify",
-        "phx.digest"
-      ]
+      "assets.build": ["tailwind default", "esbuild default"],
+      release: [
+        "assets.build",
+        "cmd git tag v#{@version} -f",
+        "cmd git push",
+        "cmd git push --tags",
+        "hex.publish --yes"
+      ],
+      dev: "run --no-halt dev.exs",
+      release: [
+        "assets.build",
+        "cmd git tag v#{@version} -f",
+        "cmd git push",
+        "cmd git push --tags",
+        "hex.publish --yes"
+      ],
+      # elixir --sname hello -S mix run --no-halt dev.exs
     ]
   end
 end

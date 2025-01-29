@@ -1,0 +1,12 @@
+{
+  "skip_files": [
+    "lib/web.ex",
+    "lib/tracing_web/rpc/adapter.ex",
+    "lib/tracing_web/rpc/local.ex",
+    "deps/*",
+    "test/*"
+  ],
+  "coverage_options": {
+    "minimum_coverage": 80
+  }
+}
