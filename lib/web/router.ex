@@ -176,6 +176,9 @@ defmodule Tracing.Web.Router do
           tracing_dashboard "/tracing"
         end
       end
+
+  ## References:
+   * https://github.com/oban-bg/oban_web/blob/main/lib/oban/web/router.ex
   """
   defmacro tracing_dashboard(path, opts \\ []) do
     opts =

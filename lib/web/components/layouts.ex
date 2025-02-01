@@ -1,4 +1,10 @@
 defmodule Tracing.Web.Layouts do
+  @moduledoc """
+  This module provides layouts
+
+  ## References:
+   * https://github.com/oban-bg/oban_web/blob/main/lib/oban/web/components/layouts.ex
+  """
   use Tracing.Web, :html
 
   @static_path Application.app_dir(:tracing_web, ["priv", "static"])

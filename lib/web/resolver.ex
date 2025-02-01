@@ -68,6 +68,9 @@ defmodule Tracing.Web.Resolver do
     end
   end
   ```
+
+  ## References:
+   * https://github.com/oban-bg/oban_web/blob/main/lib/oban/web/resolver.ex
   """
 
   @type access :: :all | :read_only | {:forbidden, Path.t()}

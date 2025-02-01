@@ -1,5 +1,10 @@
 defmodule Tracing.Web.Authentication do
-  @moduledoc false
+  @moduledoc """
+  This module provides Authentication on mount
+
+  ## References:
+   * https://github.com/oban-bg/oban_web/blob/main/lib/oban/web/authentication.ex
+  """
 
   import Phoenix.Component
   import Phoenix.LiveView

@@ -1,6 +1,9 @@
 defmodule TracingWeb.Tracer do
   @moduledoc """
   This module provides Tracing context
+
+  ## References:
+   * https://github.com/thiagoesteves/deployex/blob/main/lib/deployex/tracer.ex
   """
 
   require Logger

@@ -1,4 +1,12 @@
 defmodule Tracing.Web.IndexLive do
+  @moduledoc """
+  This module provides Tracing context
+
+  ## References:
+   * https://github.com/thiagoesteves/deployex/blob/main/lib/deployex_web/live/tracing/index.ex
+   * https://github.com/oban-bg/oban_web/blob/main/lib/oban/web/dashboard_live.ex
+  """
+
   use Tracing.Web, :live_view
 
   alias Tracing.Web.Components.Core
