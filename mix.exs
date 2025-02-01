@@ -120,7 +120,7 @@ defmodule TracingWeb.MixProject do
         "cmd git push",
         "cmd git push --tags",
         "hex.publish --yes"
-      ],
+      ]
       # elixir --sname hello -S mix run --no-halt dev.exs
     ]
   end
