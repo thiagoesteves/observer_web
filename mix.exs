@@ -11,6 +11,8 @@ defmodule TracingWeb.MixProject do
       name: "Tracing Web",
       description: "Dashboard for Tracing applications using erlang debugger",
       docs: docs(),
+      extra_section: "GUIDES",
+      extras: extras(),
       elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -61,7 +63,27 @@ defmodule TracingWeb.MixProject do
       main: "overview",
       source_ref: "v#{@version}",
       formatters: ["html"],
-      api_reference: false
+      api_reference: false,
+      extra_section: "GUIDES",
+      extras: extras(),
+      groups_for_extras: groups_for_extras(),
+      # logo: "",
+      skip_undefined_reference_warnings_on: ["CHANGELOG.md"]
+    ]
+  end
+
+  defp extras do
+    [
+      "guides/overview.md",
+      "guides/installation.md",
+      "CHANGELOG.md": [filename: "changelog", title: "Changelog"]
+    ]
+  end
+
+  defp groups_for_extras do
+    [
+      Introduction: ~r/guides\/introduction\/.?/,
+      Advanced: ~r/guides\/advanced\/.?/
     ]
   end
 
