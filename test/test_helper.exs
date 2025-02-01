@@ -29,13 +29,6 @@ defmodule LimitedResolver do
   def resolve_access(_user), do: :all
 end
 
-# defmodule PrivateResolver do
-#   @behaviour Tracing.Web.Resolver
-
-#   @impl Tracing.Web.Resolver
-#   def resolve_instances(_user), do: [TracingPrivate]
-# end
-
 defmodule Tracing.Web.Test.Router do
   use Phoenix.Router
 
@@ -74,7 +67,5 @@ defmodule Tracing.Web.Endpoint do
 end
 
 Tracing.Web.Endpoint.start_link()
-
-Mox.defmock(TracingWeb.RpcMock, for: TracingWeb.Rpc.Adapter)
 
 ExUnit.start()

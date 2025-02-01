@@ -1,5 +1,5 @@
 defmodule Tracing.Web.IndexLiveTest do
-  use Tracing.Web.Case, async: false
+  use Tracing.Web.ConnCase, async: false
 
   import Mox
   alias TracingWeb.Tracer
@@ -16,23 +16,23 @@ defmodule Tracing.Web.IndexLiveTest do
     context
   end
 
-  test "forbidding mount using a resolver callback" do
-    assert {:error, {:redirect, redirect}} = live(build_conn(), "/tracing-limited")
+  test "forbidding mount using a resolver callback", %{conn: conn} do
+    assert {:error, {:redirect, redirect}} = live(conn, "/tracing-limited")
     assert %{to: "/", flash: %{"error" => "Access forbidden"}} = redirect
   end
 
-  test "GET /tracing" do
+  test "GET /tracing", %{conn: conn} do
     TracingWeb.RpcMock
     |> stub(:call, fn node, module, function, args, timeout ->
       :rpc.call(node, module, function, args, timeout)
     end)
 
-    {:ok, _index_live, html} = live(build_conn(), "/tracing")
+    {:ok, _index_live, html} = live(conn, "/tracing")
 
     assert html =~ "Live Tracing"
   end
 
-  test "Add/Remove Local Service + Module + Function + MatchSpec" do
+  test "Add/Remove Local Service + Module + Function + MatchSpec", %{conn: conn} do
     node = Node.self() |> to_string
     service = String.replace(node, "@", "-")
 
@@ -41,7 +41,7 @@ defmodule Tracing.Web.IndexLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
 
-    {:ok, index_live, _html} = live(build_conn(), "/tracing")
+    {:ok, index_live, _html} = live(conn, "/tracing")
 
     index_live
     |> element("#tracing-multi-select-toggle-options")
@@ -110,7 +110,7 @@ defmodule Tracing.Web.IndexLiveTest do
     refute html =~ "match_spec:caller"
   end
 
-  test "Run Trace for module TracingWeb.Common" do
+  test "Run Trace for module TracingWeb.Common", %{conn: conn} do
     node = Node.self() |> to_string
     service = String.replace(node, "@", "-")
 
@@ -119,7 +119,7 @@ defmodule Tracing.Web.IndexLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
 
-    {:ok, index_live, _html} = live(build_conn(), "/tracing")
+    {:ok, index_live, _html} = live(conn, "/tracing")
 
     index_live
     |> element("#tracing-multi-select-toggle-options")
@@ -158,7 +158,7 @@ defmodule Tracing.Web.IndexLiveTest do
     refute html =~ "STOP"
   end
 
-  test "Run Trace for function TracingWeb.Common.uuid4/0" do
+  test "Run Trace for function TracingWeb.Common.uuid4/0", %{conn: conn} do
     node = Node.self() |> to_string
     service = String.replace(node, "@", "-")
 
@@ -167,7 +167,7 @@ defmodule Tracing.Web.IndexLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
 
-    {:ok, index_live, _html} = live(build_conn(), "/tracing")
+    {:ok, index_live, _html} = live(conn, "/tracing")
 
     index_live
     |> element("#tracing-multi-select-toggle-options")
@@ -205,7 +205,7 @@ defmodule Tracing.Web.IndexLiveTest do
     assert render(index_live) =~ "caller: {Tracing.Web.IndexLive"
   end
 
-  test "Run Trace for mix Elixir.Enum and function TracingWeb.Common.uuid4/0" do
+  test "Run Trace for mix Elixir.Enum and function TracingWeb.Common.uuid4/0", %{conn: conn} do
     node = Node.self() |> to_string
     service = String.replace(node, "@", "-")
 
@@ -214,7 +214,7 @@ defmodule Tracing.Web.IndexLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
 
-    {:ok, index_live, _html} = live(build_conn(), "/tracing")
+    {:ok, index_live, _html} = live(conn, "/tracing")
 
     index_live
     |> element("#tracing-multi-select-toggle-options")
@@ -251,7 +251,7 @@ defmodule Tracing.Web.IndexLiveTest do
     assert render(index_live) =~ "Enum."
   end
 
-  test "Tracing timing out" do
+  test "Tracing timing out", %{conn: conn} do
     node = Node.self() |> to_string
     service = String.replace(node, "@", "-")
 
@@ -260,7 +260,7 @@ defmodule Tracing.Web.IndexLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
 
-    {:ok, index_live, _html} = live(build_conn(), "/tracing")
+    {:ok, index_live, _html} = live(conn, "/tracing")
 
     index_live
     |> element("#tracing-multi-select-toggle-options")
@@ -297,7 +297,7 @@ defmodule Tracing.Web.IndexLiveTest do
     refute html =~ "STOP"
   end
 
-  test "Try to RUN tracing when it is already running" do
+  test "Try to RUN tracing when it is already running", %{conn: conn} do
     node = Node.self() |> to_string
     service = String.replace(node, "@", "-")
 
@@ -306,7 +306,7 @@ defmodule Tracing.Web.IndexLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
 
-    {:ok, index_live, _html} = live(build_conn(), "/tracing")
+    {:ok, index_live, _html} = live(conn, "/tracing")
 
     index_live
     |> element("#tracing-multi-select-toggle-options")
@@ -348,7 +348,7 @@ defmodule Tracing.Web.IndexLiveTest do
     Tracer.stop_trace(session_id)
   end
 
-  test "Testing NodeUp/NodeDown" do
+  test "Testing NodeUp/NodeDown", %{conn: conn} do
     fake_node = :myapp@nohost
     node = Node.self() |> to_string
     service = String.replace(node, "@", "-")
@@ -360,7 +360,7 @@ defmodule Tracing.Web.IndexLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
 
-    {:ok, index_live, _html} = live(build_conn(), "/tracing")
+    {:ok, index_live, _html} = live(conn, "/tracing")
 
     index_live
     |> element("#tracing-multi-select-toggle-options")

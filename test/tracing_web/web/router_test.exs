@@ -24,13 +24,6 @@ defmodule Tracing.Web.RouterTest do
     end
   end
 
-  # defmodule PartialResolver do
-  #   @behaviour Tracing.Web.Resolver
-
-  #   @impl true
-  #   def resolve_refresh(_user), do: -1
-  # end
-
   describe "__options__" do
     test "setting default options in the router module" do
       {session_name, session_opts, route_opts} = Router.__options__("/tracing", [])
@@ -80,17 +73,6 @@ defmodule Tracing.Web.RouterTest do
 
       assert [My.Hook, Tracing.Web.Authentication] = Keyword.get(sess_opts, :on_mount)
     end
-
-    # test "falling back to default values with a partial resolver implementation" do
-    #   conn =
-    #     :get
-    #     |> conn("/tracing")
-    #     |> Conn.put_private(:current_user, %{id: 1, admin?: false})
-
-    #   session = options_to_session(conn, resolver: PartialResolver)
-
-    #   assert %{"access" => :all, "refresh" => -1, "user" => nil} = session
-    # end
 
     test "validating tracing name values" do
       assert_raise ArgumentError, ~r/invalid :tracing_name/, fn ->
