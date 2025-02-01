@@ -196,7 +196,7 @@ defmodule Tracing.Web.IndexLive do
       </div>
       <div class="p-2">
         <div class="bg-white w-full shadow-lg rounded">
-          <Core.table_logs id="live-logs" h_max_size="max-h-[400px]" rows={@streams.tracing_messages}>
+          <Core.table_tracing id="live-logs" rows={@streams.tracing_messages}>
             <:col :let={{_id, tracing_message}} label="SERVICE">
               <span>{tracing_message.service}</span>
             </:col>
@@ -209,7 +209,7 @@ defmodule Tracing.Web.IndexLive do
             <:col :let={{_id, tracing_message}} label="CONTENT">
               {tracing_message.content}
             </:col>
-          </Core.table_logs>
+          </Core.table_tracing>
         </div>
       </div>
     </div>

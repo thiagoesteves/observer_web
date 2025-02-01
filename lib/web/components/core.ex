@@ -7,21 +7,20 @@ defmodule Tracing.Web.Components.Core do
   alias Phoenix.HTML.Form
 
   @doc ~S"""
-  Renders a table with generic log styling.
+  Renders a table with generic metric log styling.
 
   ## Examples
 
-      <.table id="users" rows={@users}>
+      <.table_tracing id="users" rows={@users}>
         <:col :let={user} label="id"><%= user.id %></:col>
         <:col :let={user} label="username"><%= user.username %></:col>
-      </.table>
+      </.table_tracing>
   """
   attr :id, :string, required: true
   attr :rows, :list, required: true
   attr :row_id, :any, default: nil, doc: "the function for generating the row id"
   attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
   attr :transition, :boolean, default: false
-  attr :h_max_size, :string, default: "max-h-[600px]"
 
   attr :row_item, :any,
     default: &Function.identity/1,
@@ -33,7 +32,7 @@ defmodule Tracing.Web.Components.Core do
 
   slot :action, doc: "the slot for showing user actions in the last table column"
 
-  def table_logs(assigns) do
+  def table_tracing(assigns) do
     assigns =
       with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
         assign(assigns, row_id: assigns.row_id || fn {id, _item} -> id end)
@@ -41,11 +40,7 @@ defmodule Tracing.Web.Components.Core do
 
     ~H"""
     <div class="px-4 sm:overflow-visible sm:px-0 ">
-      <div
-        id={"#{@id}-table"}
-        class={["block overflow-y-auto", "#{@h_max_size}"]}
-        phx-hook="ScrollBottom"
-      >
+      <div id={"#{@id}-table"} class="block" phx-hook="ScrollBottom">
         <table class="items-center w-full border-collapse ">
           <thead class="text-xs text-left align-middle leading-6 bg-white text-blueGray-500 uppercase sticky top-0 z-10">
             <tr>
@@ -55,9 +50,6 @@ defmodule Tracing.Web.Components.Core do
               >
                 {col[:label]}
               </th>
-              <%!-- <th :if={@action != []} class="relative p-0 pb-4">
-                <span class="sr-only">{gettext("Actions")}</span>
-              </th> --%>
             </tr>
           </thead>
           <tbody

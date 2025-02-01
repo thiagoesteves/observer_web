@@ -119,8 +119,7 @@ defmodule Tracing.Web.Components.MultiSelectList do
                   time: 300
                 )
               }>
-                <% n_columns = length(@unselected) %>
-                <div class={["flex grid mt-1 gap-1 items-top", "grid-cols-#{n_columns}"]}>
+                <div class="flex grid mt-1 gap-1 items-top grid-cols-4">
                   <%= for item <- @unselected do %>
                     <div class="rounded-lg bg-white border border-solid border-blueGray-100 block overflow-y-auto max-h-[300px]">
                       <div class="flex items-start bg-white p-2 sticky top-0 z-10">
