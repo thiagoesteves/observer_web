@@ -64,6 +64,9 @@ jobs:
           restore-keys: |
             tracing-web-
 
+      - name: Seed fake assets
+        run: mkdir -p priv/static && touch priv/static/app.css && touch priv/static/app.js
+
       - name: Run tests
         run: mix coveralls.html
 
@@ -92,6 +95,9 @@ jobs:
           restore-keys: |
             tracing-web-
 
+      - name: Seed fake assets
+        run: mkdir -p priv/static && touch priv/static/app.css && touch priv/static/app.js
+        
       - name: Install Elixir dependencies
         run: mix do deps.get, compile --warnings-as-errors
 
