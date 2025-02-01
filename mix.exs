@@ -115,7 +115,7 @@ defmodule TracingWeb.MixProject do
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
 
       # Docs and Publishing
-      {:ex_doc, "~> 0.34", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.34", only: [:dev, :test], runtime: false},
       {:makeup_diff, "~> 0.1", only: :dev, runtime: false}
     ]
   end
