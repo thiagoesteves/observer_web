@@ -112,6 +112,7 @@ defmodule TracingWeb.MixProject do
       {:mox, "~> 1.0", only: :test},
       {:excoveralls, "~> 0.18", only: :test},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
+      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
 
       # Docs and Publishing
       {:ex_doc, "~> 0.34", only: :dev, runtime: false},
