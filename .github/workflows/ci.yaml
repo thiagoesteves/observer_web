@@ -18,8 +18,8 @@ jobs:
       - name: Setup BEAM
         uses: erlef/setup-beam@v1
         with:
-          otp-version: '1.17'
-          elixir-version: '26.2'
+          otp-version: '26.2.5.6'
+          elixir-version: '1.17.0'
 
       - name: Cache
         uses: actions/cache@v4
