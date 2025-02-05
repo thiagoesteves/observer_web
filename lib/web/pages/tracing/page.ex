@@ -1,4 +1,4 @@
-defmodule Observer.Web.TracingPage do
+defmodule Observer.Web.Tracing.Page do
   @moduledoc """
   This is the live component responsible for handling the Tracing debug
   """
@@ -7,6 +7,7 @@ defmodule Observer.Web.TracingPage do
 
   use Observer.Web, :live_component
 
+  alias Observer.Web.Components.Attention
   alias Observer.Web.Components.Core
   alias Observer.Web.Components.MultiSelectList
   alias Observer.Web.Page
@@ -43,6 +44,19 @@ defmodule Observer.Web.TracingPage do
     </a>
     """
 
+    attention_msg = ~H"""
+    Incorrect use of the <b>:dbg</b>
+    tracer in production can lead to performance degradation, latency and crashes.
+    <b>Observer Web tracing</b> enforces limits on the maximum number of messages and applies a timeout (in seconds)
+    to ensure the debugger doesn't remain active unintentionally. Check out the
+    <a
+      href="https://www.erlang.org/docs/24/man/dbg"
+      class="font-medium text-blue-600 underline dark:text-blue-500 hover:no-underline"
+    >
+      Erlang Debugger
+    </a> for more detailed information.
+    """
+
     assigns =
       assigns
       |> assign(unselected_services_keys: unselected_services_keys)
@@ -54,94 +68,68 @@ defmodule Observer.Web.TracingPage do
       |> assign(trace_idle?: trace_idle?)
       |> assign(trace_owner?: trace_owner?)
       |> assign(show_tracing_options: show_tracing_options)
+      |> assign(attention_msg: attention_msg)
 
     ~H"""
-    <div class="min-h-screen bg-white text-black">
-      <div class="flex items-center">
-        <div
-          id="live-tracing-alert"
-          class="p-2 border-l-8 border-yellow-400 rounded-l-lg bg-gray-300 text-yellow-600"
-          role="alert"
-        >
-          <div class="flex items-center">
-            <div class="flex items-center py-8">
-              <svg
-                class="flex-shrink-0 w-4 h-4 me-2"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
-              </svg>
-              <span class="sr-only">Info</span>
-              <h3 class="text-sm font-medium">Attention</h3>
-            </div>
-            <div class="ml-2 mr-2 mt-2 mb-2 text-xs text-red-500">
-              Incorrect use of the <b>:dbg</b>
-              tracer in production can lead to performance degradation, latency and crashes.
-              <b>DeployEx Live tracing</b>
-              enforces limits on the maximum number of messages and applies a timeout (in seconds)
-              to ensure the debugger doesn't remain active unintentionally. Check out the
-              <a
-                href="https://www.erlang.org/docs/24/man/dbg"
-                class="font-medium text-blue-600 underline dark:text-blue-500 hover:no-underline"
-              >
-                Erlang Debugger
-              </a>
-              for more detailed information.
-            </div>
+    <div class="min-h-screen bg-white">
+      <Attention.content
+        id="tracing"
+        title="Attention"
+        class="border-red-400 text-red-500"
+        message={@attention_msg}
+      >
+        <:inner_form>
+          <.form
+            for={@form}
+            id="tracing-update-form"
+            class="flex ml-2 mr-2 text-xs text-center whitespace-nowrap gap-5"
+            phx-change="form-update"
+          >
+            <Core.input
+              field={@form[:max_messages]}
+              type="number"
+              step="1"
+              min="1"
+              max="50"
+              label="Messages"
+            />
 
-            <.form
-              for={@form}
-              id="tracing-update-form"
-              class="flex ml-2 mr-2 text-xs text-center whitespace-nowrap gap-5"
-              phx-change="form-update"
-            >
-              <Core.input
-                field={@form[:max_messages]}
-                type="number"
-                step="1"
-                min="1"
-                max="50"
-                label="Messages"
-              />
+            <Core.input
+              field={@form[:session_timeout_seconds]}
+              type="number"
+              step="15"
+              min="30"
+              max="300"
+              label="Timeout(s)"
+            />
+          </.form>
+        </:inner_form>
+        <:inner_button>
+          <button
+            :if={@trace_idle? and @trace_owner?}
+            id="tracing-multi-select-run"
+            phx-click="tracing-apps-run"
+            class="phx-submit-loading:opacity-75 rounded-r-xl bg-green-500 transform active:scale-75 transition-transform hover:bg-green-600 py-10 w-64 text-sm font-semibold  text-white active:text-white/80"
+          >
+            RUN
+          </button>
+          <button
+            :if={@trace_idle? == false and @trace_owner?}
+            id="tracing-multi-select-stop"
+            phx-click="tracing-apps-stop"
+            class="phx-submit-loading:opacity-75 rounded-r-xl bg-red-500 transform active:scale-75 transition-transform hover:bg-red-600 py-10 w-64 text-sm font-semibold text-white active:text-white/80 animate-pulse"
+          >
+            STOP
+          </button>
 
-              <Core.input
-                field={@form[:session_timeout_seconds]}
-                type="number"
-                step="15"
-                min="30"
-                max="300"
-                label="Timeout(s)"
-              />
-            </.form>
-          </div>
-        </div>
-        <button
-          :if={@trace_idle? and @trace_owner?}
-          id="tracing-multi-select-run"
-          phx-click="tracing-apps-run"
-          class="phx-submit-loading:opacity-75 rounded-r-xl bg-green-500 transform active:scale-75 transition-transform hover:bg-green-600 py-10 w-64 text-sm font-semibold  text-white active:text-white/80"
-        >
-          RUN
-        </button>
-        <button
-          :if={@trace_idle? == false and @trace_owner?}
-          id="tracing-multi-select-stop"
-          phx-click="tracing-apps-stop"
-          class="phx-submit-loading:opacity-75 rounded-r-xl bg-red-500 transform active:scale-75 transition-transform hover:bg-red-600 py-10 w-64 text-sm font-semibold text-white active:text-white/80 animate-pulse"
-        >
-          STOP
-        </button>
-
-        <button
-          :if={not @trace_owner?}
-          class="phx-submit-loading:opacity-75 rounded-r-xl bg-red-500 transform active:scale-75 transition-transform hover:bg-red-600 py-10 w-64 text-sm font-semibold text-white active:text-white/80 animate-pulse"
-        >
-          IN USE
-        </button>
-      </div>
+          <button
+            :if={not @trace_owner?}
+            class="phx-submit-loading:opacity-75 rounded-r-xl bg-red-500 transform active:scale-75 transition-transform hover:bg-red-600 py-10 w-64 text-sm font-semibold text-white active:text-white/80 animate-pulse"
+          >
+            IN USE
+          </button>
+        </:inner_button>
+      </Attention.content>
       <div class="flex">
         <MultiSelectList.content
           id="tracing-multi-select"

@@ -2,7 +2,7 @@ defmodule ObserverWeb.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/thiagoesteves/observer_web"
-  @version "0.0.1"
+  @version "0.0.2"
 
   def project do
     [
@@ -67,7 +67,6 @@ defmodule ObserverWeb.MixProject do
       extra_section: "GUIDES",
       extras: extras(),
       groups_for_extras: groups_for_extras(),
-      # logo: "",
       skip_undefined_reference_warnings_on: ["CHANGELOG.md"]
     ]
   end

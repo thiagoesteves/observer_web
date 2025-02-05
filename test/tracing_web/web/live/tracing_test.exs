@@ -22,7 +22,7 @@ defmodule Observer.Web.TracingLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
 
-    {:ok, _index_live, html} = live(conn, "/observer/tracing")
+    {:ok, _index_live, html} = live(conn, "/observer")
 
     assert html =~ "Live Tracing"
   end

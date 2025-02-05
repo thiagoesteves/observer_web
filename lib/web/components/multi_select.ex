@@ -1,6 +1,6 @@
-defmodule Observer.Web.Components.MultiSelectList do
+defmodule Observer.Web.Components.MultiSelect do
   @moduledoc """
-  Multi select list box
+  Multi select box
 
   References:
    * https://www.creative-tim.com/twcomponents/component/multi-select
@@ -119,18 +119,13 @@ defmodule Observer.Web.Components.MultiSelectList do
                   time: 300
                 )
               }>
-                <div class="flex grid mt-1 gap-1 items-top grid-cols-4">
-                  <%= for item <- @unselected do %>
-                    <div class="rounded-lg bg-white border border-solid border-blueGray-100 block overflow-y-auto max-h-[300px]">
-                      <div class="flex items-start bg-white p-2 sticky top-0 z-10">
-                        <%= if item[:info] do %>
-                          <div class=" text-sm font-bold text-black">{item.name}
-                            {item.info}:</div>
-                        <% else %>
-                          <div class=" text-sm font-bold text-black">{item.name}:</div>
-                        <% end %>
-                      </div>
+                <%= for item <- @unselected do %>
+                  <div class="w-full flex-wrap">
+                    <div class="flex items-start p-2">
+                      <div class="text-sm font-bold text-black">{item.name}:</div>
+                    </div>
 
+                    <div class="flex flex-wrap">
                       <%= for key <- item.keys do %>
                         <button
                           id={
@@ -140,7 +135,7 @@ defmodule Observer.Web.Components.MultiSelectList do
                               "-"
                             )
                           }
-                          class="flex justify-center items-center m-1 font-medium  px-2 rounded-full text-gray-700 bg-gray-100 border border-gray-300"
+                          class="flex justify-center items-center m-1 font-medium px-2 rounded-full text-gray-700 bg-gray-100 border border-gray-300"
                           phx-click="multi-select-add-item"
                           phx-value-key={key}
                           phx-value-item={item.name}
@@ -169,8 +164,8 @@ defmodule Observer.Web.Components.MultiSelectList do
                         </button>
                       <% end %>
                     </div>
-                  <% end %>
-                </div>
+                  </div>
+                <% end %>
               </div>
             </div>
           </div>
@@ -181,25 +176,19 @@ defmodule Observer.Web.Components.MultiSelectList do
   end
 
   def border_item_color("services"), do: "border-teal-300"
-  def border_item_color("modules"), do: "border-red-500"
-  def border_item_color("functions"), do: "border-blue-400"
-  def border_item_color("match_spec"), do: "border-yellow-400"
+  def border_item_color("apps"), do: "border-blue-400"
   # coveralls-ignore-start
   def border_item_color(_), do: "border-gray-300"
   # coveralls-ignore-stop
 
   def bg_item_color("services"), do: "bg-teal-50"
-  def bg_item_color("modules"), do: "bg-red-50"
-  def bg_item_color("functions"), do: "bg-blue-50"
-  def bg_item_color("match_spec"), do: "bg-yellow-50"
+  def bg_item_color("apps"), do: "bg-blue-50"
   # coveralls-ignore-start
   def bg_item_color(_), do: "bg-gray-50"
   # coveralls-ignore-stop
 
   def text_item_color("services"), do: "text-teal-700"
-  def text_item_color("modules"), do: "text-red-500"
-  def text_item_color("functions"), do: "text-blue-400"
-  def text_item_color("match_spec"), do: "text-yellow-700"
+  def text_item_color("apps"), do: "text-blue-700"
   # coveralls-ignore-start
   def text_item_color(_), do: "text-teal-700"
   # coveralls-ignore-stop
