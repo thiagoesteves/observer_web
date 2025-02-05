@@ -24,6 +24,18 @@ defmodule ObserverWeb.Rpc do
   def call(node, module, function, args, timeout),
     do: default().call(node, module, function, args, timeout)
 
+  @doc """
+  Call :rpc.pinfo to request process information (local or remote pid)
+
+  Location transparent version of the BIF :erlang.process_info/2
+
+  https://www.erlang.org/doc/apps/kernel/rpc.html#pinfo/1
+  """
+  @impl true
+  @spec pinfo(pid :: pid, information :: list | atom()) :: any() | :undefined
+  def pinfo(pid, information),
+    do: default().pinfo(pid, information)
+
   ### ==========================================================================
   ### Private functions
   ### ==========================================================================

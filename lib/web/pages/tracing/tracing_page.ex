@@ -1,4 +1,4 @@
-defmodule Observer.Web.TracingPage do
+defmodule Observer.Web.Tracing.Page do
   @moduledoc """
   This is the live component responsible for handling the Tracing debug
   """

@@ -9,8 +9,8 @@ defmodule Observer.Web.IndexLive do
 
   use Observer.Web, :live_view
 
-  alias Observer.Web.ObserverPage
-  alias Observer.Web.TracingPage
+  alias Observer.Web.Observer.Page, as: ObserverPage
+  alias Observer.Web.Tracing.Page, as: TracingPage
 
   @impl Phoenix.LiveView
   def mount(params, session, socket) do
