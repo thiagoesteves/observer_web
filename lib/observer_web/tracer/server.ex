@@ -74,7 +74,7 @@ defmodule ObserverWeb.Server do
     Logger.info("New Trace Session: #{session_id} functions: #{inspect(functions_by_node)}")
 
     tracer_pid = self()
-    # The local node (deployex) is always present in the trace list of nodes.
+    # The local node is always present in the trace list of nodes.
     # The following list will indicate to the trace handler whether the node
     # should be included or filtered out.
     monitored_nodes = Map.keys(functions_by_node)

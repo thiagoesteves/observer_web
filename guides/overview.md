@@ -18,5 +18,5 @@ and also function callers, as many other possibilities.
 
 ## Installation
 
-See the [installation guide](installation.md) for details on installing and configuring Oban Web
+See the [installation guide](installation.md) for details on installing and configuring Observer Web
 for your application.

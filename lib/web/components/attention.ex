@@ -11,8 +11,12 @@ defmodule Observer.Web.Components.Attention do
 
   def content(assigns) do
     ~H"""
-    <div class="flex items-center justify-between bg-gray-300 w-full">
-      <div id={"live-#{@id}-alert"} class={["p-2 border-l-8 rounded-l-lg ", @class]} role="alert">
+    <div class="flex items-center justify-between bg-gray-200 w-full">
+      <div
+        id={"live-#{@id}-alert"}
+        class={["p-2 bg-gray-300 border-l-8 rounded-l-lg ", @class]}
+        role="alert"
+      >
         <div class="flex items-center">
           <div class="flex items-center py-8 ">
             <svg
@@ -27,7 +31,7 @@ defmodule Observer.Web.Components.Attention do
             <span class="sr-only">Info</span>
             <h3 class="text-sm  font-bold">{@title}</h3>
           </div>
-          <div class="ml-2 mr-2 mt-2 mb-2 text-base">
+          <div class="ml-2 mr-2 mt-2 mb-2 text-xs">
             {@message}
           </div>
           {render_slot(@inner_form)}

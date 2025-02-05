@@ -73,7 +73,15 @@ defmodule Observer.Web.Layouts do
     <footer class="flex flex-col px-3 py-6 text-sm justify-center items-center md:flex-row">
       <.version name="Observer Web" version={@oss_version} />
 
-      <span class="text-gray-800 dark:text-gray-200 font-semibold">Made by DeployEx</span>
+      <span class="text-gray-800 dark:text-gray-200 font-semibold">
+        Made by
+        <a
+          href="https://github.com/thiagoesteves/deployex"
+          class="font-medium text-blue-600 underline dark:text-blue-500 hover:no-underline"
+        >
+          DeployEx
+        </a>
+      </span>
     </footer>
     """
   end

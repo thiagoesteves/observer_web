@@ -14,7 +14,7 @@ defmodule ObserverWeb.Common do
 
   ## Examples
 
-    iex> alias Deployex.Common
+    iex> alias ObserverWeb.Common
     ...> assert is_binary(Common.uuid4())
     ...> assert is_binary(Common.uuid4())
     ...> assert is_binary(Common.uuid4())

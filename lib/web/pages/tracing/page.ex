@@ -71,7 +71,7 @@ defmodule Observer.Web.Tracing.Page do
       |> assign(attention_msg: attention_msg)
 
     ~H"""
-    <div class="min-h-screen bg-white text-black">
+    <div class="min-h-screen bg-white">
       <Attention.content
         id="tracing"
         title="Attention"
