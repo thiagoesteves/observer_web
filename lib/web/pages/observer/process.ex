@@ -4,7 +4,7 @@ defmodule Observer.Web.Observer.Process do
   use Observer.Web, :html
   use Phoenix.Component
 
-  alias Observer.Web.Observer.Attention
+  alias Observer.Web.Components.Attention
 
   attr :info, :map, required: true
   attr :id, :map, required: true
@@ -49,7 +49,12 @@ defmodule Observer.Web.Observer.Process do
       <%= cond do %>
         <% @info == nil -> %>
         <% @info == :undefined -> %>
-          <Attention.content message={"Process #{@id} is either dead or protected and therefore can not be shown."} />
+          <Attention.content
+            id="observer-process"
+            title="Warning"
+            class="border-red-400 text-red-500"
+            message={"Process #{@id} is either dead or protected and therefore can not be shown."}
+          />
         <% true -> %>
           <div id="process_information">
             <div class="flex grid grid-cols-3  gap-1 items-top">

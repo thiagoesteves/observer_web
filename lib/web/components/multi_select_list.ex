@@ -36,7 +36,7 @@ defmodule Observer.Web.Components.MultiSelectList do
                       bg_item_color(item.name)
                     ]}>
                       <div class={[
-                        "text-xs font-normal leading-none max-w-full flex-initial",
+                        "text-sm font-normal leading-none max-w-full flex-initial",
                         text_item_color(item.name)
                       ]}>
                         {"#{item.name}:#{key}"}
@@ -124,10 +124,10 @@ defmodule Observer.Web.Components.MultiSelectList do
                     <div class="rounded-lg bg-white border border-solid border-blueGray-100 block overflow-y-auto max-h-[300px]">
                       <div class="flex items-start bg-white p-2 sticky top-0 z-10">
                         <%= if item[:info] do %>
-                          <div class=" text-xs font-bold text-black">{item.name}
+                          <div class=" text-sm font-bold text-black">{item.name}
                             {item.info}:</div>
                         <% else %>
-                          <div class=" text-xs font-bold text-black">{item.name}:</div>
+                          <div class=" text-sm font-bold text-black">{item.name}:</div>
                         <% end %>
                       </div>
 
@@ -145,7 +145,7 @@ defmodule Observer.Web.Components.MultiSelectList do
                           phx-value-key={key}
                           phx-value-item={item.name}
                         >
-                          <div class="text-xs font-normal leading-none max-w-full flex-initial">
+                          <div class="text-sm font-normal leading-none max-w-full flex-initial">
                             {key}
                           </div>
                           <div class="flex flex-auto flex-row-reverse">

@@ -9,6 +9,7 @@ defmodule Observer.Web.Observer.Page do
 
   require Logger
 
+  alias Observer.Web.Components.Attention
   alias Observer.Web.Components.MultiSelect
   alias Observer.Web.Observer.Legend
   alias Observer.Web.Observer.Port
@@ -62,62 +63,53 @@ defmodule Observer.Web.Observer.Page do
       |> adjust_series_position.()
       |> flare_chart_data()
 
+    attention_msg = ~H"""
+    The <b>Observer Web </b> visualizes process relationships, supervisor trees, and more.
+    Hover over an element to view detailed information about the process or port.
+    You can also configure the initial tree depth, or set the depth to <b>-1</b> to expand all trees.
+    """
+
     assigns =
       assigns
       |> assign(chart_tree_data: chart_tree_data)
       |> assign(unselected_services_keys: unselected_services_keys)
       |> assign(unselected_apps_keys: unselected_apps_keys)
+      |> assign(attention_msg: attention_msg)
 
     ~H"""
     <div class="min-h-screen bg-white">
-      <div class="flex items-center">
-        <div
-          id="live-tracing-alert"
-          class="p-2 border-l-8 border-blue-400 rounded-l-lg bg-gray-300 text-blue-500"
-          role="alert"
-        >
-          <div class="flex items-center">
-            <div class="flex items-center py-8">
-              <svg
-                class="flex-shrink-0 w-4 h-4 me-2"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
-              </svg>
-              <span class="sr-only">Info</span>
-              <h3 class="text-sm font-medium">Note</h3>
-            </div>
-            <div class="ml-2 mr-2 mt-2 mb-2 text-xs">
-              DeployEx Observer displays process relationships, supervisor trees, and detailed process information. It allows users to configure the initial tree depth or expand all trees by setting the depth to -1.
-            </div>
-
-            <.form
-              for={@form}
-              id="observer-update-form"
-              class="flex ml-2 mr-2 text-xs text-center whitespace-nowrap gap-5"
-              phx-change="form-update"
-            >
-              <Core.input
-                field={@form[:initial_tree_depth]}
-                type="number"
-                step="1"
-                min="-1"
-                label="Initial Depth"
-              />
-            </.form>
-          </div>
-        </div>
-        <button
-          id="observer-multi-select-update"
-          phx-click="observer-apps-update"
-          class="phx-submit-loading:opacity-75 rounded-r-xl bg-green-500 transform active:scale-75 transition-transform hover:bg-green-600 py-10 w-64 text-sm font-semibold  text-white active:text-white/80"
-        >
-          UPDATE
-        </button>
-      </div>
+      <Attention.content
+        id="observer"
+        title="Information"
+        class="border-blue-400 text-blue-500"
+        message={@attention_msg}
+      >
+        <:inner_form>
+          <.form
+            for={@form}
+            id="observer-update-form"
+            class="flex ml-2 mr-2 text-xs text-center whitespace-nowrap gap-5"
+            phx-change="form-update"
+          >
+            <Core.input
+              field={@form[:initial_tree_depth]}
+              type="number"
+              step="1"
+              min="-1"
+              label="Initial Depth"
+            />
+          </.form>
+        </:inner_form>
+        <:inner_button>
+          <button
+            id="observer-multi-select-update"
+            phx-click="observer-apps-update"
+            class="phx-submit-loading:opacity-75 rounded-r-xl bg-green-500 transform active:scale-75 transition-transform hover:bg-green-600 py-10 w-64 text-sm font-semibold  text-white active:text-white/80"
+          >
+            UPDATE
+          </button>
+        </:inner_button>
+      </Attention.content>
 
       <div class="flex">
         <MultiSelect.content

@@ -36,7 +36,7 @@ defmodule Observer.Web.Components.MultiSelect do
                       bg_item_color(item.name)
                     ]}>
                       <div class={[
-                        "text-xs font-normal leading-none max-w-full flex-initial",
+                        "text-sm font-normal leading-none max-w-full flex-initial",
                         text_item_color(item.name)
                       ]}>
                         {"#{item.name}:#{key}"}
@@ -122,7 +122,7 @@ defmodule Observer.Web.Components.MultiSelect do
                 <%= for item <- @unselected do %>
                   <div class="w-full flex-wrap">
                     <div class="flex items-start p-2">
-                      <div class="text-xs font-bold text-black">{item.name}:</div>
+                      <div class="text-sm font-bold text-black">{item.name}:</div>
                     </div>
 
                     <div class="flex flex-wrap">
@@ -140,7 +140,7 @@ defmodule Observer.Web.Components.MultiSelect do
                           phx-value-key={key}
                           phx-value-item={item.name}
                         >
-                          <div class="text-xs font-normal leading-none max-w-full flex-initial">
+                          <div class="text-sm font-normal leading-none max-w-full flex-initial">
                             {key}
                           </div>
                           <div class="flex flex-auto flex-row-reverse">
