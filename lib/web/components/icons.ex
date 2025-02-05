@@ -93,6 +93,36 @@ defmodule Observer.Web.Components.Icons do
             />
           </g>
         </svg>
+      <% :root -> %>
+        <svg
+          class="flex-shrink-0 w-5 h-5 mr-4"
+          width="256"
+          height="256"
+          viewBox="0 0 256 256"
+          xmlns="http://www.w3.org/2000/svg"
+          version="1.1"
+          fill="currentColor"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.5"
+        >
+          <g
+            style="stroke: currentColor; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: none; fill-rule: nonzero; opacity: 1;"
+            transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)"
+          >
+            <polygon
+              points="75.96,30.96 75.96,13.34 67.26,13.34 67.26,22.26 45,0 0.99,44.02 7.13,50.15 45,12.28 82.88,50.15 89.01,44.02 "
+              style="stroke: currentColor; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: currentColor; fill-rule: nonzero; opacity: 1;"
+              transform="  matrix(1 0 0 1 0 0) "
+            />
+            <polygon
+              points="45,20 14.04,50.95 14.04,90 35.29,90 35.29,63.14 54.71,63.14 54.71,90 75.96,90 75.96,50.95 "
+              style="stroke: currentColor; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill: currentColor; fill-rule: nonzero; opacity: 1;"
+              transform="  matrix(1 0 0 1 0 0) "
+            />
+          </g>
+        </svg>
     <% end %>
     """
   end

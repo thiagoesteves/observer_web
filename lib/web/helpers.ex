@@ -31,6 +31,8 @@ defmodule Observer.Web.Helpers do
   """
   def observer_path(route, params \\ %{})
 
+  def observer_path(:root, _params), do: "/"
+
   def observer_path(route, params) when is_list(route) do
     route
     |> Enum.join("/")

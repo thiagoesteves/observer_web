@@ -49,7 +49,7 @@ defmodule Observer.Web.Layouts do
     ~H"""
     <nav class="flex space-x-1">
       <.link
-        :for={page <- [:tracing, :observer]}
+        :for={page <- [:root, :tracing, :observer]}
         class={link_class(@page, page)}
         data-shortcut={JS.navigate(observer_path(page))}
         id={"nav-#{page}"}

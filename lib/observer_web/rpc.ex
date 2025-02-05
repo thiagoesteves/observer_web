@@ -27,5 +27,6 @@ defmodule ObserverWeb.Rpc do
   ### ==========================================================================
   ### Private functions
   ### ==========================================================================
-  defp default, do: Application.fetch_env!(:observer_web, __MODULE__)[:adapter]
+  defp default,
+    do: Application.get_env(:observer_web, __MODULE__)[:adapter] || ObserverWeb.Rpc.Local
 end
