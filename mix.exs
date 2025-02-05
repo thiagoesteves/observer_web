@@ -67,7 +67,6 @@ defmodule ObserverWeb.MixProject do
       extra_section: "GUIDES",
       extras: extras(),
       groups_for_extras: groups_for_extras(),
-      # logo: "",
       skip_undefined_reference_warnings_on: ["CHANGELOG.md"]
     ]
   end
