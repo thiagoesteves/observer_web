@@ -1,6 +1,6 @@
-defmodule ObserverWeb.Observer do
+defmodule ObserverWeb.Apps do
   @moduledoc """
-  This module will provide observability functions
+  This module will provide observability for the applications processes and ports
 
   ## References:
    * https://github.com/shinyscorpion/wobserver
@@ -8,7 +8,7 @@ defmodule ObserverWeb.Observer do
 
   require Logger
 
-  alias ObserverWeb.Observer.Helper
+  alias ObserverWeb.Apps.Helper
   alias ObserverWeb.Rpc
 
   @link_line_color "#CCC"

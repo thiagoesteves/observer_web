@@ -1,9 +1,9 @@
-defmodule ObserverWeb.PortTest do
+defmodule ObserverWeb.Apps.PortTest do
   use ExUnit.Case, async: true
 
   import Mox
 
-  alias ObserverWeb.Observer.Port, as: ObserverPort
+  alias ObserverWeb.Apps.Port, as: AppsPort
 
   setup :verify_on_exit!
 
@@ -19,9 +19,9 @@ defmodule ObserverWeb.PortTest do
       |> :erlang.list_to_port()
 
     [h | _] = :erlang.ports()
-    assert %{connected: _, id: _, name: _, os_pid: _} = ObserverPort.info(h)
-    assert %{connected: _, id: _, name: _, os_pid: _} = ObserverPort.info(Node.self(), h)
-    assert :undefined = ObserverPort.info(Node.self(), invalid_port)
-    assert :undefined = ObserverPort.info(Node.self(), nil)
+    assert %{connected: _, id: _, name: _, os_pid: _} = AppsPort.info(h)
+    assert %{connected: _, id: _, name: _, os_pid: _} = AppsPort.info(Node.self(), h)
+    assert :undefined = AppsPort.info(Node.self(), invalid_port)
+    assert :undefined = AppsPort.info(Node.self(), nil)
   end
 end

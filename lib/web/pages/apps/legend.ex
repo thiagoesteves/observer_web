@@ -1,4 +1,4 @@
-defmodule Observer.Web.Observer.Legend do
+defmodule Observer.Web.Apps.Legend do
   @moduledoc false
   use Phoenix.Component
 

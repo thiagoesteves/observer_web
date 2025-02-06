@@ -49,7 +49,7 @@ defmodule Observer.Web.Layouts do
     ~H"""
     <nav class="flex space-x-1">
       <.link
-        :for={page <- [:root, :tracing, :observer]}
+        :for={page <- [:root, :tracing, :applications]}
         class={link_class(@page, page)}
         data-shortcut={JS.navigate(observer_path(page))}
         id={"nav-#{page}"}
@@ -76,7 +76,7 @@ defmodule Observer.Web.Layouts do
       <span class="text-gray-800 dark:text-gray-200 font-semibold">
         Made by
         <a
-          href="https://github.com/thiagoesteves/deployex"
+          href="https://deployex.pro"
           class="font-medium text-blue-600 underline dark:text-blue-500 hover:no-underline"
         >
           DeployEx

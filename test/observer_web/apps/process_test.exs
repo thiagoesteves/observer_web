@@ -1,9 +1,9 @@
-defmodule ObserverWeb.ProcessTest do
+defmodule ObserverWeb.Apps.ProcessTest do
   use ExUnit.Case, async: false
 
   import Mox
 
-  alias ObserverWeb.Observer.Process, as: ObserverPort
+  alias ObserverWeb.Apps.Process, as: AppsPort
 
   setup :verify_on_exit!
 
@@ -14,15 +14,15 @@ defmodule ObserverWeb.ProcessTest do
     kernel_pid = :application_controller.get_master(:kernel)
 
     assert %{error_handler: :error_handler, memory: _, relations: %{links: [head, tail]}} =
-             ObserverPort.info(kernel_pid)
+             AppsPort.info(kernel_pid)
 
-    assert %{error_handler: :error_handler, memory: _, relations: _} = ObserverPort.info(head)
-    assert %{error_handler: :error_handler, memory: _, relations: _} = ObserverPort.info(tail)
+    assert %{error_handler: :error_handler, memory: _, relations: _} = AppsPort.info(head)
+    assert %{error_handler: :error_handler, memory: _, relations: _} = AppsPort.info(tail)
     invalid_pid = "<0.11111.0>" |> String.to_charlist() |> :erlang.list_to_pid()
-    assert :undefined = ObserverPort.info(invalid_pid)
+    assert :undefined = AppsPort.info(invalid_pid)
     process = Process.whereis(Elixir.ObserverWeb.Application)
 
     assert %{error_handler: :error_handler, memory: _, relations: _} =
-             ObserverPort.info(process)
+             AppsPort.info(process)
   end
 end

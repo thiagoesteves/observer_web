@@ -1,4 +1,4 @@
-defmodule ObserverWeb.Observer.Port do
+defmodule ObserverWeb.Apps.Port do
   @moduledoc """
   Retrieve Port information
   """

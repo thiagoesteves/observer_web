@@ -1,4 +1,4 @@
-defmodule ObserverWeb.Observer.Process do
+defmodule ObserverWeb.Apps.Process do
   @moduledoc """
   Retrieve process links and information
 
@@ -6,7 +6,7 @@ defmodule ObserverWeb.Observer.Process do
    * https://github.com/shinyscorpion/wobserver
   """
 
-  alias ObserverWeb.Observer.Helper
+  alias ObserverWeb.Apps.Helper
   alias ObserverWeb.Rpc
 
   @process_full [

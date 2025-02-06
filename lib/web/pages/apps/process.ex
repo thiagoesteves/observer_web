@@ -1,4 +1,4 @@
-defmodule Observer.Web.Observer.Process do
+defmodule Observer.Web.Apps.Process do
   @moduledoc false
 
   use Observer.Web, :html

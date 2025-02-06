@@ -8,6 +8,11 @@ doesn't hook into your asset pipeline.
 1. Ensure [Phoenix Live View][plv] is installed and working in your application. If you don't have
    Live View, follow [these instructions][lvi] to get started.
 
+> #### Clustering Required {: .info}
+>
+> The Observer Web **requires your app to be clustered**. Otherwise, observability will only be 
+> available on the current node.
+
 ## Configuration
 
 Add `observer_web` as a dependency for your application. Open `mix.exs` and add the following line:
@@ -60,7 +65,8 @@ Web customization is done through the `Observer.Web.Resolver` behaviour. It allo
 access controls. Using a custom resolver is entirely optional, but you should familiarize yourself
 with the default limits and functionality.
 
-Installation is complete and you're all set! Start your Phoenix server and enjoy erlang debugger!!!
+Installation is complete and you're all set! Start your Phoenix server and enjoy the observability
+via OTP distribution!
 
 [plv]: https://github.com/phoenixframework/phoenix_live_view
 [lvi]: https://github.com/phoenixframework/phoenix_live_view#installation

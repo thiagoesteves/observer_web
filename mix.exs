@@ -9,7 +9,7 @@ defmodule ObserverWeb.MixProject do
       app: :observer_web,
       version: @version,
       name: "Observer Web",
-      description: "Dashboard for Observer applications using erlang debugger",
+      description: "Dashboard for Observer applications using OTP distribution",
       docs: docs(),
       extra_section: "GUIDES",
       extras: extras(),
@@ -134,6 +134,14 @@ defmodule ObserverWeb.MixProject do
         "cmd git push",
         "cmd git push --tags",
         "hex.publish --yes"
+      ],
+      "test.ci": [
+        "format --check-formatted",
+        "deps.unlock --check-unused",
+        "credo --strict",
+        "deps.audit",
+        "sobelow --exit --threshold medium --skip -i Config.HTTPS",
+        "test --raise"
       ]
     ]
   end

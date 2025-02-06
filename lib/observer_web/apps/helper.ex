@@ -1,4 +1,4 @@
-defmodule ObserverWeb.Observer.Helper do
+defmodule ObserverWeb.Apps.Helper do
   @moduledoc """
   Helper functions and JSON encoders.
 

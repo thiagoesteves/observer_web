@@ -2,9 +2,14 @@
 
 # Observer Web
 
-Observer Web is an easy-to-use tool that integrates into your application to provide observability for processes, ports, and tracing using the [Erlang debugger][edb]. It supports running tracing and observer functions for both the local node and any other connected nodes. Powered by [Phoenix LiveView][liv], it is distributed, lightweight, and fully real-time. This library is part of the [DeployEx][dye] project.
+Observer Web is an easy-to-use tool that integrates into your application to provide observability.
+It relies on the OTP distribution to offer tracing using the [Erlang debugger][edb], as well as 
+Process/Port status and details.
 
-A preview of the Dashboard
+Powered by [Phoenix LiveView][liv], it is distributed, lightweight, and fully real-time. This 
+library is part of the [DeployEx][dye] project.
+
+A preview of the Dashboard:
 
 ![Observer Dashboard](guides/static/dashboard.png)
 

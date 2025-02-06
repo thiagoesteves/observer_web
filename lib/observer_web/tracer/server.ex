@@ -1,4 +1,4 @@
-defmodule ObserverWeb.Server do
+defmodule ObserverWeb.Tracer.Server do
   @moduledoc """
   This server is responsible for handling tracing requests.
 

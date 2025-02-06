@@ -58,7 +58,7 @@ defmodule Observer.Web.Components.Icons do
             />
           </g>
         </svg>
-      <% :observer -> %>
+      <% :applications -> %>
         <svg
           class="flex-shrink-0 w-5 h-5 mr-4"
           width="24px"

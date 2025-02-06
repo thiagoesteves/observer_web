@@ -246,7 +246,7 @@ defmodule ObserverWeb.TracerTest do
 
       assert %Tracer{status: :running} = Tracer.state()
 
-      send(ObserverWeb.Server, {:stop_tracing, "123456789"})
+      send(ObserverWeb.Tracer.Server, {:stop_tracing, "123456789"})
 
       assert %Tracer{status: :running} = Tracer.state()
 
@@ -288,7 +288,7 @@ defmodule ObserverWeb.TracerTest do
 
       assert %Tracer{status: :running} = Tracer.state()
 
-      send(ObserverWeb.Server, {:trace_session_timeout, "invalid-session"})
+      send(ObserverWeb.Tracer.Server, {:trace_session_timeout, "invalid-session"})
 
       assert %Tracer{status: :running} = Tracer.state()
 

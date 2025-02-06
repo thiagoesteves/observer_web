@@ -1,4 +1,4 @@
-defmodule Observer.Web.Observer.Port do
+defmodule Observer.Web.Apps.Port do
   @moduledoc false
 
   use Observer.Web, :html

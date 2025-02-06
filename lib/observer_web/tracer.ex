@@ -9,7 +9,7 @@ defmodule ObserverWeb.Tracer do
   require Logger
 
   alias ObserverWeb.Rpc
-  alias ObserverWeb.Server, as: TServer
+  alias ObserverWeb.Tracer.Server, as: TServer
 
   @default_session_timeout_ms 30_000
   @default_max_msg 5

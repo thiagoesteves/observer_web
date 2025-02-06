@@ -9,7 +9,7 @@ defmodule Observer.Web.IndexLive do
 
   use Observer.Web, :live_view
 
-  alias Observer.Web.Observer.Page, as: ObserverPage
+  alias Observer.Web.Apps.Page, as: AppsPage
   alias Observer.Web.Tracing.Page, as: TracingPage
 
   @impl Phoenix.LiveView
@@ -66,7 +66,7 @@ defmodule Observer.Web.IndexLive do
 
   ## Render Helpers
 
-  defp resolve_page(%{"page" => "observer"}), do: %{name: :observer, comp: ObserverPage}
+  defp resolve_page(%{"page" => "applications"}), do: %{name: :applications, comp: AppsPage}
   defp resolve_page(%{"page" => "tracing"}), do: %{name: :tracing, comp: TracingPage}
   defp resolve_page(_params), do: %{name: :tracing, comp: TracingPage}
 end

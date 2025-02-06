@@ -1,4 +1,4 @@
-defmodule Observer.Web.ObserverLiveTest do
+defmodule Observer.Web.AppsLiveTest do
   use Observer.Web.ConnCase, async: false
 
   import Phoenix.LiveViewTest
@@ -9,16 +9,16 @@ defmodule Observer.Web.ObserverLiveTest do
     :verify_on_exit!
   ]
 
-  test "GET /observer", %{conn: conn} do
+  test "GET /observer/applications", %{conn: conn} do
     ObserverWeb.RpcMock
     |> stub(:call, fn node, module, function, args, timeout ->
       :rpc.call(node, module, function, args, timeout)
     end)
     |> stub(:pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
 
-    {:ok, _index_live, html} = live(conn, "/observer/observer")
+    {:ok, _index_live, html} = live(conn, "/observer/applications")
 
-    assert html =~ "Live Observer"
+    assert html =~ "Live Applications"
   end
 
   test "Adjust Initial Tree Depth", %{conn: conn} do
@@ -28,7 +28,7 @@ defmodule Observer.Web.ObserverLiveTest do
     end)
     |> stub(:pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
 
-    {:ok, index_live, _html} = live(conn, "/observer/observer")
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     html =
       index_live
@@ -55,7 +55,7 @@ defmodule Observer.Web.ObserverLiveTest do
     end)
     |> stub(:pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
 
-    {:ok, index_live, _html} = live(conn, "/observer/observer")
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
     |> element("#observer-multi-select-toggle-options")
@@ -100,7 +100,7 @@ defmodule Observer.Web.ObserverLiveTest do
     end)
     |> stub(:pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
 
-    {:ok, index_live, _html} = live(conn, "/observer/observer")
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
     |> element("#observer-multi-select-toggle-options")
@@ -149,7 +149,7 @@ defmodule Observer.Web.ObserverLiveTest do
       :rpc.pinfo(pid, information)
     end)
 
-    {:ok, index_live, _html} = live(conn, "/observer/observer")
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
     |> element("#observer-multi-select-toggle-options")
@@ -198,7 +198,7 @@ defmodule Observer.Web.ObserverLiveTest do
       :rpc.pinfo(pid, information)
     end)
 
-    {:ok, index_live, _html} = live(conn, "/observer/observer")
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
     |> element("#observer-multi-select-toggle-options")
@@ -241,7 +241,7 @@ defmodule Observer.Web.ObserverLiveTest do
       :rpc.pinfo(pid, information)
     end)
 
-    {:ok, index_live, _html} = live(conn, "/observer/observer")
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
     |> element("#observer-multi-select-toggle-options")
@@ -290,7 +290,7 @@ defmodule Observer.Web.ObserverLiveTest do
       :rpc.pinfo(pid, information)
     end)
 
-    {:ok, index_live, _html} = live(conn, "/observer/observer")
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
     |> element("#observer-multi-select-toggle-options")
@@ -333,7 +333,7 @@ defmodule Observer.Web.ObserverLiveTest do
       :rpc.pinfo(pid, information)
     end)
 
-    {:ok, index_live, _html} = live(conn, "/observer/observer")
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
     |> element("#observer-multi-select-toggle-options")
@@ -379,7 +379,7 @@ defmodule Observer.Web.ObserverLiveTest do
     end)
     |> stub(:pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
 
-    {:ok, index_live, _html} = live(conn, "/observer/observer")
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
     |> element("#observer-multi-select-toggle-options")
@@ -417,7 +417,7 @@ defmodule Observer.Web.ObserverLiveTest do
       :rpc.pinfo(pid, information)
     end)
 
-    {:ok, index_live, _html} = live(conn, "/observer/observer")
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
     |> element("#observer-multi-select-toggle-options")

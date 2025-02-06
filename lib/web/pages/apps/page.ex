@@ -1,4 +1,4 @@
-defmodule Observer.Web.Observer.Page do
+defmodule Observer.Web.Apps.Page do
   @moduledoc """
   This is the live component responsible for handling the Observer page
   """
@@ -9,13 +9,13 @@ defmodule Observer.Web.Observer.Page do
 
   require Logger
 
+  alias Observer.Web.Apps.Legend
+  alias Observer.Web.Apps.Port
+  alias Observer.Web.Apps.Process
   alias Observer.Web.Components.Attention
   alias Observer.Web.Components.MultiSelect
-  alias Observer.Web.Observer.Legend
-  alias Observer.Web.Observer.Port
-  alias Observer.Web.Observer.Process
   alias Observer.Web.Page
-  alias ObserverWeb.Observer, as: ObserverSystem
+  alias ObserverWeb.Apps
 
   @tooltip_debouncing 50
 
@@ -171,7 +171,7 @@ defmodule Observer.Web.Observer.Page do
 
   defp apply_action(socket, :index, _params) do
     socket
-    |> assign(:page_title, "Live Observer")
+    |> assign(:page_title, "Live Applications")
   end
 
   @impl Page
@@ -195,7 +195,7 @@ defmodule Observer.Web.Observer.Page do
         [service, app] = String.split(key, "::")
 
         new_info =
-          ObserverSystem.info(String.to_existing_atom(service), String.to_existing_atom(app))
+          Apps.info(String.to_existing_atom(service), String.to_existing_atom(app))
 
         Map.put(acc, key, %{data | "data" => new_info})
       end)
@@ -272,7 +272,7 @@ defmodule Observer.Web.Observer.Page do
 
         if app_key in node_service.apps_keys do
           info =
-            ObserverSystem.info(
+            Apps.info(
               String.to_existing_atom(service_key),
               String.to_existing_atom(app_key)
             )
@@ -310,7 +310,7 @@ defmodule Observer.Web.Observer.Page do
 
         if app_key in node_service.apps_keys do
           info =
-            ObserverSystem.info(
+            Apps.info(
               String.to_existing_atom(service_key),
               String.to_existing_atom(app_key)
             )
@@ -351,7 +351,7 @@ defmodule Observer.Web.Observer.Page do
           Logger.info("Retrieving process info for pid: #{request_id}")
 
           %{
-            info: ObserverSystem.Process.info(pid),
+            info: Apps.Process.info(pid),
             id_string: request_id,
             type: "pid",
             debouncing: @tooltip_debouncing
@@ -370,7 +370,7 @@ defmodule Observer.Web.Observer.Page do
           Logger.info("Retrieving port info for port: #{request_id}")
 
           %{
-            info: ObserverSystem.Port.info(node, port),
+            info: Apps.Port.info(node, port),
             id_string: request_id,
             type: "port",
             debouncing: @tooltip_debouncing
@@ -483,7 +483,7 @@ defmodule Observer.Web.Observer.Page do
       [name, _hostname] = String.split(service, "@")
       services_keys = (services_keys ++ [service]) |> Enum.sort()
 
-      instance_app_keys = ObserverSystem.list(instance_node) |> Enum.map(&(&1.name |> to_string))
+      instance_app_keys = Apps.list(instance_node) |> Enum.map(&(&1.name |> to_string))
       apps_keys = (apps_keys ++ instance_app_keys) |> Enum.sort() |> Enum.uniq()
 
       node =
