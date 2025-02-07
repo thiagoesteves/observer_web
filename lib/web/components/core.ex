@@ -197,8 +197,9 @@ defmodule Observer.Web.Components.Core do
 
   attr :type, :string,
     default: "text",
-    values: ~w(checkbox color date datetime-local email file month number password
-               range search select tel text textarea time url week select-undefined-class)
+    values:
+      ~w(checkbox color date datetime-local email file month number password
+               range search select tel text textarea time url week select-undefined-class text-custom-search)
 
   attr :field, Phoenix.HTML.FormField,
     doc: "a form field struct retrieved from the form, for example: @form[:email]"
@@ -293,6 +294,27 @@ defmodule Observer.Web.Components.Core do
         ]}
         {@rest}
       ><%= Form.normalize_value("textarea", @value) %></textarea>
+    </div>
+    """
+  end
+
+  def input(%{type: "text-custom-search"} = assigns) do
+    ~H"""
+    <div phx-feedback-for={@name}>
+      <.label for={@id}>{@label}</.label>
+      <input
+        type="text"
+        name={@name}
+        id={@id}
+        value={Form.normalize_value(@type, @value)}
+        class={[
+          "ml-2 mr-2 h-2 block rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
+          "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
+          @errors == [] && "border-zinc-300 focus:border-zinc-400",
+          @errors != [] && "border-rose-400 focus:border-rose-400"
+        ]}
+        {@rest}
+      />
     </div>
     """
   end
