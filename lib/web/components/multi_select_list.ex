@@ -148,6 +148,7 @@ defmodule Observer.Web.Components.MultiSelectList do
                           for={@form_search}
                           id={"multi-select-list-search-form-#{@id}-#{item.name}"}
                           phx-change="multi-select-list-update-search"
+                          class="flex"
                         >
                           <%= if item[:info] do %>
                             <div class=" text-sm font-bold text-black">{item.name}
