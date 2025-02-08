@@ -24,7 +24,6 @@ defmodule ObserverWeb.Tracer.Server do
 
   @impl true
   def init(_args) do
-    Logger.info("Initializing Tracing Server")
     {:ok, %Tracer{}}
   end
 
@@ -33,8 +32,6 @@ defmodule ObserverWeb.Tracer.Server do
         session_id: session_id
       })
       when rcv_session_id == session_id do
-    Logger.info("The Trace session_id: #{inspect(session_id)} was requested to stop.")
-
     :dbg.stop()
 
     {:reply, :ok, %Tracer{}}
@@ -70,8 +67,6 @@ defmodule ObserverWeb.Tracer.Server do
         _state
       ) do
     Process.monitor(request_pid)
-
-    Logger.info("New Trace Session: #{session_id} functions: #{inspect(functions_by_node)}")
 
     tracer_pid = self()
     # The local node is always present in the trace list of nodes.
@@ -138,8 +133,6 @@ defmodule ObserverWeb.Tracer.Server do
         request_pid: request_pid
       })
       when rcv_session_id == session_id do
-    Logger.info("The Trace session_id: #{inspect(session_id)} timed out")
-
     :dbg.stop()
 
     send(request_pid, msg)
@@ -154,12 +147,10 @@ defmodule ObserverWeb.Tracer.Server do
   # NOTE: Messages from handle_trace
   def handle_info({:stop_tracing, rcv_session_id} = msg, %Tracer{
         session_id: session_id,
-        max_messages: max_messages,
+        max_messages: _max_messages,
         request_pid: request_pid
       })
       when rcv_session_id == session_id do
-    Logger.info("Max messages (#{max_messages}) reached for session: #{inspect(session_id)}.")
-
     send(request_pid, msg)
 
     {:noreply, %Tracer{}}
@@ -175,8 +166,6 @@ defmodule ObserverWeb.Tracer.Server do
         %{request_pid: request_pid}
       )
       when target_pid == request_pid do
-    Logger.warning("target process was terminated")
-
     :dbg.stop()
 
     {:noreply, %Tracer{}}

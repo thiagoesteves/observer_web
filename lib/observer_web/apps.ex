@@ -6,8 +6,6 @@ defmodule ObserverWeb.Apps do
    * https://github.com/shinyscorpion/wobserver
   """
 
-  require Logger
-
   alias ObserverWeb.Apps.Helper
   alias ObserverWeb.Rpc
 
@@ -257,7 +255,6 @@ defmodule ObserverWeb.Apps do
   # coveralls-ignore-start
   def new(%{id: id} = attrs) do
     name = "#{inspect(id)}"
-    Logger.warning("Entity ID not mapped: #{name}")
 
     struct(
       __MODULE__,
