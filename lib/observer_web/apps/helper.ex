@@ -8,6 +8,7 @@ defmodule ObserverWeb.Apps.Helper do
 
   alias Jason.Encoder
 
+  # coveralls-ignore-start
   defimpl Encoder, for: PID do
     @doc """
     JSON encodes a `PID`.
@@ -50,24 +51,19 @@ defmodule ObserverWeb.Apps.Helper do
     end
   end
 
+  # coveralls-ignore-stop
+
   @doc """
   Formats function information as readable string.
 
   Only name will be return if only `name` is given.
 
-  Example:
-  ```bash
-  iex> format_function {Logger, :log, 2}
-  "Logger.log/2"
-  ```
-  ```bash
-  iex> format_function :format_function
-  "format_function"
-  ```
-  ```bash
-  iex> format_function nil
-  nil
-  ```
+  ## Examples
+  iex> alias ObserverWeb.Apps.Helper
+  ...> assert "Elixir.Logger.log/2" == Helper.format_function({Logger, :log, 2})
+  ...> assert "format_function" == Helper.format_function(:format_function)
+  ...> assert nil == Helper.format_function(nil)
+
   """
   @spec format_function(nil | {atom, atom, integer} | atom) :: String.t() | nil
   def format_function(nil), do: nil

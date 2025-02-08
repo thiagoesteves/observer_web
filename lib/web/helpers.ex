@@ -7,6 +7,16 @@ defmodule Observer.Web.Helpers do
 
   @doc """
   Prepare parsed params for URI encoding.
+
+  ## Examples
+
+  iex> alias Observer.Web.Helpers
+  ...> assert [nodes: "web-1,web-2"] = Helpers.encode_params(nodes: ~w(web-1 web-2))
+  ...> assert [args: "a++x"] = Helpers.encode_params(args: [~w(a), "x"])
+  ...> assert [args: "a,b++x"] = Helpers.encode_params(args: [~w(a b), "x"])
+  ...> assert [args: "a,b,c++x"] = Helpers.encode_params(args: [~w(a b c), "x"])
+  ...> assert [args: "a"] = Helpers.encode_params(args: [~w(a)])
+  ...> assert [args: :hi] = Helpers.encode_params([args: :hi])
   """
   def encode_params(params) do
     for {key, val} <- params, val != nil, val != "" do
@@ -28,6 +38,15 @@ defmodule Observer.Web.Helpers do
 
   Routing is based on a socket and prefix tuple stored in the process dictionary. Proper routing
   can be disabled for testing by setting the value to `:nowhere`.
+
+  ## Examples
+
+  iex> alias Observer.Web.Helpers
+  ...> assert "/" = Helpers.observer_path(:root, :any)
+  ...> assert_raise RuntimeError, ~r/nothing stored in the :routing key/, fn -> Helpers.observer_path(nil, ["path", "to", "resource"]) end
+  ...> Process.put(:routing, :nowhere)
+  ...> assert "/" = Helpers.observer_path(:tracing, ["path", "to", "resource"])
+  ...> assert "/" = Helpers.observer_path(["/", "tracing"], ["path", "to", "resource"])
   """
   def observer_path(route, params \\ %{})
 

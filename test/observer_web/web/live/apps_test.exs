@@ -32,14 +32,14 @@ defmodule Observer.Web.AppsLiveTest do
 
     html =
       index_live
-      |> element("#observer-multi-select-toggle-options")
+      |> element("#apps-multi-select-toggle-options")
       |> render_click()
 
     refute html =~ "4242"
 
     html =
       index_live
-      |> element("#observer-update-form")
+      |> element("#apps-update-form")
       |> render_change(%{initial_tree_depth: "4242"})
 
     assert html =~ "4242"
@@ -58,16 +58,16 @@ defmodule Observer.Web.AppsLiveTest do
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
-    |> element("#observer-multi-select-toggle-options")
+    |> element("#apps-multi-select-toggle-options")
     |> render_click()
 
     index_live
-    |> element("#observer-multi-select-services-#{service}-add-item")
+    |> element("#apps-multi-select-services-#{service}-add-item")
     |> render_click()
 
     html =
       index_live
-      |> element("#observer-multi-select-apps-kernel-add-item")
+      |> element("#apps-multi-select-apps-kernel-add-item")
       |> render_click()
 
     assert html =~ "services:#{node}"
@@ -75,7 +75,7 @@ defmodule Observer.Web.AppsLiveTest do
 
     html =
       index_live
-      |> element("#observer-multi-select-apps-kernel-remove-item")
+      |> element("#apps-multi-select-apps-kernel-remove-item")
       |> render_click()
 
     assert html =~ "services:#{node}"
@@ -83,7 +83,7 @@ defmodule Observer.Web.AppsLiveTest do
 
     html =
       index_live
-      |> element("#observer-multi-select-services-#{service}-remove-item")
+      |> element("#apps-multi-select-services-#{service}-remove-item")
       |> render_click()
 
     refute html =~ "services:#{node}"
@@ -103,16 +103,16 @@ defmodule Observer.Web.AppsLiveTest do
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
-    |> element("#observer-multi-select-toggle-options")
+    |> element("#apps-multi-select-toggle-options")
     |> render_click()
 
     index_live
-    |> element("#observer-multi-select-apps-kernel-add-item")
+    |> element("#apps-multi-select-apps-kernel-add-item")
     |> render_click()
 
     html =
       index_live
-      |> element("#observer-multi-select-services-#{service}-add-item")
+      |> element("#apps-multi-select-services-#{service}-add-item")
       |> render_click()
 
     assert html =~ "services:#{node}"
@@ -120,7 +120,7 @@ defmodule Observer.Web.AppsLiveTest do
 
     html =
       index_live
-      |> element("#observer-multi-select-services-#{service}-remove-item")
+      |> element("#apps-multi-select-services-#{service}-remove-item")
       |> render_click()
 
     refute html =~ "services:#{node}"
@@ -128,7 +128,7 @@ defmodule Observer.Web.AppsLiveTest do
 
     html =
       index_live
-      |> element("#observer-multi-select-apps-kernel-remove-item")
+      |> element("#apps-multi-select-apps-kernel-remove-item")
       |> render_click()
 
     refute html =~ "services:#{node}"
@@ -152,15 +152,15 @@ defmodule Observer.Web.AppsLiveTest do
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
-    |> element("#observer-multi-select-toggle-options")
+    |> element("#apps-multi-select-toggle-options")
     |> render_click()
 
     index_live
-    |> element("#observer-multi-select-apps-kernel-add-item")
+    |> element("#apps-multi-select-apps-kernel-add-item")
     |> render_click()
 
     index_live
-    |> element("#observer-multi-select-services-#{service}-add-item")
+    |> element("#apps-multi-select-services-#{service}-add-item")
     |> render_click()
 
     pid = Enum.random(:erlang.processes())
@@ -201,15 +201,15 @@ defmodule Observer.Web.AppsLiveTest do
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
-    |> element("#observer-multi-select-toggle-options")
+    |> element("#apps-multi-select-toggle-options")
     |> render_click()
 
     index_live
-    |> element("#observer-multi-select-apps-kernel-add-item")
+    |> element("#apps-multi-select-apps-kernel-add-item")
     |> render_click()
 
     index_live
-    |> element("#observer-multi-select-services-#{service}-add-item")
+    |> element("#apps-multi-select-services-#{service}-add-item")
     |> render_click()
 
     series_name = "#{Node.self()}::kernel"
@@ -244,15 +244,15 @@ defmodule Observer.Web.AppsLiveTest do
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
-    |> element("#observer-multi-select-toggle-options")
+    |> element("#apps-multi-select-toggle-options")
     |> render_click()
 
     index_live
-    |> element("#observer-multi-select-apps-kernel-add-item")
+    |> element("#apps-multi-select-apps-kernel-add-item")
     |> render_click()
 
     index_live
-    |> element("#observer-multi-select-services-#{service}-add-item")
+    |> element("#apps-multi-select-services-#{service}-add-item")
     |> render_click()
 
     port = Enum.random(:erlang.ports())
@@ -293,15 +293,15 @@ defmodule Observer.Web.AppsLiveTest do
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
-    |> element("#observer-multi-select-toggle-options")
+    |> element("#apps-multi-select-toggle-options")
     |> render_click()
 
     index_live
-    |> element("#observer-multi-select-apps-kernel-add-item")
+    |> element("#apps-multi-select-apps-kernel-add-item")
     |> render_click()
 
     index_live
-    |> element("#observer-multi-select-services-#{service}-add-item")
+    |> element("#apps-multi-select-services-#{service}-add-item")
     |> render_click()
 
     series_name = "#{Node.self()}::kernel"
@@ -336,15 +336,15 @@ defmodule Observer.Web.AppsLiveTest do
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
-    |> element("#observer-multi-select-toggle-options")
+    |> element("#apps-multi-select-toggle-options")
     |> render_click()
 
     index_live
-    |> element("#observer-multi-select-apps-kernel-add-item")
+    |> element("#apps-multi-select-apps-kernel-add-item")
     |> render_click()
 
     index_live
-    |> element("#observer-multi-select-services-#{service}-add-item")
+    |> element("#apps-multi-select-services-#{service}-add-item")
     |> render_click()
 
     reference = make_ref()
@@ -382,23 +382,23 @@ defmodule Observer.Web.AppsLiveTest do
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
-    |> element("#observer-multi-select-toggle-options")
+    |> element("#apps-multi-select-toggle-options")
     |> render_click()
 
     index_live
-    |> element("#observer-multi-select-apps-observer_web-add-item")
+    |> element("#apps-multi-select-apps-observer_web-add-item")
     |> render_click()
 
     html =
       index_live
-      |> element("#observer-multi-select-services-#{service}-add-item")
+      |> element("#apps-multi-select-services-#{service}-add-item")
       |> render_click()
 
     assert html =~ "services:#{node}"
     assert html =~ "apps:observer_web"
 
     assert index_live
-           |> element("#observer-multi-select-update", "UPDATE")
+           |> element("#apps-multi-select-update", "UPDATE")
            |> render_click() =~ "apps:observer_web"
   end
 
@@ -420,16 +420,16 @@ defmodule Observer.Web.AppsLiveTest do
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
-    |> element("#observer-multi-select-toggle-options")
+    |> element("#apps-multi-select-toggle-options")
     |> render_click()
 
     index_live
-    |> element("#observer-multi-select-apps-kernel-add-item")
+    |> element("#apps-multi-select-apps-kernel-add-item")
     |> render_click()
 
     html =
       index_live
-      |> element("#observer-multi-select-services-#{service}-add-item")
+      |> element("#apps-multi-select-services-#{service}-add-item")
       |> render_click()
 
     assert html =~ "services:#{node}"

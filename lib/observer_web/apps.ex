@@ -226,6 +226,7 @@ defmodule ObserverWeb.Apps do
     })
   end
 
+  # coveralls-ignore-start
   defp structure_links(port) when is_port(port) do
     new(%{
       id: port,
@@ -233,6 +234,8 @@ defmodule ObserverWeb.Apps do
       itemStyle: %{color: @port_item_color}
     })
   end
+
+  # coveralls-ignore-stop
 
   defp structure_links(pid) when is_pid(pid) do
     new(%{id: pid})
@@ -273,8 +276,9 @@ defmodule ObserverWeb.Apps do
     end
   end
 
-  defp name(port) when is_port(port), do: port |> inspect |> String.trim_leading("#Port")
   # coveralls-ignore-start
+  defp name(port) when is_port(port), do: port |> inspect |> String.trim_leading("#Port")
+
   defp name(reference) when is_reference(reference),
     do: reference |> inspect |> String.trim_leading("#Reference")
 

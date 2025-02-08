@@ -217,7 +217,7 @@ defmodule Observer.Web.Tracing.Page do
   end
 
   def handle_parent_event(
-        "multi-select-list-update-search",
+        "form-multi-select-list-update-search",
         %{"_target" => target} = values,
         socket
       ) do
