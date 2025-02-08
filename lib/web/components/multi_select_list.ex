@@ -8,6 +8,7 @@ defmodule Observer.Web.Components.MultiSelectList do
   """
   use Phoenix.Component
 
+  alias Observer.Web.Components.Core
   alias Phoenix.LiveView.JS
 
   attr :id, :string, required: true
@@ -15,8 +16,28 @@ defmodule Observer.Web.Components.MultiSelectList do
   attr :selected, :list, required: true
   attr :unselected, :list, required: true
   attr :show_options, :boolean, required: true
+  attr :form_search, :map, default: %{}
 
   def content(assigns) do
+    elements_to_filter = Map.keys(assigns.form_search.params)
+
+    filtered_unselected =
+      Enum.map(assigns.unselected, fn %{name: name, keys: keys} = element ->
+        if name in elements_to_filter do
+          filtered_keys =
+            Enum.filter(keys, &String.contains?(&1, assigns.form_search.params[name]))
+
+          %{element | keys: filtered_keys}
+        else
+          element
+        end
+      end)
+
+    assigns =
+      assigns
+      |> assign(elements_to_filter: elements_to_filter)
+      |> assign(unselected: filtered_unselected)
+
     ~H"""
     <div class="w-full m flex flex-col items-center mx-auto">
       <div class="w-full px-2">
@@ -122,13 +143,27 @@ defmodule Observer.Web.Components.MultiSelectList do
                 <div class="flex grid mt-1 gap-1 items-top grid-cols-4">
                   <%= for item <- @unselected do %>
                     <div class="rounded-lg bg-white border border-solid border-blueGray-100 block overflow-y-auto max-h-[300px]">
-                      <div class="flex items-start bg-white p-2 sticky top-0 z-10">
-                        <%= if item[:info] do %>
-                          <div class=" text-sm font-bold text-black">{item.name}
-                            {item.info}:</div>
-                        <% else %>
-                          <div class=" text-sm font-bold text-black">{item.name}:</div>
-                        <% end %>
+                      <div class="flex items-start items-center bg-white p-2 sticky top-0 z-10">
+                        <.form
+                          for={@form_search}
+                          id={"multi-select-list-search-form-#{@id}-#{item.name}"}
+                          phx-change="form-multi-select-list-update-search"
+                          class="flex"
+                        >
+                          <%= if item[:info] do %>
+                            <div class=" text-sm font-bold text-black">{item.name}
+                              {item.info}:</div>
+                          <% else %>
+                            <div class=" text-sm font-bold text-black">{item.name}:</div>
+                          <% end %>
+                          <%= if item.name in @elements_to_filter do %>
+                            <Core.input
+                              field={@form_search[item.name]}
+                              type="text-custom-search"
+                              placeholder="search..."
+                            />
+                          <% end %>
+                        </.form>
                       </div>
 
                       <%= for key <- item.keys do %>

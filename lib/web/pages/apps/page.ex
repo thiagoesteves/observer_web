@@ -87,7 +87,7 @@ defmodule Observer.Web.Apps.Page do
         <:inner_form>
           <.form
             for={@form}
-            id="observer-update-form"
+            id="apps-update-form"
             class="flex ml-2 mr-2 text-xs text-center whitespace-nowrap gap-5"
             phx-change="form-update"
           >
@@ -102,8 +102,8 @@ defmodule Observer.Web.Apps.Page do
         </:inner_form>
         <:inner_button>
           <button
-            id="observer-multi-select-update"
-            phx-click="observer-apps-update"
+            id="apps-multi-select-update"
+            phx-click="apps-apps-update"
             class="phx-submit-loading:opacity-75 rounded-r-xl bg-green-500 transform active:scale-75 transition-transform hover:bg-green-600 py-10 w-64 text-sm font-semibold  text-white active:text-white/80"
           >
             UPDATE
@@ -113,7 +113,7 @@ defmodule Observer.Web.Apps.Page do
 
       <div class="flex">
         <MultiSelect.content
-          id="observer-multi-select"
+          id="apps-multi-select"
           selected_text="Selected apps"
           selected={[
             %{name: "services", keys: @node_info.selected_services_keys},
@@ -131,9 +131,9 @@ defmodule Observer.Web.Apps.Page do
           <Legend.content />
         <% end %>
         <div>
-          <div id="observer-tree" class="ml-5 mr-5 mt-10" phx-hook="ObserverEChart" data-merge={false}>
-            <div id="observer-tree-chart" style="width: 100%; height: 600px;" phx-update="ignore" />
-            <div id="observer-tree-data" hidden>{Jason.encode!(@chart_tree_data)}</div>
+          <div id="apps-tree" class="ml-5 mr-5 mt-10" phx-hook="ObserverEChart" data-merge={false}>
+            <div id="apps-tree-chart" style="width: 100%; height: 600px;" phx-update="ignore" />
+            <div id="apps-tree-data" hidden>{Jason.encode!(@chart_tree_data)}</div>
           </div>
         </div>
         <%= if @current_selected_id.type == "pid" do %>
@@ -157,12 +157,16 @@ defmodule Observer.Web.Apps.Page do
     |> assign(:show_observer_options, false)
   end
 
+  # coveralls-ignore-start
   @impl Phoenix.LiveComponent
   def handle_event(message, value, socket) do
     # Redirect message to the parent process
+    # Testing is not possible since there is no mechanism to send a message to a component
     send(self(), {message, value})
     {:noreply, socket}
   end
+
+  # coveralls-ignore-stop
 
   @impl Page
   def handle_params(params, _uri, socket) do
@@ -186,7 +190,7 @@ defmodule Observer.Web.Apps.Page do
   end
 
   def handle_parent_event(
-        "observer-apps-update",
+        "apps-apps-update",
         _data,
         %{assigns: %{observer_data: observer_data}} = socket
       ) do

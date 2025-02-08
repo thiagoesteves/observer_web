@@ -147,6 +147,7 @@ defmodule Observer.Web.Tracing.Page do
             %{name: "match_spec", keys: @unselected_match_spec_keys, info: @match_spec_info}
           ]}
           show_options={@show_tracing_options}
+          form_search={@form_search}
         />
       </div>
       <div class="p-2">
@@ -179,6 +180,7 @@ defmodule Observer.Web.Tracing.Page do
     |> assign(:trace_session_id, nil)
     |> assign(:show_tracing_options, false)
     |> assign(:form, to_form(default_form_options()))
+    |> assign(:form_search, to_form(default_form_search_options()))
     |> stream(:tracing_messages, [])
   end
 
@@ -212,6 +214,21 @@ defmodule Observer.Web.Tracing.Page do
            "session_timeout_seconds" => session_timeout_seconds
          })
      )}
+  end
+
+  def handle_parent_event(
+        "form-multi-select-list-update-search",
+        %{"_target" => target} = values,
+        socket
+      ) do
+    new_params = Enum.reduce(target, %{}, fn key, acc -> Map.put(acc, key, values[key]) end)
+
+    form_search =
+      socket.assigns.form_search.params
+      |> Map.merge(new_params)
+      |> to_form()
+
+    {:noreply, assign(socket, form_search: form_search)}
   end
 
   def handle_parent_event(
@@ -484,6 +501,8 @@ defmodule Observer.Web.Tracing.Page do
       "session_timeout_seconds" => "30"
     }
   end
+
+  defp default_form_search_options, do: %{"modules" => "", "functions" => ""}
 
   defp node_info_new do
     match_spec_keys =

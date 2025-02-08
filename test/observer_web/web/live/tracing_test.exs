@@ -116,6 +116,78 @@ defmodule Observer.Web.TracingLiveTest do
     refute html =~ "match_spec:caller"
   end
 
+  test "Filtering by Module", %{conn: conn} do
+    node = Node.self() |> to_string
+    service = String.replace(node, "@", "-")
+
+    ObserverWeb.RpcMock
+    |> stub(:call, fn node, module, function, args, timeout ->
+      :rpc.call(node, module, function, args, timeout)
+    end)
+
+    {:ok, index_live, _html} = live(conn, "/observer/tracing")
+
+    index_live
+    |> element("#tracing-multi-select-toggle-options")
+    |> render_click()
+
+    index_live
+    |> element("#tracing-multi-select-services-#{service}-add-item")
+    |> render_click()
+
+    html =
+      index_live
+      |> element("#tracing-multi-select-modules-Elixir-Enum-add-item")
+      |> render_click()
+
+    assert html =~ "Elixir.Agent"
+
+    html =
+      index_live
+      |> element("#multi-select-list-search-form-tracing-multi-select-modules")
+      |> render_change(%{"_target" => "modules", "modules" => "Enum"})
+
+    refute html =~ "Elixir.Agent"
+  end
+
+  test "Filtering by Function", %{conn: conn} do
+    node = Node.self() |> to_string
+    service = String.replace(node, "@", "-")
+
+    ObserverWeb.RpcMock
+    |> stub(:call, fn node, module, function, args, timeout ->
+      :rpc.call(node, module, function, args, timeout)
+    end)
+
+    {:ok, index_live, _html} = live(conn, "/observer/tracing")
+
+    index_live
+    |> element("#tracing-multi-select-toggle-options")
+    |> render_click()
+
+    index_live
+    |> element("#tracing-multi-select-services-#{service}-add-item")
+    |> render_click()
+
+    index_live
+    |> element("#tracing-multi-select-modules-Elixir-Enum-add-item")
+    |> render_click()
+
+    html =
+      index_live
+      |> element("#tracing-multi-select-functions-map-2-add-item")
+      |> render_click()
+
+    assert html =~ "all?"
+
+    html =
+      index_live
+      |> element("#multi-select-list-search-form-tracing-multi-select-modules")
+      |> render_change(%{"_target" => "functions", "functions" => "map"})
+
+    refute html =~ "all?"
+  end
+
   test "Run Trace for module ObserverWeb.Common", %{conn: conn} do
     node = Node.self() |> to_string
     service = String.replace(node, "@", "-")
@@ -239,7 +311,7 @@ defmodule Observer.Web.TracingLiveTest do
     |> render_click()
 
     index_live
-    |> element("#tracing-multi-select-functions-map-2-add-item")
+    |> element("#tracing-multi-select-functions-uuid4-0-add-item")
     |> render_click()
 
     index_live
