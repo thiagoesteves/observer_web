@@ -2,7 +2,7 @@ defmodule ObserverWeb.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/thiagoesteves/observer_web"
-  @version "0.1.1"
+  @version "0.1.2"
 
   def project do
     [
@@ -92,9 +92,9 @@ defmodule ObserverWeb.MixProject do
   defp deps do
     [
       {:jason, "~> 1.2"},
-      {:phoenix, "~> 1.7.18"},
-      {:phoenix_html, "~> 4.2"},
-      {:phoenix_live_view, "~> 1.0.0"},
+      {:phoenix, "~> 1.7"},
+      {:phoenix_html, "~> 4.0"},
+      {:phoenix_live_view, "~> 1.0"},
       {:phoenix_pubsub, "~> 2.1"},
 
       # Dev Server
