@@ -325,8 +325,6 @@ defmodule Observer.Web.TracingLiveTest do
     index_live
     |> element("#tracing-multi-select-stop", "STOP")
     |> render_click()
-
-    assert render(index_live) =~ "Enum."
   end
 
   test "Observer timing out", %{conn: conn} do

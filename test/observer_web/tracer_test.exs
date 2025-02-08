@@ -2,7 +2,6 @@ defmodule ObserverWeb.TracerTest do
   use ExUnit.Case, async: true
 
   import Mox
-  import ExUnit.CaptureLog
 
   alias ObserverWeb.Tracer
   alias ObserverWeb.TracerFixtures
@@ -307,16 +306,14 @@ defmodule ObserverWeb.TracerTest do
       }
     ]
 
-    assert capture_log(fn ->
-             spawn(fn ->
-               {:ok, %{session_id: _session_id}} =
-                 Tracer.start_trace(functions, %{max_messages: 20})
-             end)
+    spawn(fn ->
+      {:ok, %{session_id: _session_id}} =
+        Tracer.start_trace(functions, %{max_messages: 20})
+    end)
 
-             :timer.sleep(50)
+    :timer.sleep(50)
 
-             assert %Tracer{status: :idle} = Tracer.state()
-           end) =~ "target process was terminated"
+    assert %Tracer{status: :idle} = Tracer.state()
   end
 
   defp terminate_tracing(session_id) do

@@ -6,8 +6,6 @@ defmodule ObserverWeb.Tracer do
    * https://github.com/thiagoesteves/deployex/blob/main/lib/deployex/tracer.ex
   """
 
-  require Logger
-
   alias ObserverWeb.Rpc
   alias ObserverWeb.Tracer.Server, as: TServer
 
