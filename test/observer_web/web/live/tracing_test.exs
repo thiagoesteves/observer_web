@@ -311,7 +311,7 @@ defmodule Observer.Web.TracingLiveTest do
     |> render_click()
 
     index_live
-    |> element("#tracing-multi-select-functions-map-2-add-item")
+    |> element("#tracing-multi-select-functions-uuid4-0-add-item")
     |> render_click()
 
     index_live

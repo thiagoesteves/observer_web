@@ -190,8 +190,6 @@ defmodule ObserverWeb.Apps do
     })
   end
 
-  # coveralls-ignore-stop
-
   defp monitored_by(port) when is_port(port) do
     new(%{
       id: port,
@@ -200,6 +198,8 @@ defmodule ObserverWeb.Apps do
       lineStyle: %{color: @monitored_by_line_color}
     })
   end
+
+  # coveralls-ignore-stop
 
   defp monitored_by(pid) when is_pid(pid) do
     new(%{
