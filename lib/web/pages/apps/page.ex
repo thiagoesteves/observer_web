@@ -352,7 +352,7 @@ defmodule Observer.Web.Apps.Page do
             |> String.to_charlist()
             |> :erlang.list_to_pid()
 
-          Logger.info("Retrieving process info for pid: #{request_id}")
+          Logger.debug("Retrieving process info for pid: #{request_id}")
 
           %{
             info: Apps.Process.info(pid),
@@ -371,7 +371,7 @@ defmodule Observer.Web.Apps.Page do
 
           node = String.to_existing_atom(service)
 
-          Logger.info("Retrieving port info for port: #{request_id}")
+          Logger.debug("Retrieving port info for port: #{request_id}")
 
           %{
             info: Apps.Port.info(node, port),
