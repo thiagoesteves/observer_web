@@ -7,8 +7,6 @@ defmodule Observer.Web.Apps.Page do
 
   use Observer.Web, :live_component
 
-  require Logger
-
   alias Observer.Web.Apps.Legend
   alias Observer.Web.Apps.Port
   alias Observer.Web.Apps.Process
@@ -352,8 +350,6 @@ defmodule Observer.Web.Apps.Page do
             |> String.to_charlist()
             |> :erlang.list_to_pid()
 
-          Logger.debug("Retrieving process info for pid: #{request_id}")
-
           %{
             info: Apps.Process.info(pid),
             id_string: request_id,
@@ -370,8 +366,6 @@ defmodule Observer.Web.Apps.Page do
             |> :erlang.list_to_port()
 
           node = String.to_existing_atom(service)
-
-          Logger.debug("Retrieving port info for port: #{request_id}")
 
           %{
             info: Apps.Port.info(node, port),
