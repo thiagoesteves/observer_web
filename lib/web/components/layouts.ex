@@ -36,7 +36,7 @@ defmodule Observer.Web.Layouts do
       <h3 class="class ml-2 items-center tracking-tight text-gray-900">
         <span class="block text-4xl font-oswald">
           Observer
-          <span class="text-transparent text-4xl font-mono bg-clip-text bg-gradient-to-tr to-cyan-500 from-blue-600">
+          <span class="text-transparent text-4xl font-bold bg-clip-text bg-gradient-to-tr to-cyan-500 from-blue-600">
             WEB
           </span>
         </span>
