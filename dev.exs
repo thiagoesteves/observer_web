@@ -80,7 +80,6 @@ Application.put_env(:phoenix, :persistent, true)
 
 Task.async(fn ->
   children = [
-    {Phoenix.PubSub, [name: WebDev.PubSub]},
     {WebDev.Endpoint, []}
   ]
 
