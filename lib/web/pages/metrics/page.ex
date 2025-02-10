@@ -22,8 +22,7 @@ defmodule Observer.Web.Metrics.Page do
     unselected_metrics_keys =
       assigns.node_info.metrics_keys -- assigns.node_info.selected_metrics_keys
 
-    attention_msg = ~H"""
-    """
+    attention_msg = ""
 
     assigns =
       assigns
@@ -36,14 +35,14 @@ defmodule Observer.Web.Metrics.Page do
       <Attention.content
         id="metrics"
         title="Configuration"
-        class="border-orange-400 text-orange-500"
+        class="border-orange-400 text-orange-500 rounded-r-xl w-full"
         message={@attention_msg}
       >
         <:inner_form>
           <.form
             for={@form}
             id="metrics-update-form"
-            class="flex ml-2 mr-2 text-xs text-center text-black whitespace-nowrap gap-5"
+            class="flex ml-2 mr-2 text-xs rounded-r-xl text-center text-black whitespace-nowrap gap-5"
             phx-change="form-update"
           >
             <Core.input
