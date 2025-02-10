@@ -71,12 +71,16 @@ Application.put_env(:observer_web, WebDev.Endpoint,
   ]
 )
 
+Application.put_env(:observer_web, ObserverWeb.Telemetry,
+  data_retention_period: :timer.minutes(15)
+)
+
 Application.put_env(:phoenix, :serve_endpoints, true)
 Application.put_env(:phoenix, :persistent, true)
 
 Task.async(fn ->
   children = [
-    {Phoenix.PubSub, [name: WebDev.PubSub, adapter: Phoenix.PubSub.PG2]},
+    {Phoenix.PubSub, [name: WebDev.PubSub]},
     {WebDev.Endpoint, []}
   ]
 

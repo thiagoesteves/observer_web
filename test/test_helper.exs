@@ -3,6 +3,7 @@ Application.put_env(:observer_web, Observer.Web.Endpoint,
   http: [port: 4002],
   live_view: [signing_salt: "eX7TFPY6Y/+XQ1o2pOUW3DjgAoXGTAdX"],
   render_errors: [formats: [html: Observer.Web.ErrorHTML], layout: false],
+  pubsub_server: WebDev.PubSub,
   secret_key_base: "jAu3udxm+8tIRDXLLKo+EupAlEvdLsnNG82O8e9nqylpBM9gP8AjUnZ4PWNttztU",
   server: false,
   url: [host: "localhost"]
@@ -66,6 +67,10 @@ defmodule Observer.Web.Endpoint do
   plug Observer.Web.Test.Router
 end
 
-Observer.Web.Endpoint.start_link()
+children = [
+  {Observer.Web.Endpoint, []}
+]
+
+{:ok, _} = Supervisor.start_link(children, strategy: :one_for_one)
 
 ExUnit.start()

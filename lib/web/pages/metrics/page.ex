@@ -7,12 +7,12 @@ defmodule Observer.Web.Metrics.Page do
 
   use Observer.Web, :live_component
 
-  alias ObserverWeb.Telemetry
-  alias Observer.Web.Components.Metrics.VmMemory
   alias Observer.Web.Components.Attention
   alias Observer.Web.Components.Core
+  alias Observer.Web.Components.Metrics.VmMemory
   alias Observer.Web.Components.MultiSelect
   alias Observer.Web.Page
+  alias ObserverWeb.Telemetry
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
@@ -335,18 +335,18 @@ defmodule Observer.Web.Metrics.Page do
         selected_metrics_keys: selected_metrics_keys
     }
 
-    [0]
-    |> Enum.reduce(initial_map, fn instance,
+    ([Node.self()] ++ Node.list())
+    |> Enum.reduce(initial_map, fn target_node,
                                    %{
                                      services_keys: services_keys,
                                      metrics_keys: metrics_keys,
                                      node: node
                                    } = acc ->
-      instance_metrics_keys = Telemetry.get_keys_by_instance(instance)
-      service = Telemetry.node_by_instance(instance) |> to_string
+      node_metrics_keys = Telemetry.get_keys_by_node(target_node)
+      service = target_node |> to_string
       [name, _hostname] = String.split(service, "@")
 
-      metrics_keys = (metrics_keys ++ instance_metrics_keys) |> Enum.sort() |> Enum.uniq()
+      metrics_keys = (metrics_keys ++ node_metrics_keys) |> Enum.sort() |> Enum.uniq()
       services_keys = Enum.sort(services_keys ++ [service])
 
       node =
@@ -354,7 +354,7 @@ defmodule Observer.Web.Metrics.Page do
           [
             %{
               name: name,
-              metrics_keys: instance_metrics_keys,
+              metrics_keys: node_metrics_keys,
               service: service
             }
             | node

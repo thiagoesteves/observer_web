@@ -1,9 +1,10 @@
-defmodule ObserverWeb.Telemetry.Producer do
+defmodule ObserverWeb.Telemetry.VmMemory do
   @moduledoc """
   GenServer that collects the vm metrics and produce its statistics
   """
   use GenServer
-  require Logger
+
+  @vm_memory_interval :timer.seconds(5)
 
   ### ==========================================================================
   ### Callback functions
@@ -16,9 +17,7 @@ defmodule ObserverWeb.Telemetry.Producer do
 
   @impl true
   def init(_args) do
-    Logger.info("Initialising Telemetry Producer")
-
-    :timer.send_interval(5_000, :collect_vm_metrics)
+    :timer.send_interval(@vm_memory_interval, :collect_vm_metrics)
 
     {:ok, %{}}
   end
@@ -26,28 +25,23 @@ defmodule ObserverWeb.Telemetry.Producer do
   @impl true
   def handle_info(:collect_vm_metrics, state) do
     measurements = Enum.into(:erlang.memory(), %{})
-    # IO.inspect Node.self
-    # IO.inspect measurements
 
-    node = Node.self()
-
-    event = %{
+    %{
       metrics: [
         %{
-          name: "ow.vm.memory.total",
-          version: "0.1.0-rc4",
-          value: measurements.total / 1000,
+          name: "vm.memory.total",
+          value: measurements.total / 1_000,
           unit: " kilobyte",
           info: "",
           tags: %{},
           type: "summary"
         }
       ],
-      reporter: node,
+      reporter: Node.self(),
       measurements: measurements
     }
+    |> ObserverWeb.Telemetry.push_data()
 
-    ObserverWeb.Telemetry.push_data(event)
     {:noreply, state}
   end
 

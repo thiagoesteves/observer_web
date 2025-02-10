@@ -8,9 +8,10 @@ defmodule ObserverWeb.Application do
   @impl true
   def start(_type, _args) do
     children = [
+      {Phoenix.PubSub, [name: ObserverWeb.PubSub]},
       ObserverWeb.Tracer.Server,
-      ObserverWeb.Telemetry.Producer,
-      ObserverWeb.Telemetry.Server
+      ObserverWeb.Telemetry.VmMemory,
+      ObserverWeb.Telemetry.Consumer
     ]
 
     # # See https://hexdocs.pm/elixir/Supervisor.html

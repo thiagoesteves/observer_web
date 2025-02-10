@@ -12,7 +12,7 @@ defmodule Observer.Web.Components.Metrics.VmMemory do
 
   def content(assigns) do
     ~H"""
-    <div :if={@metric in ["vm.memory.total", "ow.vm.memory.total"]} style={"grid-column: span #{@cols};"}>
+    <div :if={@metric == "vm.memory.total"} style={"grid-column: span #{@cols};"}>
       <% id = String.replace("#{@service}-#{@metric}", ["@", ".", "/"], "-") %>
       <div class="relative flex flex-col min-w-0 break-words bg-white w-full shadow-lg rounded">
         <div class="rounded-t mb-0 px-4 py-3 border border-b border-solid">

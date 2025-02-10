@@ -24,40 +24,12 @@ defmodule ObserverWeb.Telemetry do
               measurements: %{}
   end
 
-  defmodule Memory do
-    @moduledoc """
-    Structure to handle the memory struct
-    """
-    @type t :: %__MODULE__{
-            total: non_neg_integer(),
-            processes: non_neg_integer(),
-            processes_used: non_neg_integer(),
-            system: non_neg_integer(),
-            atom: non_neg_integer(),
-            atom_used: non_neg_integer(),
-            binary: non_neg_integer(),
-            code: non_neg_integer(),
-            ets: non_neg_integer()
-          }
-
-    defstruct total: 0,
-              processes: 0,
-              processes_used: 0,
-              system: 0,
-              atom: 0,
-              atom_used: 0,
-              binary: 0,
-              code: 0,
-              ets: 0
-  end
-
   ### ==========================================================================
   ### Public functions
   ### ==========================================================================
 
   @doc """
-  This function pushes events to the Telemetry module, it is expected
-  to be called via RPC.
+  This function pushes events to the Telemetry module
   """
   # coveralls-ignore-start
   @spec push_data(any()) :: :ok
@@ -90,20 +62,14 @@ defmodule ObserverWeb.Telemetry do
     do: default().list_data_by_node_key(node, key, options)
 
   @doc """
-  List all keys registered for the respective instance
+  List all keys registered for the respective node
   """
-  @spec get_keys_by_instance(integer()) :: list()
-  def get_keys_by_instance(instance), do: default().get_keys_by_instance(instance)
-
-  @doc """
-  Retrieve the repective noce registered for the passed instance
-  """
-  @spec node_by_instance(integer()) :: nil | atom()
-  def node_by_instance(instance), do: default().node_by_instance(instance)
+  @spec get_keys_by_node(atom()) :: list()
+  def get_keys_by_node(node), do: default().get_keys_by_node(node)
 
   ### ==========================================================================
   ### Private functions
   ### ==========================================================================
   defp default,
-    do: Application.get_env(:observer_web, __MODULE__)[:adapter] || ObserverWeb.Telemetry.Server
+    do: Application.get_env(:observer_web, __MODULE__)[:adapter] || ObserverWeb.Telemetry.Consumer
 end
