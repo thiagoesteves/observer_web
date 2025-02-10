@@ -7,7 +7,11 @@ defmodule ObserverWeb.Application do
 
   @impl true
   def start(_type, _args) do
-    children = [ObserverWeb.Tracer.Server]
+    children = [
+      ObserverWeb.Tracer.Server,
+      ObserverWeb.Telemetry.Producer,
+      ObserverWeb.Telemetry.Server
+    ]
 
     # # See https://hexdocs.pm/elixir/Supervisor.html
     # # for other strategies and supported options

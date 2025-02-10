@@ -11,6 +11,7 @@ defmodule Observer.Web.IndexLive do
 
   alias Observer.Web.Apps.Page, as: AppsPage
   alias Observer.Web.Tracing.Page, as: TracingPage
+  alias Observer.Web.Metrics.Page, as: MetricsPage
 
   @impl Phoenix.LiveView
   def mount(params, session, socket) do
@@ -68,5 +69,6 @@ defmodule Observer.Web.IndexLive do
 
   defp resolve_page(%{"page" => "applications"}), do: %{name: :applications, comp: AppsPage}
   defp resolve_page(%{"page" => "tracing"}), do: %{name: :tracing, comp: TracingPage}
+  defp resolve_page(%{"page" => "metrics"}), do: %{name: :metrics, comp: MetricsPage}
   defp resolve_page(_params), do: %{name: :tracing, comp: TracingPage}
 end
