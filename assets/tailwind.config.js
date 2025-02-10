@@ -5,7 +5,8 @@ module.exports = {
   theme: {
     fontFamily: {
       sans: ["Inter var", "sans-serif"],
-      mono: ["Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"]
+      mono: ["Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"],
+      oswald: ["Oswald"]
     },
     extend: {
       spacing: {
