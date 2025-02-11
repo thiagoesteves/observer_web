@@ -1,4 +1,4 @@
-defmodule Observer.Web.TracingLiveTest do
+defmodule Observer.Web.Tracing.PageLiveTest do
   use Observer.Web.ConnCase, async: false
 
   import Mox
@@ -280,7 +280,7 @@ defmodule Observer.Web.TracingLiveTest do
     :timer.sleep(50)
 
     assert render(index_live) =~ "ObserverWeb.Common.uuid4"
-    assert render(index_live) =~ "caller: {Observer.Web.TracingLiveTest"
+    assert render(index_live) =~ "caller: {Observer.Web.Tracing.PageLiveTest"
   end
 
   test "Run Trace for mix Elixir.Enum and function ObserverWeb.Common.uuid4/0", %{conn: conn} do

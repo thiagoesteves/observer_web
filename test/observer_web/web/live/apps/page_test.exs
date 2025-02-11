@@ -1,4 +1,4 @@
-defmodule Observer.Web.AppsLiveTest do
+defmodule Observer.Web.Apps.PageLiveTest do
   use Observer.Web.ConnCase, async: false
 
   import Phoenix.LiveViewTest

@@ -177,18 +177,21 @@ defmodule Observer.Web.Components.MultiSelect do
 
   def border_item_color("services"), do: "border-teal-300"
   def border_item_color("apps"), do: "border-blue-400"
+  def border_item_color("metrics"), do: "border-orange-400"
   # coveralls-ignore-start
   def border_item_color(_), do: "border-gray-300"
   # coveralls-ignore-stop
 
   def bg_item_color("services"), do: "bg-teal-50"
   def bg_item_color("apps"), do: "bg-blue-50"
+  def bg_item_color("metrics"), do: "bg-orange-50"
   # coveralls-ignore-start
   def bg_item_color(_), do: "bg-gray-50"
   # coveralls-ignore-stop
 
   def text_item_color("services"), do: "text-teal-700"
   def text_item_color("apps"), do: "text-blue-700"
+  def text_item_color("metrics"), do: "text-orange-700"
   # coveralls-ignore-start
   def text_item_color(_), do: "text-teal-700"
   # coveralls-ignore-stop

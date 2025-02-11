@@ -54,6 +54,23 @@ After you've verified that the dashboard is loading you'll probably want to rest
 dashboard via authentication, either with a [custom resolver's][ac] access controls or [Basic
 Auth][ba].
 
+### Retention period for metrics
+
+The Observer Web can monitor Beam VM metrics by default, using ETS tables to store the data.
+However, this means that the data is not persisted across restarts. The retention period
+for this data can be configured.
+
+By default, without a retention time set, the metrics will only show data received during the
+current session. If you'd like to persist this data for a longer period, you can configure
+a retention time.
+
+To configure the retention period, use the following optional setting:
+
+```elixir
+config :observer_web, ObserverWeb.Telemetry,
+  data_retention_period: :timer.minutes(5)
+```
+
 ### Usage with Web and Clustering
 
 The Observer Web provides observer ability for the local application as well as any other that is

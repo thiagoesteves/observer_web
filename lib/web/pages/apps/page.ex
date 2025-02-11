@@ -145,9 +145,22 @@ defmodule Observer.Web.Apps.Page do
   end
 
   @impl Page
-  def handle_mount(socket) do
+  def handle_mount(socket) when is_connected?(socket) do
+    # Subscribe to notifications if any node is UP or Down
+    :net_kernel.monitor_nodes(true)
+
     socket
     |> assign(:node_info, update_node_info())
+    |> assign(:node_data, %{})
+    |> assign(:observer_data, %{})
+    |> assign(:current_selected_id, reset_current_selected_id())
+    |> assign(form: to_form(default_form_options()))
+    |> assign(:show_observer_options, false)
+  end
+
+  def handle_mount(socket) do
+    socket
+    |> assign(:node_info, node_info_new())
     |> assign(:node_data, %{})
     |> assign(:observer_data, %{})
     |> assign(:current_selected_id, reset_current_selected_id())

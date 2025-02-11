@@ -18,6 +18,7 @@ defmodule Observer.Web do
       use Phoenix.LiveComponent
 
       unquote(html_helpers())
+      defguard is_connected?(socket) when socket.transport_pid != nil
     end
   end
 

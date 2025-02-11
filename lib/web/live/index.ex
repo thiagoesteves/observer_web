@@ -10,15 +10,11 @@ defmodule Observer.Web.IndexLive do
   use Observer.Web, :live_view
 
   alias Observer.Web.Apps.Page, as: AppsPage
+  alias Observer.Web.Metrics.Page, as: MetricsPage
   alias Observer.Web.Tracing.Page, as: TracingPage
 
   @impl Phoenix.LiveView
   def mount(params, session, socket) do
-    if connected?(socket) do
-      # Subscribe to notifications if any node is UP or Down
-      :net_kernel.monitor_nodes(true)
-    end
-
     %{"prefix" => prefix, "resolver" => resolver} = session
     %{"live_path" => live_path, "live_transport" => live_transport} = session
     %{"user" => user, "access" => access, "csp_nonces" => csp_nonces} = session
@@ -67,6 +63,7 @@ defmodule Observer.Web.IndexLive do
   ## Render Helpers
 
   defp resolve_page(%{"page" => "applications"}), do: %{name: :applications, comp: AppsPage}
+  defp resolve_page(%{"page" => "metrics"}), do: %{name: :metrics, comp: MetricsPage}
   defp resolve_page(%{"page" => "tracing"}), do: %{name: :tracing, comp: TracingPage}
   defp resolve_page(_params), do: %{name: :tracing, comp: TracingPage}
 end

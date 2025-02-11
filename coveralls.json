@@ -5,6 +5,8 @@
     "lib/web/components/core.ex",
     "lib/observer_web/rpc/adapter.ex",
     "lib/observer_web/rpc/local.ex",
+    "lib/observer_web/telemetry/adapter.ex",
+    "lib/observer_web/macros.ex",
     "deps/*",
     "test/*"
   ],
