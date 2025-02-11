@@ -13,8 +13,8 @@ defmodule Observer.Web.Metrics.PageLiveTest do
 
   test "GET /metrics", %{conn: conn} do
     ObserverWeb.TelemetryMock
-    |> expect(:subscribe_for_new_keys, 2, fn -> :ok end)
-    |> expect(:get_keys_by_node, 2, fn _node -> [] end)
+    |> expect(:subscribe_for_new_keys, fn -> :ok end)
+    |> expect(:get_keys_by_node, fn _node -> [] end)
 
     {:ok, _index_live, html} = live(conn, "/observer/metrics")
 
@@ -27,12 +27,17 @@ defmodule Observer.Web.Metrics.PageLiveTest do
     metric = "fake.phoenix.metric"
 
     ObserverWeb.TelemetryMock
-    |> expect(:subscribe_for_new_keys, 2, fn ->
+    |> expect(:subscribe_for_new_keys, fn ->
       send(test_pid_process, {:liveview_pid, self()})
       :ok
     end)
     |> expect(:get_keys_by_node, 2, fn _node ->
-      if test_pid_process == self() do
+      # First time: initialization call
+      # Second time: New key event
+      called = Process.get("get_keys_by_node", 0)
+      Process.put("get_keys_by_node", called + 1)
+
+      if called > 0 do
         send(test_pid_process, :added_metric)
       end
 
@@ -66,7 +71,7 @@ defmodule Observer.Web.Metrics.PageLiveTest do
     test_pid_process = self()
 
     ObserverWeb.TelemetryMock
-    |> expect(:subscribe_for_new_keys, 2, fn ->
+    |> expect(:subscribe_for_new_keys, fn ->
       send(test_pid_process, {:liveview_pid, self()})
       :ok
     end)
@@ -120,4 +125,67 @@ defmodule Observer.Web.Metrics.PageLiveTest do
     |> element("#metrics-update-form")
     |> render_change(%{num_cols: 4, start_time: time}) =~ time
   end
+
+  test "Testing NodeDown, removing the current node from the selected services", %{conn: conn} do
+    node = Node.self() |> to_string
+    service_id = String.replace(node, "@", "-")
+    test_pid_process = self()
+
+    ObserverWeb.TelemetryMock
+    |> expect(:subscribe_for_new_keys, fn ->
+      send(test_pid_process, {:liveview_pid, self()})
+      :ok
+    end)
+    |> stub(:get_keys_by_node, fn _node -> []    end)
+
+    {:ok, liveview, _html} = live(conn, "/observer/metrics")
+
+    liveview
+    |> element("#metrics-multi-select-toggle-options")
+    |> render_click()
+
+    assert_receive {:liveview_pid, liveview_pid}, 1_000
+
+    html = liveview
+    |> element("#metrics-multi-select-services-#{service_id}-add-item")
+    |> render_click()
+
+    assert html =~ "services:#{node}"
+
+    send(liveview_pid, {:nodedown, Node.self()})
+
+    refute render(liveview) =~ "services:#{node}"
+  end
+
+  test "Testing NodeUp, no previous service is removed", %{conn: conn} do
+    node = Node.self() |> to_string
+    service_id = String.replace(node, "@", "-")
+    test_pid_process = self()
+
+    ObserverWeb.TelemetryMock
+    |> expect(:subscribe_for_new_keys, fn ->
+      send(test_pid_process, {:liveview_pid, self()})
+      :ok
+    end)
+    |> stub(:get_keys_by_node, fn _node -> []    end)
+
+    {:ok, liveview, _html} = live(conn, "/observer/metrics")
+
+    liveview
+    |> element("#metrics-multi-select-toggle-options")
+    |> render_click()
+
+    assert_receive {:liveview_pid, liveview_pid}, 1_000
+
+    html = liveview
+    |> element("#metrics-multi-select-services-#{service_id}-add-item")
+    |> render_click()
+
+    assert html =~ "services:#{node}"
+
+    send(liveview_pid, {:nodedown, :fake_node})
+
+    assert render(liveview) =~ "services:#{node}"
+  end
+
 end

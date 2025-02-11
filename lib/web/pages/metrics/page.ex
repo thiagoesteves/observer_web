@@ -100,7 +100,7 @@ defmodule Observer.Web.Metrics.Page do
   end
 
   @impl Page
-  def handle_mount(socket) do
+  def handle_mount(socket) when is_connected?(socket) do
     # Subscribe to notifications if new metric is received
     Telemetry.subscribe_for_new_keys()
 
@@ -110,6 +110,16 @@ defmodule Observer.Web.Metrics.Page do
     |> assign(:metric_config, %{})
     |> assign(form: to_form(default_form_options()))
     |> assign(:show_metric_options, false)
+  end
+
+  def handle_mount(socket) do
+    socket
+     |> assign(:node_info, node_info_new())
+     |> assign(:node_data, %{})
+     |> assign(:host_info, nil)
+     |> assign(:metric_config, %{})
+     |> assign(form: to_form(default_form_options()))
+     |> assign(:show_metric_options, false)
   end
 
   @impl Page

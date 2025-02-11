@@ -19,7 +19,7 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
     telemetry_data = TelemetryFixtures.build_telemetry_data_vm_total_memory()
 
     ObserverWeb.TelemetryMock
-    |> expect(:subscribe_for_new_keys, 2, fn -> :ok end)
+    |> expect(:subscribe_for_new_keys, fn -> :ok end)
     |> expect(:subscribe_for_new_data, fn ^node, ^metric -> :ok end)
     |> expect(:unsubscribe_for_new_data, fn ^node, ^metric -> :ok end)
     |> expect(:list_data_by_node_key, fn ^node, ^metric, _ -> [telemetry_data] end)
@@ -68,7 +68,7 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
     telemetry_data = TelemetryFixtures.build_telemetry_data_vm_total_memory()
 
     ObserverWeb.TelemetryMock
-    |> expect(:subscribe_for_new_keys, 2, fn -> :ok end)
+    |> expect(:subscribe_for_new_keys, fn -> :ok end)
     |> expect(:subscribe_for_new_data, fn ^node, ^metric -> :ok end)
     |> expect(:unsubscribe_for_new_data, fn ^node, ^metric -> :ok end)
     |> expect(:list_data_by_node_key, fn ^node, ^metric, _ -> [telemetry_data] end)
@@ -118,7 +118,7 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
     test_pid_process = self()
 
     ObserverWeb.TelemetryMock
-    |> expect(:subscribe_for_new_keys, 2, fn -> :ok end)
+    |> expect(:subscribe_for_new_keys, fn -> :ok end)
     |> expect(:subscribe_for_new_data, fn ^node, ^metric ->
       send(test_pid_process, {:liveview_pid, self()})
       :ok
