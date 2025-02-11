@@ -4,6 +4,8 @@ defmodule ObserverWeb.Telemetry.Consumer do
   """
   use GenServer
 
+  import ObserverWeb.Macros
+
   alias ObserverWeb.Rpc
 
   @behaviour ObserverWeb.Telemetry.Adapter
@@ -192,11 +194,12 @@ defmodule ObserverWeb.Telemetry.Consumer do
   ### ==========================================================================
   ### Private functions
   ### ==========================================================================
-
-  defp data_retention_period,
-    do:
-      Application.get_env(:observer_web, ObserverWeb.Telemetry)[:data_retention_period] ||
-        :timer.minutes(1)
+  if_not_test do
+    defp data_retention_period,
+      do: Application.get_env(:observer_web, ObserverWeb.Telemetry)[:data_retention_period]
+  else
+    defp data_retention_period, do: :timer.minutes(1)
+  end
 
   defp metric_key(metric, timestamp), do: "#{metric}|#{timestamp}"
 

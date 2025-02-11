@@ -70,10 +70,6 @@ Application.put_env(:observer_web, WebDev.Endpoint,
   ]
 )
 
-Application.put_env(:observer_web, ObserverWeb.Telemetry,
-  data_retention_period: :timer.minutes(15)
-)
-
 Application.put_env(:phoenix, :serve_endpoints, true)
 Application.put_env(:phoenix, :persistent, true)
 

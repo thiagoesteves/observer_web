@@ -30,6 +30,10 @@ if config_env() == :dev do
       ),
       cd: Path.expand("../assets", __DIR__)
     ]
+
+  config :observer_web, ObserverWeb.Telemetry,
+    adapter: ObserverWeb.Telemetry.Consumer,
+    data_retention_period: :timer.minutes(15)
 end
 
 # Configures Elixir's Logger
@@ -37,9 +41,3 @@ config :logger, level: :warning
 config :logger, :console, format: "[$level] $message\n"
 
 config :phoenix, stacktrace_depth: 20
-
-# Rpc Adapter
-config :observer_web, ObserverWeb.Rpc, adapter: ObserverWeb.Rpc.Local
-
-# Telemetry Adapter
-config :observer_web, ObserverWeb.Telemetry, adapter: ObserverWeb.Telemetry.Consumer
