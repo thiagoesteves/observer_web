@@ -1,6 +1,6 @@
 # CHANGELOG (v0.1.4)
 
-## 0.1.4 ()
+## 0.1.4 (2025-02-11)
 
 ### Backwards incompatible changes for 0.1.3
  * None
