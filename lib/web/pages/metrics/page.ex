@@ -56,7 +56,7 @@ defmodule Observer.Web.Metrics.Page do
               field={@form[:start_time]}
               type="select"
               label="Start Time"
-              options={["1 minute", "5 minutes", "15 minutes", "30 minutes"]}
+              options={["1m", "5m", "15m", "30m", "1h"]}
             />
           </.form>
         </:inner_form>
@@ -352,12 +352,13 @@ defmodule Observer.Web.Metrics.Page do
     assign(socket, :metric_config, Map.put(metric_config, data_key, updated_data))
   end
 
-  defp default_form_options, do: %{"num_cols" => "2", "start_time" => "5 minutes"}
+  defp default_form_options, do: %{"num_cols" => "2", "start_time" => "5m"}
 
-  defp start_time_to_integer("1 minute"), do: 1
-  defp start_time_to_integer("5 minutes"), do: 5
-  defp start_time_to_integer("15 minutes"), do: 15
-  defp start_time_to_integer("30 minutes"), do: 30
+  defp start_time_to_integer("1m"), do: 1
+  defp start_time_to_integer("5m"), do: 5
+  defp start_time_to_integer("15m"), do: 15
+  defp start_time_to_integer("30m"), do: 30
+  defp start_time_to_integer("1h"), do: 60
 
   defp node_info_new,
     do: %{

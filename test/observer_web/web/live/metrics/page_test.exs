@@ -101,25 +101,31 @@ defmodule Observer.Web.Metrics.PageLiveTest do
 
     assert_receive {:liveview_pid, _liveview_pid}, 1_000
 
-    time = "1 minute"
+    time = "1m"
 
     liveview
     |> element("#metrics-update-form")
     |> render_change(%{num_cols: 1, start_time: time}) =~ time
 
-    time = "5 minutes"
+    time = "5m"
 
     liveview
     |> element("#metrics-update-form")
     |> render_change(%{num_cols: 2, start_time: time}) =~ time
 
-    time = "15 minutes"
+    time = "15m"
 
     liveview
     |> element("#metrics-update-form")
     |> render_change(%{num_cols: 3, start_time: time}) =~ time
 
-    time = "30 minutes"
+    time = "30m"
+
+    liveview
+    |> element("#metrics-update-form")
+    |> render_change(%{num_cols: 4, start_time: time}) =~ time
+
+    time = "1h"
 
     liveview
     |> element("#metrics-update-form")
