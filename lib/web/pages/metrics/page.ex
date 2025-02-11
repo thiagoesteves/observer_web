@@ -123,6 +123,12 @@ defmodule Observer.Web.Metrics.Page do
   end
 
   @impl Page
+  def handle_parent_event("toggle-options", _value, socket) do
+    show_metric_options = !socket.assigns.show_metric_options
+
+    {:noreply, socket |> assign(:show_metric_options, show_metric_options)}
+  end
+
   def handle_parent_event(
         "form-update",
         %{"num_cols" => num_cols, "start_time" => start_time},
@@ -265,12 +271,6 @@ defmodule Observer.Web.Metrics.Page do
     {:noreply, assign(socket, :node_info, node_info)}
   end
 
-  def handle_parent_event("toggle-options", _value, socket) do
-    show_metric_options = !socket.assigns.show_metric_options
-
-    {:noreply, socket |> assign(:show_metric_options, show_metric_options)}
-  end
-
   @impl Page
   def handle_info({:metrics_new_data, service, key, data}, socket) do
     data_key = data_key(service, key)
@@ -288,6 +288,28 @@ defmodule Observer.Web.Metrics.Page do
     node_info =
       update_node_info(
         node_info.selected_services_keys,
+        node_info.selected_metrics_keys
+      )
+
+    {:noreply, assign(socket, :node_info, node_info)}
+  end
+
+  def handle_info({:nodeup, _node}, %{assigns: %{node_info: node_info}} = socket) do
+    node_info =
+      update_node_info(
+        node_info.selected_services_keys,
+        node_info.selected_metrics_keys
+      )
+
+    {:noreply, assign(socket, :node_info, node_info)}
+  end
+
+  def handle_info({:nodedown, node}, %{assigns: %{node_info: node_info}} = socket) do
+    service_key = node |> to_string
+
+    node_info =
+      update_node_info(
+        node_info.selected_services_keys -- [service_key],
         node_info.selected_metrics_keys
       )
 
