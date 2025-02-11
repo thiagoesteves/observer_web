@@ -21,6 +21,7 @@ defmodule ObserverWeb.MixProject do
       docs: docs(),
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
+      dialyzer: [ignore_warnings: ".dialyzer_ignore.exs"],
       preferred_cli_env: [
         coveralls: :test,
         "coveralls.detail": :test,
@@ -106,7 +107,7 @@ defmodule ObserverWeb.MixProject do
 
       # Tooling
       {:credo, "~> 1.7", only: [:test, :dev], runtime: false},
-      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev], runtime: false},
       {:floki, "~> 0.33", only: [:test, :dev]},
       {:mox, "~> 1.0", only: :test},
       {:excoveralls, "~> 0.18", only: :test},
