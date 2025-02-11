@@ -1,9 +1,9 @@
-defmodule ObserverWeb.VmMemoryTest do
+defmodule ObserverWeb.VmDataTest do
   use ExUnit.Case, async: false
 
   import Mox
 
-  alias ObserverWeb.Telemetry.VmMemory
+  alias ObserverWeb.Telemetry.VmData
 
   setup [
     :set_mox_global,
@@ -11,7 +11,7 @@ defmodule ObserverWeb.VmMemoryTest do
   ]
 
   test "Start Server and check the memory is published" do
-    {:ok, _pid} = VmMemory.start_link(vm_memory_interval: 10)
+    {:ok, _pid} = VmData.start_link(vm_memory_interval: 10)
     node = Node.self()
     test_pid_process = self()
 
