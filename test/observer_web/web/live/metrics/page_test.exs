@@ -136,7 +136,7 @@ defmodule Observer.Web.Metrics.PageLiveTest do
       send(test_pid_process, {:liveview_pid, self()})
       :ok
     end)
-    |> stub(:get_keys_by_node, fn _node -> []    end)
+    |> stub(:get_keys_by_node, fn _node -> [] end)
 
     {:ok, liveview, _html} = live(conn, "/observer/metrics")
 
@@ -146,9 +146,10 @@ defmodule Observer.Web.Metrics.PageLiveTest do
 
     assert_receive {:liveview_pid, liveview_pid}, 1_000
 
-    html = liveview
-    |> element("#metrics-multi-select-services-#{service_id}-add-item")
-    |> render_click()
+    html =
+      liveview
+      |> element("#metrics-multi-select-services-#{service_id}-add-item")
+      |> render_click()
 
     assert html =~ "services:#{node}"
 
@@ -167,7 +168,7 @@ defmodule Observer.Web.Metrics.PageLiveTest do
       send(test_pid_process, {:liveview_pid, self()})
       :ok
     end)
-    |> stub(:get_keys_by_node, fn _node -> []    end)
+    |> stub(:get_keys_by_node, fn _node -> [] end)
 
     {:ok, liveview, _html} = live(conn, "/observer/metrics")
 
@@ -177,9 +178,10 @@ defmodule Observer.Web.Metrics.PageLiveTest do
 
     assert_receive {:liveview_pid, liveview_pid}, 1_000
 
-    html = liveview
-    |> element("#metrics-multi-select-services-#{service_id}-add-item")
-    |> render_click()
+    html =
+      liveview
+      |> element("#metrics-multi-select-services-#{service_id}-add-item")
+      |> render_click()
 
     assert html =~ "services:#{node}"
 
@@ -187,5 +189,4 @@ defmodule Observer.Web.Metrics.PageLiveTest do
 
     assert render(liveview) =~ "services:#{node}"
   end
-
 end

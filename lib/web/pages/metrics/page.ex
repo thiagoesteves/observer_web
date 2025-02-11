@@ -104,6 +104,9 @@ defmodule Observer.Web.Metrics.Page do
     # Subscribe to notifications if new metric is received
     Telemetry.subscribe_for_new_keys()
 
+    # Subscribe to notifications if any node is UP or Down
+    :net_kernel.monitor_nodes(true)
+
     socket
     |> assign(:node_info, update_node_info())
     |> assign(:node_data, %{})
@@ -114,12 +117,12 @@ defmodule Observer.Web.Metrics.Page do
 
   def handle_mount(socket) do
     socket
-     |> assign(:node_info, node_info_new())
-     |> assign(:node_data, %{})
-     |> assign(:host_info, nil)
-     |> assign(:metric_config, %{})
-     |> assign(form: to_form(default_form_options()))
-     |> assign(:show_metric_options, false)
+    |> assign(:node_info, node_info_new())
+    |> assign(:node_data, %{})
+    |> assign(:host_info, nil)
+    |> assign(:metric_config, %{})
+    |> assign(form: to_form(default_form_options()))
+    |> assign(:show_metric_options, false)
   end
 
   @impl Page

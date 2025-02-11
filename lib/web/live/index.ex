@@ -15,11 +15,6 @@ defmodule Observer.Web.IndexLive do
 
   @impl Phoenix.LiveView
   def mount(params, session, socket) do
-    if connected?(socket) do
-      # Subscribe to notifications if any node is UP or Down
-      :net_kernel.monitor_nodes(true)
-    end
-
     %{"prefix" => prefix, "resolver" => resolver} = session
     %{"live_path" => live_path, "live_transport" => live_transport} = session
     %{"user" => user, "access" => access, "csp_nonces" => csp_nonces} = session
