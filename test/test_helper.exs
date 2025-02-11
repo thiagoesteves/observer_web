@@ -10,6 +10,7 @@ Application.put_env(:observer_web, Observer.Web.Endpoint,
 )
 
 Application.put_env(:observer_web, ObserverWeb.Rpc, adapter: ObserverWeb.RpcMock)
+Application.put_env(:observer_web, ObserverWeb.Telemetry, adapter: ObserverWeb.TelemetryMock)
 
 defmodule Observer.Web.ErrorHTML do
   use Phoenix.Component

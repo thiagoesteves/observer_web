@@ -40,3 +40,6 @@ config :phoenix, stacktrace_depth: 20
 
 # Rpc Adapter
 config :observer_web, ObserverWeb.Rpc, adapter: ObserverWeb.Rpc.Local
+
+# Telemetry Adapter
+config :observer_web, ObserverWeb.Telemetry, adapter: ObserverWeb.Telemetry.Consumer

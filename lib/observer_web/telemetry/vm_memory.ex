@@ -16,8 +16,10 @@ defmodule ObserverWeb.Telemetry.VmMemory do
   end
 
   @impl true
-  def init(_args) do
-    :timer.send_interval(@vm_memory_interval, :collect_vm_metrics)
+  def init(args) do
+    args
+    |> Keyword.get(:vm_memory_interval, @vm_memory_interval)
+    |> :timer.send_interval(:collect_vm_metrics)
 
     {:ok, %{}}
   end

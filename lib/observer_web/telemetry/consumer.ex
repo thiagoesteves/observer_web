@@ -194,7 +194,9 @@ defmodule ObserverWeb.Telemetry.Consumer do
   ### ==========================================================================
 
   defp data_retention_period,
-    do: Application.get_env(:observer_web, ObserverWeb.Telemetry)[:data_retention_period]
+    do:
+      Application.get_env(:observer_web, ObserverWeb.Telemetry)[:data_retention_period] ||
+        :timer.minutes(1)
 
   defp metric_key(metric, timestamp), do: "#{metric}|#{timestamp}"
 

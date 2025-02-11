@@ -112,6 +112,7 @@ defmodule ObserverWeb.MixProject do
       {:excoveralls, "~> 0.18", only: :test},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
+      {:mock, "~> 0.3.0", only: :test},
 
       # Docs and Publishing
       {:ex_doc, "~> 0.34", only: [:dev, :test], runtime: false},
