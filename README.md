@@ -10,9 +10,9 @@ and Beam VM statistics.
 Powered by [Phoenix LiveView][liv], it is distributed, lightweight, and fully real-time. This 
 library is part of the [DeployEx][dye] project.
 
-A preview of the Dashboard:
+A preview of the Dashboard (Click to see the video):
 
-![Observer Dashboard](guides/static/dashboard.png)
+[![Observer Dashboard](guides/static/dashboard.png)](https://www.youtube.com/watch?v=wnQoQJUIdGQ)
 
 ## Installation in your App
 
