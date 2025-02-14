@@ -199,6 +199,9 @@ defmodule Observer.Web.Tracing.Page do
   end
 
   @impl Page
+  def handle_refresh(socket), do: socket
+
+  @impl Page
   def handle_params(params, _uri, socket) do
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
   end

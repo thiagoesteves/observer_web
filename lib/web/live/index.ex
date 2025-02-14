@@ -28,6 +28,8 @@ defmodule Observer.Web.IndexLive do
       |> assign(params: params, page: page)
       |> assign(live_path: live_path, live_transport: live_transport)
       |> assign(access: access, csp_nonces: csp_nonces, resolver: resolver, user: user)
+      |> assign(timer: nil)
+      |> init_schedule_refresh()
       |> page.comp.handle_mount()
 
     {:ok, socket}
@@ -46,11 +48,27 @@ defmodule Observer.Web.IndexLive do
   end
 
   @impl Phoenix.LiveView
+  def terminate(_reason, %{assigns: %{timer: timer}}) do
+    if is_reference(timer), do: Process.cancel_timer(timer)
+
+    :ok
+  end
+
+  @impl Phoenix.LiveView
   def handle_params(params, uri, socket) do
     socket.assigns.page.comp.handle_params(params, uri, socket)
   end
 
   @impl Phoenix.LiveView
+  def handle_info(:refresh, socket) do
+    socket =
+      socket
+      |> socket.assigns.page.comp.handle_refresh()
+      |> schedule_refresh()
+
+    {:noreply, socket}
+  end
+
   def handle_info(message, socket) do
     socket.assigns.page.comp.handle_info(message, socket)
   end
@@ -62,8 +80,31 @@ defmodule Observer.Web.IndexLive do
 
   ## Render Helpers
 
-  defp resolve_page(%{"page" => "applications"}), do: %{name: :applications, comp: AppsPage}
-  defp resolve_page(%{"page" => "metrics"}), do: %{name: :metrics, comp: MetricsPage}
-  defp resolve_page(%{"page" => "tracing"}), do: %{name: :tracing, comp: TracingPage}
-  defp resolve_page(_params), do: %{name: :tracing, comp: TracingPage}
+  defp resolve_page(%{"page" => "applications"}),
+    do: %{name: :applications, comp: AppsPage, refresh: 3}
+
+  defp resolve_page(%{"page" => "metrics"}), do: %{name: :metrics, comp: MetricsPage, refresh: 0}
+  defp resolve_page(_params), do: %{name: :tracing, comp: TracingPage, refresh: 0}
+
+  ## Refresh Helpers
+
+  defp init_schedule_refresh(socket) do
+    if connected?(socket) do
+      schedule_refresh(socket)
+    else
+      assign(socket, timer: nil)
+    end
+  end
+
+  defp schedule_refresh(socket) do
+    if is_reference(socket.assigns.timer), do: Process.cancel_timer(socket.assigns.timer)
+
+    if socket.assigns.page.refresh > 0 do
+      interval = :timer.seconds(socket.assigns.page.refresh) - 50
+
+      assign(socket, timer: Process.send_after(self(), :refresh, interval))
+    else
+      assign(socket, timer: nil)
+    end
+  end
 end

@@ -98,7 +98,7 @@ defmodule Observer.Web.Apps.Page do
             />
           </.form>
         </:inner_form>
-        <:inner_button>
+        <%!-- <:inner_button>
           <button
             id="apps-multi-select-update"
             phx-click="apps-apps-update"
@@ -106,7 +106,7 @@ defmodule Observer.Web.Apps.Page do
           >
             UPDATE
           </button>
-        </:inner_button>
+        </:inner_button> --%>
       </Attention.content>
 
       <div class="flex">
@@ -129,9 +129,16 @@ defmodule Observer.Web.Apps.Page do
           <Legend.content />
         <% end %>
         <div>
-          <div id="apps-tree" class="ml-5 mr-5 mt-10" phx-hook="ObserverEChart" data-merge={false}>
+          <div
+            id="apps-tree"
+            class="ml-5 mr-5 mt-10"
+            phx-hook="ObserverEChart"
+            phx-update="ignore"
+            data-merge={false}
+            data-config={Jason.encode!(@chart_tree_data)}
+          >
             <div id="apps-tree-chart" style="width: 100%; height: 600px;" phx-update="ignore" />
-            <div id="apps-tree-data" hidden>{Jason.encode!(@chart_tree_data)}</div>
+            <%!-- <div id="apps-tree-data" hidden>{Jason.encode!(@chart_tree_data)}</div> --%>
           </div>
         </div>
         <%= if @current_selected_id.type == "pid" do %>
@@ -168,6 +175,22 @@ defmodule Observer.Web.Apps.Page do
     |> assign(:show_observer_options, false)
   end
 
+  @impl Page
+  def handle_refresh(%{assigns: %{observer_data: observer_data}} = socket) do
+    new_observer_data =
+      Enum.reduce(observer_data, %{}, fn {key, data}, acc ->
+        [service, app] = String.split(key, "::")
+
+        new_info =
+          Apps.info(String.to_existing_atom(service), String.to_existing_atom(app))
+
+        Map.put(acc, key, %{data | "data" => new_info})
+      end)
+
+    socket
+    |> assign(:observer_data, new_observer_data)
+  end
+
   # coveralls-ignore-start
   @impl Phoenix.LiveComponent
   def handle_event(message, value, socket) do
@@ -200,25 +223,25 @@ defmodule Observer.Web.Apps.Page do
     {:noreply, assign(socket, form: to_form(%{"initial_tree_depth" => depth}))}
   end
 
-  def handle_parent_event(
-        "apps-apps-update",
-        _data,
-        %{assigns: %{observer_data: observer_data}} = socket
-      ) do
-    new_observer_data =
-      Enum.reduce(observer_data, %{}, fn {key, data}, acc ->
-        [service, app] = String.split(key, "::")
+  # def handle_parent_event(
+  #       "apps-apps-update",
+  #       _data,
+  #       %{assigns: %{observer_data: observer_data}} = socket
+  #     ) do
+  #   new_observer_data =
+  #     Enum.reduce(observer_data, %{}, fn {key, data}, acc ->
+  #       [service, app] = String.split(key, "::")
 
-        new_info =
-          Apps.info(String.to_existing_atom(service), String.to_existing_atom(app))
+  #       new_info =
+  #         Apps.info(String.to_existing_atom(service), String.to_existing_atom(app))
 
-        Map.put(acc, key, %{data | "data" => new_info})
-      end)
+  #       Map.put(acc, key, %{data | "data" => new_info})
+  #     end)
 
-    {:noreply,
-     socket
-     |> assign(:observer_data, new_observer_data)}
-  end
+  #   {:noreply,
+  #    socket
+  #    |> assign(:observer_data, new_observer_data)}
+  # end
 
   def handle_parent_event(
         "multi-select-remove-item",

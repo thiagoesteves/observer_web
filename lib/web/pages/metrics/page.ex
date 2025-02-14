@@ -134,6 +134,9 @@ defmodule Observer.Web.Metrics.Page do
   end
 
   @impl Page
+  def handle_refresh(socket), do: socket
+
+  @impl Page
   def handle_params(params, _url, socket) do
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
   end

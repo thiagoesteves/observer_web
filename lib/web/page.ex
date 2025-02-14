@@ -9,6 +9,11 @@ defmodule Observer.Web.Page do
   @callback handle_mount(socket :: Socket.t()) :: Socket.t()
 
   @doc """
+  Called by parent live view on mount, and on each subsequent refresh.
+  """
+  @callback handle_refresh(socket :: Socket.t()) :: Socket.t()
+
+  @doc """
   Called by parent live view on param changes.
   """
   @callback handle_params(params :: map(), uri :: String.t(), socket :: Socket.t()) ::
