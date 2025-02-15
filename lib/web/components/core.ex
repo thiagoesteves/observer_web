@@ -104,6 +104,7 @@ defmodule Observer.Web.Components.Core do
   attr :row_id, :any, default: nil, doc: "the function for generating the row id"
   attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
   attr :transition, :boolean, default: false
+  attr :title_bg_color, :string, default: "LightGray"
 
   attr :row_item, :any,
     default: &Function.identity/1,
@@ -123,7 +124,10 @@ defmodule Observer.Web.Components.Core do
     <div class="px-4 sm:overflow-visible sm:px-0 rounded border border-solid border-blueGray-100">
       <div id={"#{@id}-table"} class="block max-h-[600px]" phx-hook="ScrollBottom">
         <table class="items-center w-full border-collapse ">
-          <div class="text-center text-sm font-mono bg-gray-100 font-semibold px-6 py-1">
+          <div
+            class="text-center text-sm font-mono font-semibold px-6 py-1"
+            style={"background-color: #{@title_bg_color};"}
+          >
             {@title}
           </div>
           <tbody

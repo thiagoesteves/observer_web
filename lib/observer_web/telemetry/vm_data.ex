@@ -53,7 +53,7 @@ defmodule ObserverWeb.Telemetry.VmData do
           %{
             name: "vm.total_run_queue_lengths.total",
             value: total_run_queue,
-            unit: " kilobyte",
+            unit: "",
             info: "",
             tags: %{},
             type: "summary"
@@ -67,7 +67,7 @@ defmodule ObserverWeb.Telemetry.VmData do
           %{
             name: "vm.total_run_queue_lengths.cpu",
             value: cpu_run_queue,
-            unit: " kilobyte",
+            unit: "",
             info: "",
             tags: %{},
             type: "summary"
@@ -81,7 +81,7 @@ defmodule ObserverWeb.Telemetry.VmData do
           %{
             name: "vm.total_run_queue_lengths.io",
             value: io_run_queue,
-            unit: " kilobyte",
+            unit: "",
             info: "",
             tags: %{},
             type: "summary"
