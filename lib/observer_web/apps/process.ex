@@ -86,6 +86,15 @@ defmodule ObserverWeb.Apps.Process do
     gc = Keyword.get(data, :garbage_collection, [])
     dictionary = Keyword.get(data, :dictionary)
 
+    {state, phx_lv_socket} =
+      case state(pid) do
+        %{socket: %Phoenix.LiveView.Socket{} = socket} ->
+          {"Phoenix.LiveView.Socket", socket}
+
+        state ->
+          {to_string(:io_lib.format("~tp", [state])), nil}
+      end
+
     %{
       pid: pid,
       registered_name: Keyword.get(data, :registered_name, nil),
@@ -109,7 +118,8 @@ defmodule ObserverWeb.Apps.Process do
         gc_full_sweep_after: Keyword.get(gc, :fullsweep_after, 0)
       },
       meta: structure_meta(data, pid),
-      state: to_string(:io_lib.format("~tp", [state(pid)]))
+      state: state,
+      phx_lv_socket: phx_lv_socket
     }
   end
 
