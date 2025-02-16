@@ -88,8 +88,9 @@ defmodule ObserverWeb.Apps.Process do
 
     {state, phx_lv_socket} =
       case state(pid) do
-        %{socket: %Phoenix.LiveView.Socket{} = socket} ->
-          {"Phoenix.LiveView.Socket", socket}
+        %{socket: %Phoenix.LiveView.Socket{} = socket} = state ->
+          new_state = %{state | socket: "Phoenix.LiveView.Socket", components: "hidden"}
+          {to_string(:io_lib.format("~tp", [new_state])), socket}
 
         state ->
           {to_string(:io_lib.format("~tp", [state])), nil}

@@ -12,7 +12,7 @@ defmodule Observer.Web.Apps.Process do
   def content(assigns) do
     info = assigns.info
 
-    {process_overview, process_memory} =
+    {process_overview, process_memory, process_phx_lv_socket} =
       if is_map(info) do
         process_overview =
           [
@@ -34,15 +34,29 @@ defmodule Observer.Web.Apps.Process do
             %{name: "GC FullSweep After", value: "#{info.memory.gc_full_sweep_after}"}
           ]
 
-        {process_overview, process_memory}
+        process_phx_lv_socket =
+          if info.phx_lv_socket do
+            [
+              %{name: "Id", value: "#{inspect(info.phx_lv_socket.id)}"},
+              %{name: "Endpoint", value: "#{inspect(info.phx_lv_socket.endpoint)}"},
+              %{name: "View", value: "#{inspect(info.phx_lv_socket.view)}"},
+              %{name: "Router", value: "#{inspect(info.phx_lv_socket.router)}"},
+              %{name: "Connected?", value: "#{inspect(info.phx_lv_socket.transport_pid)}"}
+            ]
+          else
+            nil
+          end
+
+        {process_overview, process_memory, process_phx_lv_socket}
       else
-        {nil, nil}
+        {nil, nil, nil}
       end
 
     assigns =
       assigns
       |> assign(process_overview: process_overview)
       |> assign(process_memory: process_memory)
+      |> assign(process_phx_lv_socket: process_phx_lv_socket)
 
     ~H"""
     <div class="max-w-full rounded overflow-hidden shadow-lg">
@@ -90,6 +104,21 @@ defmodule Observer.Web.Apps.Process do
               <.relations title="Monitored by" value={"#{inspect(@info.relations.monitored_by)}"} />
             </div>
           </div>
+          <div :if={@process_phx_lv_socket} id="phx-socket-liveview-information">
+            <Core.table_process
+              id="phx-socket-liveview-overview-table"
+              title="Phoenix.LiveView.Socket"
+              title_bg_color="MediumSeaGreen"
+              rows={@process_phx_lv_socket}
+            >
+              <:col :let={item}>
+                <span>{item.name}</span>
+              </:col>
+              <:col :let={item}>
+                {item.value}
+              </:col>
+            </Core.table_process>
+          </div>
       <% end %>
     </div>
     """
@@ -98,7 +127,10 @@ defmodule Observer.Web.Apps.Process do
   defp relations(assigns) do
     ~H"""
     <div class=" text-sm text-center block rounded-lg bg-white border border-solid border-blueGray-100 shadow-secondary-1 text-surface">
-      <div class="font-mono font-semibold bg-gray-100  border-b-2 border-neutral-100 px-6 py-1">
+      <div
+        class="font-mono font-semibold border-b-2 border-neutral-100 px-6 py-1"
+        style="background-color: LightGray;"
+      >
         {@title}
       </div>
       <div class="p-2">
