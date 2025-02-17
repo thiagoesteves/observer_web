@@ -111,6 +111,7 @@ defmodule Observer.Web.Metrics.Page do
                     service={service}
                     metric={metric}
                     cols={@form.params["num_cols"]}
+                    transition={@metric_config[data_key]["transition"]}
                     metrics={Map.get(@streams, data_key)}
                   />
                 <% end %>
