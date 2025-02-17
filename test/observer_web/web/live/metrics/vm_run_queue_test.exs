@@ -29,6 +29,7 @@ defmodule Observer.Web.Metrics.VmRunQueueTest do
       |> expect(:unsubscribe_for_new_data, fn ^node, ^metric -> :ok end)
       |> expect(:list_data_by_node_key, fn ^node, ^metric, _ -> [] end)
       |> stub(:get_keys_by_node, fn _ -> [metric] end)
+      |> stub(:push_data, fn _event -> :ok end)
 
       {:ok, liveview, _html} = live(conn, "/observer/metrics")
 
@@ -84,6 +85,7 @@ defmodule Observer.Web.Metrics.VmRunQueueTest do
       |> expect(:unsubscribe_for_new_data, fn ^node, ^metric -> :ok end)
       |> expect(:list_data_by_node_key, fn ^node, ^metric, _ -> [] end)
       |> stub(:get_keys_by_node, fn _ -> [metric] end)
+      |> stub(:push_data, fn _event -> :ok end)
 
       {:ok, liveview, _html} = live(conn, "/observer/metrics")
 
@@ -150,6 +152,7 @@ defmodule Observer.Web.Metrics.VmRunQueueTest do
         ]
       end)
       |> stub(:get_keys_by_node, fn _ -> [metric] end)
+      |> stub(:push_data, fn _event -> :ok end)
 
       {:ok, liveview, _html} = live(conn, "/observer/metrics")
 

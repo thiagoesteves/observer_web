@@ -22,6 +22,9 @@ defmodule Observer.Web.Tracing.PageLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
 
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
+
     {:ok, _index_live, html} = live(conn, "/observer")
 
     assert html =~ "Live Tracing"
@@ -32,6 +35,9 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     |> stub(:call, fn node, module, function, args, timeout ->
       :rpc.call(node, module, function, args, timeout)
     end)
+
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, _index_live, html} = live(conn, "/observer/tracing")
 
@@ -46,6 +52,9 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     |> stub(:call, fn node, module, function, args, timeout ->
       :rpc.call(node, module, function, args, timeout)
     end)
+
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, index_live, _html} = live(conn, "/observer/tracing")
 
@@ -125,6 +134,9 @@ defmodule Observer.Web.Tracing.PageLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
 
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
+
     {:ok, index_live, _html} = live(conn, "/observer/tracing")
 
     index_live
@@ -158,6 +170,9 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     |> stub(:call, fn node, module, function, args, timeout ->
       :rpc.call(node, module, function, args, timeout)
     end)
+
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, index_live, _html} = live(conn, "/observer/tracing")
 
@@ -196,6 +211,9 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     |> stub(:call, fn node, module, function, args, timeout ->
       :rpc.call(node, module, function, args, timeout)
     end)
+
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, index_live, _html} = live(conn, "/observer/tracing")
 
@@ -245,6 +263,9 @@ defmodule Observer.Web.Tracing.PageLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
 
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
+
     {:ok, index_live, _html} = live(conn, "/observer/tracing")
 
     index_live
@@ -292,6 +313,9 @@ defmodule Observer.Web.Tracing.PageLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
 
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
+
     {:ok, index_live, _html} = live(conn, "/observer/tracing")
 
     index_live
@@ -335,6 +359,9 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     |> stub(:call, fn node, module, function, args, timeout ->
       :rpc.call(node, module, function, args, timeout)
     end)
+
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, index_live, _html} = live(conn, "/observer/tracing")
 
@@ -381,6 +408,9 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     |> stub(:call, fn node, module, function, args, timeout ->
       :rpc.call(node, module, function, args, timeout)
     end)
+
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, index_live, _html} = live(conn, "/observer/tracing")
 
@@ -435,6 +465,9 @@ defmodule Observer.Web.Tracing.PageLiveTest do
       send(test_pid_process, {:tracing_index_pid, self()})
       :rpc.call(node, module, function, args, timeout)
     end)
+
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, index_live, _html} = live(conn, "/observer/tracing")
 

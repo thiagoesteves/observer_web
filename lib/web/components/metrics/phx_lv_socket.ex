@@ -46,9 +46,9 @@ defmodule Observer.Web.Components.Metrics.PhxLvSocket do
 
   defp normalize(metrics) do
     empty_series_data = %{
-      supervisors_total: [],
-      sockets_total: [],
-      sockets_connected: []
+      total: [],
+      supervisors: [],
+      connected: []
     }
 
     {series_data, categories_data} =
@@ -60,30 +60,28 @@ defmodule Observer.Web.Components.Metrics.PhxLvSocket do
           |> DateTime.to_string()
 
         {%{
-           supervisors_total:
-             series_data.supervisors_total ++ [metric.measurements.supervisors_total],
-           sockets_total: series_data.sockets_total ++ [metric.measurements.sockets_total],
-           sockets_connected:
-             series_data.sockets_connected ++ [metric.measurements.sockets_connected]
+           total: series_data.total ++ [metric.measurements.total],
+           supervisors: series_data.supervisors ++ [metric.measurements.supervisors],
+           connected: series_data.connected ++ [metric.measurements.connected]
          }, categories_data ++ [timestamp]}
       end)
 
     datasets =
       [
         %{
-          name: "Sockets Supervisors Total",
-          type: "line",
-          data: series_data.supervisors_total
-        },
-        %{
           name: "Sockets Total",
           type: "line",
-          data: series_data.sockets_total
+          data: series_data.total
+        },
+        %{
+          name: "Sockets Supervisors Total",
+          type: "line",
+          data: series_data.supervisors
         },
         %{
           name: "Sockets Connected",
           type: "line",
-          data: series_data.sockets_connected
+          data: series_data.connected
         }
       ]
 
@@ -100,8 +98,8 @@ defmodule Observer.Web.Components.Metrics.PhxLvSocket do
       },
       legend: %{
         data: [
-          "Sockets Supervisors Total",
           "Sockets Total",
+          "Supervisors Total",
           "Sockets Connected"
         ],
         right: "25%"

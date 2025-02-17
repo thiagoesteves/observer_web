@@ -10,10 +10,12 @@ defmodule ObserverWeb.Application do
   @impl true
   def start(_type, _args) do
     children =
-      [
-        {Phoenix.PubSub, [name: ObserverWeb.PubSub]},
-        ObserverWeb.Tracer.Server
-      ] ++ telemetry_servers()
+      telemetry_servers() ++
+        [
+          Observer.Web.Telemetry,
+          {Phoenix.PubSub, [name: ObserverWeb.PubSub]},
+          ObserverWeb.Tracer.Server
+        ]
 
     # # See https://hexdocs.pm/elixir/Supervisor.html
     # # for other strategies and supported options
@@ -24,9 +26,7 @@ defmodule ObserverWeb.Application do
   if_not_test do
     defp telemetry_servers,
       do: [
-        ObserverWeb.Telemetry.Consumer,
-        ObserverWeb.Telemetry.Producer.VmData,
-        ObserverWeb.Telemetry.Producer.PhxLvSocket
+        ObserverWeb.Telemetry.Consumer
       ]
   else
     defp telemetry_servers, do: []

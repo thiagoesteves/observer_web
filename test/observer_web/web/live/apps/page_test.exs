@@ -16,6 +16,9 @@ defmodule Observer.Web.Apps.PageLiveTest do
     end)
     |> stub(:pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
 
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
+
     {:ok, _index_live, html} = live(conn, "/observer/applications")
 
     assert html =~ "Live Applications"
@@ -27,6 +30,9 @@ defmodule Observer.Web.Apps.PageLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
     |> stub(:pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
+
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 
@@ -54,6 +60,9 @@ defmodule Observer.Web.Apps.PageLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
     |> stub(:pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
+
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 
@@ -99,6 +108,9 @@ defmodule Observer.Web.Apps.PageLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
     |> stub(:pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
+
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 
@@ -149,6 +161,9 @@ defmodule Observer.Web.Apps.PageLiveTest do
       :rpc.pinfo(pid, information)
     end)
 
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
+
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
@@ -198,6 +213,9 @@ defmodule Observer.Web.Apps.PageLiveTest do
       :rpc.pinfo(pid, information)
     end)
 
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
+
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
@@ -240,6 +258,9 @@ defmodule Observer.Web.Apps.PageLiveTest do
       send(test_pid_process, {:observer_page_pid, self()})
       :rpc.pinfo(pid, information)
     end)
+
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 
@@ -290,6 +311,9 @@ defmodule Observer.Web.Apps.PageLiveTest do
       :rpc.pinfo(pid, information)
     end)
 
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
+
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
@@ -332,6 +356,9 @@ defmodule Observer.Web.Apps.PageLiveTest do
       send(test_pid_process, {:observer_page_pid, self()})
       :rpc.pinfo(pid, information)
     end)
+
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 
@@ -379,6 +406,9 @@ defmodule Observer.Web.Apps.PageLiveTest do
     end)
     |> stub(:pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
 
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
+
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 
     index_live
@@ -416,6 +446,9 @@ defmodule Observer.Web.Apps.PageLiveTest do
       send(test_pid_process, {:observer_page_pid, self()})
       :rpc.pinfo(pid, information)
     end)
+
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, index_live, _html} = live(conn, "/observer/applications")
 

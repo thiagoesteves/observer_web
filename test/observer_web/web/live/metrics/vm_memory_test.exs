@@ -24,6 +24,7 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
     |> expect(:unsubscribe_for_new_data, fn ^node, ^metric -> :ok end)
     |> expect(:list_data_by_node_key, fn ^node, ^metric, _ -> [telemetry_data] end)
     |> stub(:get_keys_by_node, fn _node -> [metric] end)
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, liveview, _html} = live(conn, "/observer/metrics")
 
@@ -73,6 +74,7 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
     |> expect(:unsubscribe_for_new_data, fn ^node, ^metric -> :ok end)
     |> expect(:list_data_by_node_key, fn ^node, ^metric, _ -> [telemetry_data] end)
     |> stub(:get_keys_by_node, fn _ -> [metric] end)
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, liveview, _html} = live(conn, "/observer/metrics")
 
@@ -129,6 +131,7 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
       ]
     end)
     |> stub(:get_keys_by_node, fn _ -> [metric] end)
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, liveview, _html} = live(conn, "/observer/metrics")
 

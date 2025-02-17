@@ -1,89 +1,51 @@
 defmodule ObserverWeb.Telemetry.Producer.PhxLvSocket do
   @moduledoc """
-  GenServer that collects phoenix metrics and produce its statistics
+  Telemetry function that collects phoenix liveview socket metrics
   """
-  use GenServer
-
-  @phoenix_interval :timer.seconds(5)
 
   ### ==========================================================================
-  ### Callback functions
+  ### Public functions
   ### ==========================================================================
 
-  @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
-  def start_link(args) do
-    GenServer.start_link(__MODULE__, args, name: __MODULE__)
-  end
+  def process_phoenix_liveview_sockets do
+    cached_endpoints = Process.get(:endpoints, nil)
 
-  @impl true
-  def init(args) do
-    phoenix_interval = Keyword.get(args, :phoenix_interval, @phoenix_interval)
+    endpoints =
+      if is_nil(cached_endpoints) do
+        endpoints = fetch_endpoints()
 
-    # NOTE: Fetching the current endpoint modules must be delayed to ensure
-    #       that all modules are fully loaded by the Erlang system.
-    Process.send_after(self(), :capture_endpoints, phoenix_interval)
+        if endpoints != [] do
+          Process.put(:endpoints, endpoints)
+        end
 
-    {:ok, %{endpoints: nil, phoenix_interval: phoenix_interval}}
-  end
+        endpoints
+      else
+        cached_endpoints
+      end
 
-  @impl true
-  def handle_info(:capture_endpoints, %{phoenix_interval: phoenix_interval} = state) do
-    case fetch_endpoints() do
-      [] ->
-        Process.send_after(self(), :capture_endpoints, phoenix_interval)
-        {:noreply, state}
+    Enum.each(endpoints, fn
+      endpoint ->
+        endpoint
+        |> :supervisor.which_children()
+        |> Enum.each(fn
+          {Phoenix.LiveView.Socket, lv_socket_pid, :supervisor, _data} ->
+            supervisors = :supervisor.which_children(lv_socket_pid)
+            sockets = fetch_sockets(supervisors)
 
-      endpoints ->
-        Process.send_after(self(), :collect_phoenix_metrics, phoenix_interval)
-        {:noreply, %{state | endpoints: endpoints}}
-    end
-  end
+            :telemetry.execute(
+              [:phoenix, :liveview, :socket],
+              %{
+                supervisors: supervisors |> length(),
+                total: sockets |> length(),
+                connected: sockets_connected(sockets)
+              },
+              %{}
+            )
 
-  def handle_info(
-        :collect_phoenix_metrics,
-        %{endpoints: endpoints, phoenix_interval: phoenix_interval} = state
-      ) do
-    endpoints
-    |> Enum.each(fn endpoint ->
-      endpoint
-      |> :supervisor.which_children()
-      |> Enum.each(fn
-        {Phoenix.LiveView.Socket, lv_socket_pid, :supervisor, _data} ->
-          supervisors = :supervisor.which_children(lv_socket_pid)
-          sockets = fetch_sockets(supervisors)
-
-          measurements = %{
-            supervisors_total: supervisors |> length(),
-            sockets_total: sockets |> length(),
-            sockets_connected: sockets_connected(sockets)
-          }
-
-          [
-            %{
-              metrics: [
-                %{
-                  name: "phoenix.liveview.socket.total",
-                  value: measurements.sockets_total,
-                  unit: "",
-                  info: "",
-                  tags: %{},
-                  type: "summary"
-                }
-              ],
-              reporter: Node.self(),
-              measurements: measurements
-            }
-          ]
-          |> Enum.each(&ObserverWeb.Telemetry.push_data(&1))
-
-        _ ->
-          nil
-      end)
+          _ ->
+            :ok
+        end)
     end)
-
-    Process.send_after(self(), :collect_phoenix_metrics, phoenix_interval)
-
-    {:noreply, state}
   end
 
   ### ==========================================================================

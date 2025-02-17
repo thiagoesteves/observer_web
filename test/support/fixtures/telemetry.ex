@@ -63,9 +63,9 @@ defmodule ObserverWeb.TelemetryFixtures do
       unit: "",
       tags: %{},
       measurements: %{
-        supervisors_total: 10,
-        sockets_total: value,
-        sockets_connected: value - 10
+        supervisors: 10,
+        total: value,
+        connected: value - 10
       }
     }
   end

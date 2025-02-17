@@ -1,49 +1,30 @@
 defmodule ObserverWeb.PhxLvSocket do
   use ExUnit.Case, async: false
 
+  import Mock
   import Mox
+
+  setup :verify_on_exit!
 
   alias ObserverWeb.Telemetry.Producer.PhxLvSocket
 
-  setup [
-    :set_mox_global,
-    :verify_on_exit!
-  ]
-
-  test "Start Server and check the memory is published" do
-    {:ok, _pid} = PhxLvSocket.start_link(phoenix_interval: 50)
-    node = Node.self()
-    test_pid_process = self()
-
+  test "Check the phoenix liveview socket info is being published" do
     ObserverWeb.RpcMock
     |> stub(:call, fn node, module, function, args, timeout ->
       :rpc.call(node, module, function, args, timeout)
     end)
 
-    ObserverWeb.TelemetryMock
-    |> expect(:push_data, fn event ->
-      assert %{
-               metrics: [
-                 %{
-                   name: "phoenix.liveview.socket.total",
-                   value: _,
-                   unit: "",
-                   info: "",
-                   tags: %{},
-                   type: "summary"
-                 }
-               ],
-               reporter: ^node,
-               measurements: %{
-                 supervisors_total: _,
-                 sockets_total: _,
-                 sockets_connected: _
-               }
-             } = event
-
-      send(test_pid_process, :received_data)
-    end)
-
-    assert_receive :received_data, 1_000
+    with_mock :telemetry,
+      execute: fn [:phoenix, :liveview, :socket],
+                  %{
+                    supervisors: _,
+                    total: _,
+                    connected: _
+                  },
+                  %{} ->
+        :ok
+      end do
+      assert :ok == PhxLvSocket.process_phoenix_liveview_sockets()
+    end
   end
 end
