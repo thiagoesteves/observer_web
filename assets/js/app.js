@@ -29,6 +29,21 @@ const livePath = document.querySelector("meta[name='live-path']").getAttribute("
 
 let hooks = {}
 
+hooks.ScrollBottom = {
+  mounted() {
+    this.el.scrollTo(0, this.el.scrollHeight);
+  },
+
+  updated() {
+    const pixelsBelowBottom =
+      this.el.scrollHeight - this.el.clientHeight - this.el.scrollTop;
+
+    if (pixelsBelowBottom < this.el.clientHeight * 0.3) {
+      this.el.scrollTo(0, this.el.scrollHeight);
+    }
+  },
+};
+
 hooks.ObserverEChart = {
   mounted() {
     selector = "#" + this.el.id
@@ -67,7 +82,7 @@ hooks.ObserverEChart = {
 
     this.chart.setOption(newOption, notMerge)
   }
-}
+};
 
 hooks.LiveMetricsEChart = {
   mounted() {
@@ -109,7 +124,7 @@ hooks.LiveMetricsEChart = {
       this.columns = columns
     }
   }
-}
+};
 
 const liveSocket = new LiveSocket(livePath, Socket, {
   transport: liveTran === "longpoll" ? LongPoll : WebSocket,
