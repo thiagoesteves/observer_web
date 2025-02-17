@@ -1,4 +1,4 @@
-defmodule ObserverWeb.Telemetry.VmData do
+defmodule ObserverWeb.Telemetry.Producer.VmData do
   @moduledoc """
   GenServer that collects the vm metrics and produce its statistics
   """

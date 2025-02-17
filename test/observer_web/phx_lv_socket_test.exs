@@ -3,7 +3,7 @@ defmodule ObserverWeb.PhxLvSocket do
 
   import Mox
 
-  alias ObserverWeb.Telemetry.PhxLvSocket
+  alias ObserverWeb.Telemetry.Producer.PhxLvSocket
 
   setup [
     :set_mox_global,

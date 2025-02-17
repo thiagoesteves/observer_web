@@ -3,7 +3,7 @@ defmodule ObserverWeb.VmDataTest do
 
   import Mox
 
-  alias ObserverWeb.Telemetry.VmData
+  alias ObserverWeb.Telemetry.Producer.VmData
 
   setup [
     :set_mox_global,

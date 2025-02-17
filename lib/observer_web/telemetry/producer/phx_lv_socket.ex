@@ -1,4 +1,4 @@
-defmodule ObserverWeb.Telemetry.PhxLvSocket do
+defmodule ObserverWeb.Telemetry.Producer.PhxLvSocket do
   @moduledoc """
   GenServer that collects phoenix metrics and produce its statistics
   """
@@ -19,6 +19,8 @@ defmodule ObserverWeb.Telemetry.PhxLvSocket do
   def init(args) do
     phoenix_interval = Keyword.get(args, :phoenix_interval, @phoenix_interval)
 
+    # NOTE: Fetching the current endpoint modules must be delayed to ensure
+    #       that all modules are fully loaded by the Erlang system.
     Process.send_after(self(), :capture_endpoints, phoenix_interval)
 
     {:ok, %{endpoints: nil, phoenix_interval: phoenix_interval}}
@@ -84,7 +86,10 @@ defmodule ObserverWeb.Telemetry.PhxLvSocket do
     {:noreply, state}
   end
 
-  def sockets_connected(sockets) do
+  ### ==========================================================================
+  ### Private functions
+  ### ==========================================================================
+  defp sockets_connected(sockets) do
     sockets
     |> Enum.reduce(0, fn socket, acc ->
       case ObserverWeb.Apps.Process.state(socket) do
@@ -98,7 +103,7 @@ defmodule ObserverWeb.Telemetry.PhxLvSocket do
     end)
   end
 
-  def fetch_sockets(supervisors) do
+  defp fetch_sockets(supervisors) do
     supervisors
     |> Enum.reduce([], fn {_index, sup_pid, :supervisor, _meta}, acc ->
       sockets =
@@ -110,7 +115,7 @@ defmodule ObserverWeb.Telemetry.PhxLvSocket do
     end)
   end
 
-  def fetch_endpoints do
+  defp fetch_endpoints do
     filter_supervisor_endpoints = fn
       {name, _pid, :supervisor, [_name]}, acc ->
         if String.contains?(name |> to_string, ".Endpoint") do

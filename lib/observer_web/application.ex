@@ -25,8 +25,8 @@ defmodule ObserverWeb.Application do
     defp telemetry_servers,
       do: [
         ObserverWeb.Telemetry.Consumer,
-        ObserverWeb.Telemetry.VmData,
-        ObserverWeb.Telemetry.PhxLvSocket
+        ObserverWeb.Telemetry.Producer.VmData,
+        ObserverWeb.Telemetry.Producer.PhxLvSocket
       ]
   else
     defp telemetry_servers, do: []
