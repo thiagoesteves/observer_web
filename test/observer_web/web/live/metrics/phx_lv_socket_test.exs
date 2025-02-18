@@ -1,4 +1,4 @@
-defmodule Observer.Web.Metrics.VmMemoryTest do
+defmodule Observer.Web.Metrics.PhxLvSocketTest do
   use Observer.Web.ConnCase, async: false
 
   import Phoenix.LiveViewTest
@@ -11,12 +11,12 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
     :verify_on_exit!
   ]
 
-  test "Add/Remove Service + vm.memory.total", %{conn: conn} do
+  test "Add/Remove Service + phoenix.liveview.socket.total", %{conn: conn} do
     node = Node.self() |> to_string
     service_id = String.replace(node, "@", "-")
-    metric = "vm.memory.total"
+    metric = "phoenix.liveview.socket.total"
     metric_id = String.replace(metric, ".", "-")
-    telemetry_data = TelemetryFixtures.build_telemetry_data_vm_total_memory()
+    telemetry_data = TelemetryFixtures.build_telemetry_data_phx_lv_socket_total()
 
     ObserverWeb.TelemetryMock
     |> expect(:subscribe_for_new_keys, fn -> :ok end)
@@ -61,12 +61,12 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
     refute html =~ "metrics:#{metric}"
   end
 
-  test "Add/Remove vm.memory.total + Service", %{conn: conn} do
+  test "Add/Remove phoenix.liveview.socket.totall + Service", %{conn: conn} do
     node = Node.self() |> to_string
     service_id = String.replace(node, "@", "-")
-    metric = "vm.memory.total"
+    metric = "phoenix.liveview.socket.total"
     metric_id = String.replace(metric, ".", "-")
-    telemetry_data = TelemetryFixtures.build_telemetry_data_vm_total_memory()
+    telemetry_data = TelemetryFixtures.build_telemetry_data_phx_lv_socket_total()
 
     ObserverWeb.TelemetryMock
     |> expect(:subscribe_for_new_keys, fn -> :ok end)
@@ -111,10 +111,10 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
     refute html =~ "metrics:#{metric}"
   end
 
-  test "Init and Push vm.memory.total data", %{conn: conn} do
+  test "Init and Push phoenix.liveview.socket.totall data", %{conn: conn} do
     node = Node.self() |> to_string
     service_id = String.replace(node, "@", "-")
-    metric = "vm.memory.total"
+    metric = "phoenix.liveview.socket.total"
     metric_id = String.replace(metric, ".", "-")
 
     test_pid_process = self()
@@ -127,7 +127,7 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
     end)
     |> expect(:list_data_by_node_key, fn ^node, ^metric, _ ->
       [
-        TelemetryFixtures.build_telemetry_data_vm_total_memory(1_737_982_379_123)
+        TelemetryFixtures.build_telemetry_data_phx_lv_socket_total(1_737_982_379_123)
       ]
     end)
     |> stub(:get_keys_by_node, fn _ -> [metric] end)
@@ -156,7 +156,7 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
     send(
       liveview_pid,
       {:metrics_new_data, node, metric,
-       TelemetryFixtures.build_telemetry_data_vm_total_memory(1_737_982_379_456)}
+       TelemetryFixtures.build_telemetry_data_phx_lv_socket_total(1_737_982_379_456)}
     )
 
     # assert live updated data

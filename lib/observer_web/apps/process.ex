@@ -39,6 +39,22 @@ defmodule ObserverWeb.Apps.Process do
     process_info(pid, @process_full, &structure_full/2)
   end
 
+  @spec state(pid :: pid()) :: {:ok, any()} | {:error, String.t()}
+  def state(pid) do
+    if pid != self() do
+      try do
+        state = :sys.get_state(pid, 100)
+        {:ok, state}
+      catch
+        _, _ ->
+          {:error, "Could not retrieve the state for pid: #{inspect(pid)}"}
+      end
+    else
+      {:error,
+       "The requester’s PID is identical to the target PID, so the state cannot be requested."}
+    end
+  end
+
   ### ==========================================================================
   ### Private functions
   ### ==========================================================================
@@ -57,12 +73,6 @@ defmodule ObserverWeb.Apps.Process do
     _, _ ->
       :unknown
       # coveralls-ignore-stop
-  end
-
-  defp state(pid) do
-    :sys.get_state(pid, 100)
-  catch
-    _, _ -> :unknown
   end
 
   defp initial_call(data) do
@@ -85,6 +95,19 @@ defmodule ObserverWeb.Apps.Process do
   defp structure_full(data, pid) do
     gc = Keyword.get(data, :garbage_collection, [])
     dictionary = Keyword.get(data, :dictionary)
+
+    {state, phx_lv_socket} =
+      case state(pid) do
+        {:ok, %{socket: %Phoenix.LiveView.Socket{}} = state} ->
+          new_state = %{state | socket: "Phoenix.LiveView.Socket", components: "hidden"}
+          {to_string(:io_lib.format("~tp", [new_state])), state.socket}
+
+        {:ok, state} ->
+          {to_string(:io_lib.format("~tp", [state])), nil}
+
+        {:error, reason} ->
+          {reason, nil}
+      end
 
     %{
       pid: pid,
@@ -109,7 +132,8 @@ defmodule ObserverWeb.Apps.Process do
         gc_full_sweep_after: Keyword.get(gc, :fullsweep_after, 0)
       },
       meta: structure_meta(data, pid),
-      state: to_string(:io_lib.format("~tp", [state(pid)]))
+      state: state,
+      phx_lv_socket: phx_lv_socket
     }
   end
 

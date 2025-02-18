@@ -74,11 +74,7 @@ Application.put_env(:phoenix, :serve_endpoints, true)
 Application.put_env(:phoenix, :persistent, true)
 
 Task.async(fn ->
-  children = [
-    {WebDev.Endpoint, []}
-  ]
-
-  {:ok, _} = Supervisor.start_link(children, strategy: :one_for_one)
+  {:ok, _} = Supervisor.start_child(ObserverWeb.Application, WebDev.Endpoint)
 
   Process.sleep(:infinity)
 end)

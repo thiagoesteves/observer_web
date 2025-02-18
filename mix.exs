@@ -105,6 +105,10 @@ defmodule ObserverWeb.MixProject do
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:tailwind, "~> 0.2", only: :dev, runtime: false},
 
+      # Telemetry
+      {:telemetry_metrics, "~> 1.0", override: true},
+      {:telemetry_poller, "~> 1.0"},
+
       # Tooling
       {:credo, "~> 1.7", only: [:test, :dev], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev], runtime: false},

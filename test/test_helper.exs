@@ -68,10 +68,6 @@ defmodule Observer.Web.Endpoint do
   plug Observer.Web.Test.Router
 end
 
-children = [
-  {Observer.Web.Endpoint, []}
-]
-
-{:ok, _} = Supervisor.start_link(children, strategy: :one_for_one)
+{:ok, _} = Supervisor.start_child(ObserverWeb.Application, Observer.Web.Endpoint)
 
 ExUnit.start()

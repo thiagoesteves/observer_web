@@ -104,6 +104,7 @@ defmodule Observer.Web.Components.Core do
   attr :row_id, :any, default: nil, doc: "the function for generating the row id"
   attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
   attr :transition, :boolean, default: false
+  attr :title_bg_color, :string, default: "LightGray"
 
   attr :row_item, :any,
     default: &Function.identity/1,
@@ -123,7 +124,10 @@ defmodule Observer.Web.Components.Core do
     <div class="px-4 sm:overflow-visible sm:px-0 rounded border border-solid border-blueGray-100">
       <div id={"#{@id}-table"} class="block max-h-[600px]" phx-hook="ScrollBottom">
         <table class="items-center w-full border-collapse ">
-          <div class="text-center text-sm font-mono bg-gray-100 font-semibold px-6 py-1">
+          <div
+            class="text-center text-sm font-mono font-semibold px-6 py-1"
+            style={"background-color: #{@title_bg_color};"}
+          >
             {@title}
           </div>
           <tbody
@@ -141,6 +145,93 @@ defmodule Observer.Web.Components.Core do
                     {"first:ease-in duration-300", "first:opacity-0 first:p-0 first:h-0",
                      "first:opacity-100"},
                     time: 100
+                  )
+              }
+            >
+              <td
+                :for={{col, i} <- Enum.with_index(@col)}
+                phx-click={@row_click && @row_click.(row)}
+                class={["relative p-0", @row_click && "hover:cursor-pointer"]}
+              >
+                <div class="block px-1 py-1 pr-6 text-xs font-mono ">
+                  <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
+                  <span class={["relative", i == 0 && "font-semibold text-zinc-900"]}>
+                    {render_slot(col, @row_item.(row))}
+                  </span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    """
+  end
+
+  @doc ~S"""
+  Renders a table with generic metrics styling.
+
+  ## Examples
+
+      <.table id="users" rows={@users}>
+        <:col :let={user} label="id"><%= user.id %></:col>
+        <:col :let={user} label="username"><%= user.username %></:col>
+      </.table>
+  """
+  attr :id, :string, required: true
+  attr :rows, :list, required: true
+  attr :row_id, :any, default: nil, doc: "the function for generating the row id"
+  attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
+  attr :transition, :boolean, default: false
+  attr :h_max_size, :string, default: "h-64"
+
+  attr :row_item, :any,
+    default: &Function.identity/1,
+    doc: "the function for mapping each row before calling the :col and :action slots"
+
+  slot :col, required: true do
+    attr :label, :string
+  end
+
+  def table_metrics(assigns) do
+    assigns =
+      with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
+        assign(assigns, row_id: assigns.row_id || fn {id, _item} -> id end)
+      end
+
+    ~H"""
+    <div class="px-4 sm:overflow-visible sm:px-0 ">
+      <div
+        id={"#{@id}-table"}
+        class={["block overflow-y-auto", "#{@h_max_size}"]}
+        phx-hook="ScrollBottom"
+      >
+        <table class="items-center w-full border-collapse">
+          <thead class="text-xs text-left align-middle leading-6 bg-white bg-blueGray-50 text-blueGray-500 uppercase sticky top-0 z-10">
+            <tr>
+              <th
+                :for={col <- @col}
+                class="p-1 pb-1 pr-6 font-semibold border border-solid border-blueGray-100 border-l-0 border-t-0 border-r-0 font-normal"
+              >
+                {col[:label]}
+              </th>
+            </tr>
+          </thead>
+          <tbody
+            id={@id}
+            phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
+            class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700"
+          >
+            <tr
+              :for={row <- @rows}
+              id={@row_id && @row_id.(row)}
+              class="group hover:bg-zinc-50"
+              phx-mounted={
+                @transition &&
+                  JS.transition(
+                    {"last:ease-in duration-300", "last:opacity-0 last:p-0 last:h-0",
+                     "last:opacity-100"},
+                    time: 300
                   )
               }
             >

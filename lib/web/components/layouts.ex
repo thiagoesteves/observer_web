@@ -76,10 +76,10 @@ defmodule Observer.Web.Layouts do
       <span class="text-gray-800 dark:text-gray-200 font-semibold">
         Made by
         <a
-          href="https://deployex.pro"
+          href="https://www.linkedin.com/in/thiago-cesar-calori-esteves-972368115/"
           class="font-medium text-blue-600 underline dark:text-blue-500 hover:no-underline"
         >
-          DeployEx
+          Thiago Esteves
         </a>
       </span>
     </footer>

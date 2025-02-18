@@ -53,6 +53,23 @@ defmodule ObserverWeb.TelemetryFixtures do
     }
   end
 
+  def build_telemetry_data_phx_lv_socket_total(
+        timestamp \\ :rand.uniform(2_000_000_000_000),
+        value \\ 555
+      ) do
+    %ObserverWeb.Telemetry.Data{
+      timestamp: timestamp,
+      value: value,
+      unit: "",
+      tags: %{},
+      measurements: %{
+        supervisors: 10,
+        total: value,
+        connected: value - 10
+      }
+    }
+  end
+
   def build_telemetry_data(
         timestamp \\ :rand.uniform(2_000_000_000_000),
         value \\ 70_973.064,

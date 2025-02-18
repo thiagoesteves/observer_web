@@ -71,5 +71,5 @@ defmodule ObserverWeb.Telemetry do
   ### Private functions
   ### ==========================================================================
   defp default,
-    do: Application.get_env(:observer_web, __MODULE__)[:adapter] || ObserverWeb.Telemetry.Consumer
+    do: Application.get_env(:observer_web, __MODULE__)[:adapter] || ObserverWeb.Telemetry.Storage
 end

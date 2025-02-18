@@ -15,6 +15,7 @@ defmodule Observer.Web.Metrics.PageLiveTest do
     ObserverWeb.TelemetryMock
     |> expect(:subscribe_for_new_keys, fn -> :ok end)
     |> expect(:get_keys_by_node, fn _node -> [] end)
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, _index_live, html} = live(conn, "/observer/metrics")
 
@@ -43,6 +44,7 @@ defmodule Observer.Web.Metrics.PageLiveTest do
 
       [metric]
     end)
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, liveview, html} = live(conn, "/observer/metrics")
 
@@ -84,6 +86,7 @@ defmodule Observer.Web.Metrics.PageLiveTest do
       ]
     end)
     |> stub(:get_keys_by_node, fn _node -> [metric] end)
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, liveview, _html} = live(conn, "/observer/metrics")
 
@@ -143,6 +146,7 @@ defmodule Observer.Web.Metrics.PageLiveTest do
       :ok
     end)
     |> stub(:get_keys_by_node, fn _node -> [] end)
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, liveview, _html} = live(conn, "/observer/metrics")
 
@@ -175,6 +179,7 @@ defmodule Observer.Web.Metrics.PageLiveTest do
       :ok
     end)
     |> stub(:get_keys_by_node, fn _node -> [] end)
+    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, liveview, _html} = live(conn, "/observer/metrics")
 
@@ -191,7 +196,7 @@ defmodule Observer.Web.Metrics.PageLiveTest do
 
     assert html =~ "services:#{node}"
 
-    send(liveview_pid, {:nodedown, :fake_node})
+    send(liveview_pid, {:nodeup, :fake_node})
 
     assert render(liveview) =~ "services:#{node}"
   end

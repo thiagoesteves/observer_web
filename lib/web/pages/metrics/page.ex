@@ -9,6 +9,8 @@ defmodule Observer.Web.Metrics.Page do
 
   alias Observer.Web.Components.Attention
   alias Observer.Web.Components.Core
+  alias Observer.Web.Components.Metrics.Phoenix, as: MetricsPhoenix
+  alias Observer.Web.Components.Metrics.PhxLvSocket
   alias Observer.Web.Components.Metrics.VmMemory
   alias Observer.Web.Components.Metrics.VmRunQueue
   alias Observer.Web.Components.MultiSelect
@@ -95,6 +97,21 @@ defmodule Observer.Web.Metrics.Page do
                     service={service}
                     metric={metric}
                     cols={@form.params["num_cols"]}
+                    metrics={Map.get(@streams, data_key)}
+                  />
+                  <PhxLvSocket.content
+                    title={"#{metric} [#{app.name}]"}
+                    service={service}
+                    metric={metric}
+                    cols={@form.params["num_cols"]}
+                    metrics={Map.get(@streams, data_key)}
+                  />
+                  <MetricsPhoenix.content
+                    title={"#{metric} [#{app.name}]"}
+                    service={service}
+                    metric={metric}
+                    cols={@form.params["num_cols"]}
+                    transition={@metric_config[data_key]["transition"]}
                     metrics={Map.get(@streams, data_key)}
                   />
                 <% end %>
