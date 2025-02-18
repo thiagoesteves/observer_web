@@ -74,7 +74,7 @@ defmodule Observer.Web.Components.Metrics.PhxLvSocket do
           data: series_data.total
         },
         %{
-          name: "Sockets Supervisors Total",
+          name: "Supervisors Total",
           type: "line",
           data: series_data.supervisors
         },
