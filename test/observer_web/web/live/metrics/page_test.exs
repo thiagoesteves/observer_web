@@ -196,7 +196,7 @@ defmodule Observer.Web.Metrics.PageLiveTest do
 
     assert html =~ "services:#{node}"
 
-    send(liveview_pid, {:nodedown, :fake_node})
+    send(liveview_pid, {:nodeup, :fake_node})
 
     assert render(liveview) =~ "services:#{node}"
   end

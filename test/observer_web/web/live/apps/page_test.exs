@@ -3,6 +3,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
 
   import Phoenix.LiveViewTest
   import Mox
+  import Mock
 
   setup [
     :set_mox_global,
@@ -157,7 +158,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
     |> stub(:pinfo, fn pid, information ->
-      send(test_pid_process, {:observer_page_pid, self()})
+      send(test_pid_process, {:apps_page_pid, self()})
       :rpc.pinfo(pid, information)
     end)
 
@@ -185,10 +186,10 @@ defmodule Observer.Web.Apps.PageLiveTest do
     id = "#{inspect(pid)}"
     series_name = "#{Node.self()}::kernel"
 
-    assert_receive {:observer_page_pid, observer_page_pid}, 1_000
+    assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
-    send(observer_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
-    send(observer_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
 
     assert html = render(index_live)
 
@@ -197,6 +198,106 @@ defmodule Observer.Web.Apps.PageLiveTest do
     assert html =~ "Heap Size"
     refute html =~ "Os Pid"
     refute html =~ "Connected"
+  end
+
+  test "Select Service+Apps and select a socket liveview process to request information", %{
+    conn: conn
+  } do
+    node = Node.self() |> to_string
+    service = String.replace(node, "@", "-")
+    test_pid_process = self()
+
+    ObserverWeb.RpcMock
+    |> stub(:call, fn node, module, function, args, timeout ->
+      :rpc.call(node, module, function, args, timeout)
+    end)
+    |> stub(:pinfo, fn pid, information ->
+      send(test_pid_process, {:apps_page_pid, self()})
+      :rpc.pinfo(pid, information)
+    end)
+
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
+
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
+
+    index_live
+    |> element("#apps-multi-select-toggle-options")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-apps-kernel-add-item")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-services-#{service}-add-item")
+    |> render_click()
+
+    pid = Enum.random(:erlang.processes())
+
+    id = "#{inspect(pid)}"
+    series_name = "#{Node.self()}::kernel"
+
+    assert_receive {:apps_page_pid, apps_page_pid}, 1_000
+
+    with_mock ObserverWeb.Apps.Process,
+      info: fn _ ->
+        data = %{
+          pid: self(),
+          registered_name: "name",
+          priority: nil,
+          trap_exit: nil,
+          message_queue_len: 0,
+          error_handler: :none,
+          relations: %{
+            group_leader: :none,
+            ancestors: :none,
+            links: :none,
+            monitored_by: :none,
+            monitors: :none
+          },
+          memory: %{
+            total: 0,
+            stack_and_heap: 0,
+            heap_size: 0,
+            stack_size: 0,
+            gc_min_heap_size: 0,
+            gc_full_sweep_after: 0
+          },
+          meta: %{
+            init: "",
+            current: "",
+            status: "",
+            class: ""
+          },
+          state: "Phoenix.LiveView.Socket",
+          phx_lv_socket: %Phoenix.LiveView.Socket{
+            id: "my-test-id",
+            assigns: %{flag: true},
+            host_uri: %URI{scheme: "https", port: 55_555}
+          }
+        }
+
+        send(test_pid_process, :requested_mock_info)
+        data
+      end do
+      send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+      send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+
+      assert_receive :requested_mock_info, 1_000
+    end
+
+    assert html = render(index_live)
+
+    # Check the Process information is being shown
+    assert html =~ "Group Leader"
+    assert html =~ "Heap Size"
+    assert html =~ "Phoenix.LiveView.Socket"
+    assert html =~ "my-test-id"
+    assert html =~ "Phoenix.LiveView.Socket - URI"
+    assert html =~ "55555"
+    assert html =~ "Phoenix.LiveView.Socket - Assigns"
+    assert html =~ "flag =&gt; true"
   end
 
   test "Select Service+Apps and select a process that is dead or doesn't exist", %{conn: conn} do
@@ -209,7 +310,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
     |> stub(:pinfo, fn pid, information ->
-      send(test_pid_process, {:observer_page_pid, self()})
+      send(test_pid_process, {:apps_page_pid, self()})
       :rpc.pinfo(pid, information)
     end)
 
@@ -234,10 +335,10 @@ defmodule Observer.Web.Apps.PageLiveTest do
 
     id = "#PID<0.0.11111>"
 
-    assert_receive {:observer_page_pid, observer_page_pid}, 1_000
+    assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
-    send(observer_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
-    send(observer_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
 
     assert html = render(index_live)
 
@@ -255,7 +356,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
     |> stub(:pinfo, fn pid, information ->
-      send(test_pid_process, {:observer_page_pid, self()})
+      send(test_pid_process, {:apps_page_pid, self()})
       :rpc.pinfo(pid, information)
     end)
 
@@ -283,10 +384,10 @@ defmodule Observer.Web.Apps.PageLiveTest do
     id = "#{inspect(port)}"
     series_name = "#{Node.self()}::kernel"
 
-    assert_receive {:observer_page_pid, observer_page_pid}, 1_000
+    assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
-    send(observer_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
-    send(observer_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
 
     assert html = render(index_live)
 
@@ -307,7 +408,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
     |> stub(:pinfo, fn pid, information ->
-      send(test_pid_process, {:observer_page_pid, self()})
+      send(test_pid_process, {:apps_page_pid, self()})
       :rpc.pinfo(pid, information)
     end)
 
@@ -332,10 +433,10 @@ defmodule Observer.Web.Apps.PageLiveTest do
 
     id = "#Port<0.100>"
 
-    assert_receive {:observer_page_pid, observer_page_pid}, 1_000
+    assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
-    send(observer_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
-    send(observer_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
 
     assert html = render(index_live)
 
@@ -353,7 +454,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
     |> stub(:pinfo, fn pid, information ->
-      send(test_pid_process, {:observer_page_pid, self()})
+      send(test_pid_process, {:apps_page_pid, self()})
       :rpc.pinfo(pid, information)
     end)
 
@@ -381,10 +482,10 @@ defmodule Observer.Web.Apps.PageLiveTest do
     id = "#{inspect(reference)}"
     series_name = "#{Node.self()}::kernel"
 
-    assert_receive {:observer_page_pid, observer_page_pid}, 1_000
+    assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
-    send(observer_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
-    send(observer_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
 
     assert html = render(index_live)
 
@@ -443,7 +544,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
     |> stub(:pinfo, fn pid, information ->
-      send(test_pid_process, {:observer_page_pid, self()})
+      send(test_pid_process, {:apps_page_pid, self()})
       :rpc.pinfo(pid, information)
     end)
 
@@ -468,11 +569,11 @@ defmodule Observer.Web.Apps.PageLiveTest do
     assert html =~ "services:#{node}"
     assert html =~ "apps:kernel"
 
-    assert_receive {:observer_page_pid, observer_page_pid}, 1_000
+    assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
     # Check node up/down doesn't change the selected items
-    send(observer_page_pid, {:nodeup, fake_node})
-    send(observer_page_pid, {:nodedown, fake_node})
+    send(apps_page_pid, {:nodeup, fake_node})
+    send(apps_page_pid, {:nodedown, fake_node})
 
     assert html = render(index_live)
     assert html =~ "services:#{node}"

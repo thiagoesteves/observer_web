@@ -26,7 +26,7 @@ defmodule ObserverWeb.Application do
   if_not_test do
     defp telemetry_servers,
       do: [
-        ObserverWeb.Telemetry.Consumer
+        ObserverWeb.Telemetry.Storage
       ]
   else
     defp telemetry_servers, do: []

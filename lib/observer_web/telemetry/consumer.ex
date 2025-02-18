@@ -1,222 +1,183 @@
 defmodule ObserverWeb.Telemetry.Consumer do
   @moduledoc """
-  GenServer that collects the telemetry data received
+   A reporter that sends the events and metrics to Observer Web consumer
+
+   References:
+     * https://github.com/beam-telemetry/telemetry_metrics/blob/main/lib/telemetry_metrics/console_reporter.ex
   """
+
   use GenServer
+  require Logger
 
-  import ObserverWeb.Macros
+  alias Telemetry.Metrics
 
-  alias ObserverWeb.Rpc
+  @type option ::
+          {:name, String.t()}
+          | {:device, atom()}
+          | {:metrics, [Metrics.t()]}
+  @type options :: [option]
 
-  @behaviour ObserverWeb.Telemetry.Adapter
+  @type t :: %__MODULE__{
+          name: String.t(),
+          value: integer() | float(),
+          unit: String.t(),
+          info: String.t(),
+          tags: list(),
+          type: String.t()
+        }
 
-  @metric_keys "metric-keys"
-  @metric_table :observer_web_metrics
+  defstruct name: "unknown",
+            value: "",
+            unit: "",
+            info: "",
+            tags: [],
+            type: ""
 
-  @one_minute_in_milliseconds 60_000
-  @retention_data_delete_interval :timer.minutes(1)
+  @doc """
+  Reporter's child spec.
 
-  ### ==========================================================================
-  ### Callback functions
-  ### ==========================================================================
+  This function allows you to start the reporter under a supervisor like this:
 
-  @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
-  def start_link(args) do
-    GenServer.start_link(__MODULE__, args, name: __MODULE__)
+      children = [
+        {ObserverWeb.Telemetry.Consumer, options}
+      ]
+
+  See `start_link/1` for a list of available options.
+  """
+  @spec child_spec(options) :: Supervisor.child_spec()
+  def child_spec(options) do
+    %{id: __MODULE__, start: {__MODULE__, :start_link, [options]}}
+  end
+
+  @spec start_link(options) :: GenServer.on_start()
+  def start_link(options) do
+    server_opts = Keyword.take(options, [:name])
+    device = options[:device] || :stdio
+
+    metrics =
+      options[:metrics] ||
+        raise ArgumentError, "the :metrics option is required by #{inspect(__MODULE__)}"
+
+    GenServer.start_link(__MODULE__, {metrics, device}, server_opts)
   end
 
   @impl true
-  def init(_args) do
-    node = Node.self()
+  def init({metrics, device}) do
+    Process.flag(:trap_exit, true)
+    groups = Enum.group_by(metrics, & &1.event_name)
 
-    # Create metric tables for the node
-    :ets.new(@metric_table, [:set, :protected, :named_table])
-    :ets.insert(@metric_table, {@metric_keys, []})
+    reporter = Node.self()
 
-    persist_data? =
-      if data_retention_period() do
-        :timer.send_interval(@retention_data_delete_interval, :prune_expired_entries)
-        true
-      else
-        false
-      end
+    for {event, metrics} <- groups do
+      id = {__MODULE__, event, self()}
 
-    {:ok, %{node: node, persist_data?: persist_data?}}
-  end
-
-  @impl true
-  def handle_cast(
-        {:observer_web_telemetry,
-         %{metrics: metrics, reporter: reporter, measurements: measurements}},
-        %{node: node, persist_data?: persist_data?} = state
-      )
-      when reporter in [node] do
-    now = System.os_time(:millisecond)
-    minute = unix_to_minutes(now)
-
-    keys = get_keys_by_node(reporter)
-
-    new_keys =
-      Enum.reduce(metrics, [], fn metric, acc ->
-        {key, timed_key, data} = build_telemetry_data(metric, measurements, now, minute)
-
-        # credo:disable-for-lines:3
-        if persist_data? do
-          current_data =
-            case :ets.lookup(@metric_table, timed_key) do
-              [{_, current_list_data}] -> [data | current_list_data]
-              _ -> [data]
-            end
-
-          :ets.insert(@metric_table, {timed_key, current_data})
-        end
-
-        Phoenix.PubSub.broadcast(
-          ObserverWeb.PubSub,
-          metrics_topic(reporter, key),
-          {:metrics_new_data, reporter, key, data}
-        )
-
-        if key in keys do
-          acc
-        else
-          [key | acc]
-        end
-      end)
-
-    if new_keys != [] do
-      :ets.insert(@metric_table, {@metric_keys, new_keys ++ keys})
-
-      Phoenix.PubSub.broadcast(
-        ObserverWeb.PubSub,
-        keys_topic(),
-        {:metrics_new_keys, reporter, new_keys}
+      :telemetry.attach(
+        id,
+        event,
+        &__MODULE__.handle_event/4,
+        {metrics, device, reporter}
       )
     end
 
-    {:noreply, state}
+    {:ok, Map.keys(groups)}
   end
 
   @impl true
-  def handle_info(:prune_expired_entries, state) do
-    now_minutes = unix_to_minutes()
-    retention_period = trunc(data_retention_period() / @one_minute_in_milliseconds)
-    deletion_period_to = now_minutes - retention_period - 1
-    deletion_period_from = deletion_period_to - 2
-
-    prune_keys = fn key ->
-      Enum.each(deletion_period_from..deletion_period_to, fn timestamp ->
-        :ets.delete(@metric_table, metric_key(key, timestamp))
-      end)
+  def terminate(_, events) do
+    for event <- events do
+      :telemetry.detach({__MODULE__, event, self()})
     end
 
-    Node.self()
-    |> get_keys_by_node()
-    |> Enum.each(&prune_keys.(&1))
-
-    {:noreply, state}
+    :ok
   end
 
-  ### ==========================================================================
-  ### Deployex.Telemetry.Adapter implementation
-  ### ==========================================================================
-  @impl true
-  def push_data(event) do
-    GenServer.cast(__MODULE__, {:observer_web_telemetry, event})
-  end
+  @doc false
+  def handle_event(
+        _event_name,
+        measurements,
+        metadata,
+        {metrics, _device, reporter}
+      ) do
+    metrics =
+      Enum.reduce(metrics, [], fn %struct{} = metric, acc ->
+        data = %__MODULE__{name: "#{Enum.join(metric.name, ".")}", type: metric(struct)}
+        measurement = extract_measurement(metric, measurements, metadata)
 
-  @impl true
-  def subscribe_for_new_keys do
-    Phoenix.PubSub.subscribe(ObserverWeb.PubSub, keys_topic())
-  end
+        tags =
+          extract_tags(metric, metadata)
+          |> add_phoenix_tags(metadata)
 
-  @impl true
-  def subscribe_for_new_data(node, key) do
-    Phoenix.PubSub.subscribe(ObserverWeb.PubSub, metrics_topic(node, key))
-  end
-
-  @impl true
-  def unsubscribe_for_new_data(node, key) do
-    Phoenix.PubSub.unsubscribe(ObserverWeb.PubSub, metrics_topic(node, key))
-  end
-
-  @impl true
-  def list_data_by_node_key(node, key, options \\ [])
-
-  def list_data_by_node_key(node, key, options) when is_binary(node) do
-    node
-    |> String.to_existing_atom()
-    |> list_data_by_node_key(key, options)
-  end
-
-  def list_data_by_node_key(node, key, options) when is_atom(node) do
-    from = Keyword.get(options, :from, 15)
-    order = Keyword.get(options, :order, :asc)
-
-    now_minutes = unix_to_minutes()
-    from_minutes = now_minutes - from
-
-    result =
-      Enum.reduce(from_minutes..now_minutes, [], fn minute, acc ->
-        case Rpc.call(
-               node,
-               :ets,
-               :lookup,
-               [@metric_table, metric_key(key, minute)],
-               :infinity
-             ) do
-          [{_, value}] ->
-            value ++ acc
-
-          _ ->
+        cond do
+          is_nil(measurement) ->
             acc
+
+          not keep?(metric, metadata) ->
+            acc
+
+          metric.__struct__ == Telemetry.Metrics.Counter ->
+            [%{data | tags: tags} | acc]
+
+          true ->
+            [
+              %{
+                data
+                | value: measurement,
+                  unit: unit(metric.unit),
+                  info: info(measurement),
+                  tags: tags
+              }
+              | acc
+            ]
         end
       end)
 
-    if order == :asc, do: Enum.reverse(result), else: result
+    %{
+      metrics: metrics,
+      measurements: measurements,
+      reporter: reporter
+    }
+    |> ObserverWeb.Telemetry.push_data()
+  rescue
+    e ->
+      Logger.error([
+        "Could not format metrics #{inspect(metrics)}\n",
+        Exception.format(:error, e, __STACKTRACE__)
+      ])
   end
 
-  @impl true
-  def get_keys_by_node(nil), do: []
+  defp keep?(%{keep: nil}, _metadata), do: true
+  defp keep?(metric, metadata), do: metric.keep.(metadata)
 
-  def get_keys_by_node(node) do
-    case Rpc.call(node, :ets, :lookup, [@metric_table, @metric_keys], :infinity) do
-      [{_, value}] ->
-        value
-
-      # coveralls-ignore-start
-      _ ->
-        []
-        # coveralls-ignore-stop
+  defp extract_measurement(metric, measurements, metadata) do
+    case metric.measurement do
+      fun when is_function(fun, 2) -> fun.(measurements, metadata)
+      fun when is_function(fun, 1) -> fun.(measurements)
+      key -> measurements[key]
     end
   end
 
-  ### ==========================================================================
-  ### Private functions
-  ### ==========================================================================
-  if_not_test do
-    defp data_retention_period,
-      do: Application.get_env(:observer_web, ObserverWeb.Telemetry)[:data_retention_period]
-  else
-    defp data_retention_period, do: :timer.minutes(1)
+  defp info(int) when is_number(int), do: ""
+  defp info(_), do: " (WARNING! measurement should be a number)"
+
+  defp unit(:unit), do: ""
+  defp unit(unit), do: " #{unit}"
+
+  defp metric(Telemetry.Metrics.Counter), do: "counter"
+  defp metric(Telemetry.Metrics.Distribution), do: "distribution"
+  defp metric(Telemetry.Metrics.LastValue), do: "last_value"
+  defp metric(Telemetry.Metrics.Sum), do: "sum"
+  defp metric(Telemetry.Metrics.Summary), do: "summary"
+
+  defp extract_tags(metric, metadata) do
+    tag_values = metric.tag_values.(metadata)
+    Map.take(tag_values, metric.tags)
   end
 
-  defp metric_key(metric, timestamp), do: "#{metric}|#{timestamp}"
-
-  defp unix_to_minutes(time \\ System.os_time(:millisecond)),
-    do: trunc(time / @one_minute_in_milliseconds)
-
-  defp keys_topic, do: "metrics::keys"
-  defp metrics_topic(node, key), do: "metrics::#{node}::#{key}"
-
-  defp build_telemetry_data(%{name: name} = metric, measurements, now, minute) do
-    {name, metric_key(name, minute),
-     %ObserverWeb.Telemetry.Data{
-       timestamp: now,
-       value: metric.value,
-       unit: metric.unit,
-       tags: metric.tags,
-       measurements: measurements
-     }}
+  defp add_phoenix_tags(tags, %{conn: %{method: method, status: status}}) do
+    tags
+    |> Map.put(:method, method)
+    |> Map.put(:status, status)
   end
+
+  defp add_phoenix_tags(tags, _metadata), do: tags
 end
