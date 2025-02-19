@@ -12,7 +12,10 @@ defmodule Observer.Web.Components.Metrics.PhxLvSocket do
 
   def content(assigns) do
     ~H"""
-    <div :if={@metric == "phoenix.liveview.socket.total"} style={"grid-column: span #{@cols};"}>
+    <div
+      :if={String.match?(@metric, ~r/^phoenix\.liveview\.socket\..+\.total$/)}
+      style={"grid-column: span #{@cols};"}
+    >
       <% id = String.replace("#{@service}-#{@metric}", ["@", ".", "/"], "-") %>
       <div class="relative flex flex-col min-w-0 break-words bg-white w-full shadow-lg rounded">
         <div class="rounded-t mb-0 px-4 py-3 border border-b border-solid">

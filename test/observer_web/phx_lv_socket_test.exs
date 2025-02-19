@@ -15,13 +15,16 @@ defmodule ObserverWeb.PhxLvSocket do
     end)
 
     with_mock :telemetry,
-      execute: fn [:phoenix, :liveview, :socket],
+      execute: fn [:phoenix, :liveview, :socket, :"observer.web"],
                   %{
                     supervisors: _,
                     total: _,
                     connected: _
                   },
                   %{} ->
+        :ok
+      end,
+      attach: fn _id, _event, _handler, _config ->
         :ok
       end do
       assert :ok == PhxLvSocket.process_phoenix_liveview_sockets()

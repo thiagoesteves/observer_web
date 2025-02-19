@@ -3,29 +3,49 @@ defmodule ObserverWeb.Telemetry.Producer.PhxLvSocket do
   Telemetry function that collects phoenix liveview socket metrics
   """
 
+  import Telemetry.Metrics
+
+  alias ObserverWeb.Telemetry.Consumer
+
+  @type t :: %__MODULE__{
+          module: atom(),
+          event: list()
+        }
+
+  defstruct module: nil,
+            event: []
+
+  @cache_key {__MODULE__, :phx_endpoints}
+
   ### ==========================================================================
   ### Public functions
   ### ==========================================================================
 
   def process_phoenix_liveview_sockets do
-    cached_endpoints = Process.get(:endpoints, nil)
+    cached_phx_endpoints = Process.get(@cache_key, [])
 
-    endpoints =
-      if is_nil(cached_endpoints) do
-        endpoints = fetch_endpoints()
+    # Check if the cache is populated, if not, verify if there is any
+    # Endpoint available
+    phx_endpoints =
+      if cached_phx_endpoints == [] do
+        case fetch_endpoints() do
+          [] ->
+            []
 
-        if endpoints != [] do
-          Process.put(:endpoints, endpoints)
+          endpoints ->
+            phx_endpoints = Enum.map(endpoints, &process_endpoint/1)
+
+            Process.put(@cache_key, phx_endpoints)
+
+            phx_endpoints
         end
-
-        endpoints
       else
-        cached_endpoints
+        cached_phx_endpoints
       end
 
-    Enum.each(endpoints, fn
-      endpoint ->
-        endpoint
+    Enum.each(phx_endpoints, fn
+      %__MODULE__{module: module, event: event} ->
+        module
         |> :supervisor.which_children()
         |> Enum.each(fn
           {Phoenix.LiveView.Socket, lv_socket_pid, :supervisor, _data} ->
@@ -33,10 +53,10 @@ defmodule ObserverWeb.Telemetry.Producer.PhxLvSocket do
             sockets = fetch_sockets(supervisors)
 
             :telemetry.execute(
-              [:phoenix, :liveview, :socket],
+              event,
               %{
-                supervisors: supervisors |> length(),
                 total: sockets |> length(),
+                supervisors: supervisors |> length(),
                 connected: sockets_connected(sockets)
               },
               %{}
@@ -51,6 +71,27 @@ defmodule ObserverWeb.Telemetry.Producer.PhxLvSocket do
   ### ==========================================================================
   ### Private functions
   ### ==========================================================================
+  defp process_endpoint(endpoint) do
+    [name] =
+      endpoint
+      |> to_string()
+      |> String.split(["Elixir.", ".Endpoint"], trim: true)
+
+    name = name |> String.downcase() |> String.to_atom()
+
+    event = [:phoenix, :liveview, :socket, name]
+    metric = (event ++ [:total]) |> Enum.join(".") |> summary()
+
+    :telemetry.attach(
+      {__MODULE__, event, self()},
+      event,
+      &Consumer.handle_event/4,
+      {[metric], nil, Node.self()}
+    )
+
+    %__MODULE__{module: endpoint, event: event}
+  end
+
   defp sockets_connected(sockets) do
     sockets
     |> Enum.reduce(0, fn socket, acc ->
@@ -77,9 +118,9 @@ defmodule ObserverWeb.Telemetry.Producer.PhxLvSocket do
     end)
   end
 
-  defp fetch_endpoints do
+  def fetch_endpoints do
     filter_supervisor_endpoints = fn
-      {name, _pid, :supervisor, [_name]}, acc ->
+      {_index, _pid, :supervisor, [name]}, acc when is_atom(name) ->
         if String.contains?(name |> to_string, ".Endpoint") do
           acc ++ [name]
         else

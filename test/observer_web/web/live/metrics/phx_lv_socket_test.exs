@@ -111,10 +111,10 @@ defmodule Observer.Web.Metrics.PhxLvSocketTest do
     refute html =~ "metrics:#{metric}"
   end
 
-  test "Init and Push phoenix.liveview.socket.totall data", %{conn: conn} do
+  test "Init and Push phoenix.liveview.socket.observer.web.total data", %{conn: conn} do
     node = Node.self() |> to_string
     service_id = String.replace(node, "@", "-")
-    metric = "phoenix.liveview.socket.total"
+    metric = "phoenix.liveview.socket.observer.web.total"
     metric_id = String.replace(metric, ".", "-")
 
     test_pid_process = self()
