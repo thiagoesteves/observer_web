@@ -61,8 +61,6 @@ defmodule Observer.Web.Telemetry do
         tags: [:event],
         unit: {:native, :millisecond}
       ),
-      # Liveview Socket Metrics
-      summary("phoenix.liveview.socket.total"),
 
       # VM Metrics
       summary("vm.memory.total", unit: {:byte, :kilobyte}),
