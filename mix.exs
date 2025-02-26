@@ -9,7 +9,7 @@ defmodule ObserverWeb.MixProject do
       app: :observer_web,
       version: @version,
       name: "Observer Web",
-      description: "Dashboard for Observer applications using OTP distribution",
+      description: "Observer Web Dashboard for OTP management and performance metrics",
       docs: docs(),
       extra_section: "GUIDES",
       extras: extras(),
@@ -106,7 +106,7 @@ defmodule ObserverWeb.MixProject do
       {:tailwind, "~> 0.2", only: :dev, runtime: false},
 
       # Telemetry
-      {:telemetry_metrics, "~> 1.0", override: true},
+      {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
 
       # Tooling

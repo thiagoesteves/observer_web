@@ -1,6 +1,6 @@
 # CHANGELOG (v0.1.5)
 
-## 0.1.5 ()
+## 0.1.5 (2025-02-26)
 
 ### Backwards incompatible changes for 0.1.4
  * None
@@ -10,6 +10,7 @@
 
 ### Enhancements
  * [[`PR-8`](https://github.com/thiagoesteves/observer_web/pull/8)] Adding Metrics using telemetry
+ * [[`PR-9`](https://github.com/thiagoesteves/observer_web/pull/9)] Add support to multiple Endpoints
 
 # Previous Releases
  * [0.1.4 🚀 (2025-02-11)](https://github.com/thiagoesteves/observer_web/blob/v0.1.4/CHANGELOG.md)
