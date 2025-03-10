@@ -71,6 +71,74 @@ config :observer_web, ObserverWeb.Telemetry,
   data_retention_period: :timer.minutes(5)
 ```
 
+### Embedding Observer Web in your app page
+
+In some cases, you may prefer to run the Observer in the same page as your app rather than in 
+a separate page. This embedded approach is possible by setting the iframe flag. To implement 
+this, your router must add a root path. Here's an example for your application's `router.ex`:
+
+```elixir
+# lib/my_app_web/router.ex
+use MyAppWeb, :router
+
+import Observer.Web.Router
+
+...
+
+scope "/" do
+  pipe_through :browser
+
+  live_session :require_authenticated_user,
+    on_mount: [{MyAppWeb.UserAuth, :ensure_authenticated}] do
+    ...
+    live "/observer", ObserverLive, :index
+    ...
+  end
+  
+  observer_dashboard "/observer"
+end
+```
+
+Next, create an ObserverLive file at `live/observer/index.ex`:
+
+```elixir
+defmodule MyAppWeb.ObserverLive do
+  @moduledoc """
+  """
+  use MyAppWeb, :live_view
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div>
+      <iframe src={~p"/observer/tracing?iframe=true"} class="min-h-screen" width="100%" height="100%" title="Observer Web">
+      </iframe>
+    </div>
+    """
+  end
+
+  @impl true
+  def mount(_params, _session, socket) do
+    {:ok, socket}
+  end
+
+  @impl true
+  def handle_params(params, _url, socket) do
+    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  end
+
+  defp apply_action(socket, :index, _params) do
+    socket
+    |> assign(:page_title, "Observer Web")
+  end
+end
+```
+
+You can still access the Observer as a separate page by navigating directly to the 
+path `/observer"`. However, using the iframe approach allows you to display 
+your application's information alongside the Observer in your main page, 
+providing a more integrated monitoring experience.
+
 ### Usage with Web and Clustering
 
 The Observer Web provides observer ability for the local application as well as any other that is

@@ -4,10 +4,10 @@
 <main class="p-4 min-h-screen flex flex-col">
   <header class="flex items-center mb-2">
     <div class="md:w-84 mr-3">
-      <.logo />
+      <.logo params={@params} />
     </div>
 
-    <.nav socket={@socket} page={@page.name} />
+    <.nav socket={@socket} page={@page.name} params={@params} />
   </header>
   {@inner_content}
   <.footer />

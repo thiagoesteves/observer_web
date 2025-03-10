@@ -29,7 +29,7 @@ defmodule Observer.Web.Layouts do
 
   def logo(assigns) do
     ~H"""
-    <a href={observer_path(:tracing)} class="flex" title="Observer Web">
+    <a href={observer_path(:tracing, @params)} class="flex" title="Observer Web">
       <div>
         <Icons.content name={:logo} />
       </div>
@@ -49,11 +49,11 @@ defmodule Observer.Web.Layouts do
     ~H"""
     <nav class="flex space-x-1">
       <.link
-        :for={page <- [:root, :tracing, :applications, :metrics]}
+        :for={page <- list_pages_by_params(@params)}
         class={link_class(@page, page)}
-        data-shortcut={JS.navigate(observer_path(page))}
+        data-shortcut={JS.navigate(observer_path(page, @params))}
         id={"nav-#{page}"}
-        navigate={observer_path(page)}
+        navigate={observer_path(page, @params)}
         title={"Navigate to #{String.capitalize(to_string(page))}"}
       >
         <Icons.content name={page} />
@@ -107,4 +107,7 @@ defmodule Observer.Web.Layouts do
       base <> " hover:text-white hover:bg-indigo-500"
     end
   end
+
+  defp list_pages_by_params(%{"iframe" => "true"}), do: [:tracing, :applications, :metrics]
+  defp list_pages_by_params(_params), do: [:root, :tracing, :applications, :metrics]
 end

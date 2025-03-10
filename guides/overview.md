@@ -15,7 +15,7 @@ library is part of the [DeployEx][dye] project.
 ## Features
 
 - **🐦‍🔥 Embedded LiveView** - Mount the dashboard directly in your application without any
-  external dependencies.
+external dependencies.
 
 - **🔍 Real Time Tracing** - Trace any function within your application, capturing parameters passed
 and also function callers, as many other possibilities.
@@ -23,8 +23,11 @@ and also function callers, as many other possibilities.
 - **🔬 Process/Port Inspection** - View processes and ports details as well as their status and 
 connectivity (and much more).
 
-- **📊 Realtime VM Metrics** - - **📊 Realtime VM Metrics** - Powered by ets table and OTP 
+- **📊 Realtime VM Metrics** - Powered by ets table and OTP 
 distribution, vm memory statistics are stored and easily filtered.
+
+- **🖼️ Embedded Mode** - Observer Web can be run using iframes, seamlessly integrating the 
+observability experience within your application.
 
 ## Installation
 
