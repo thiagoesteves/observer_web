@@ -58,6 +58,11 @@ defmodule Observer.Web.Helpers do
     |> observer_path(params)
   end
 
+  # NOTE: Filter page to avoid conflicts with the route path
+  def observer_path(route, %{"page" => _name} = params) do
+    observer_path(route, Map.delete(params, "page"))
+  end
+
   def observer_path(route, params) do
     params =
       params
