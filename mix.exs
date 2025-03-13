@@ -87,6 +87,15 @@ defmodule ObserverWeb.MixProject do
     ]
   end
 
+  defp copy_ex_doc(_) do
+    static_destination_path = "./doc/static"
+    File.mkdir_p!(static_destination_path)
+
+    File.cp_r("./guides/static", static_destination_path, fn _source, _destination ->
+      true
+    end)
+  end
+
   # Specifies your project dependencies.
   #
   # Type `mix help deps` for examples and options.
@@ -133,6 +142,7 @@ defmodule ObserverWeb.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
+      docs: ["docs", &copy_ex_doc/1],
       "assets.build": ["tailwind default", "esbuild default"],
       release: [
         "assets.build",
