@@ -54,23 +54,6 @@ After you've verified that the dashboard is loading you'll probably want to rest
 dashboard via authentication, either with a [custom resolver's][ac] access controls or [Basic
 Auth][ba].
 
-### Retention period for metrics
-
-The Observer Web can monitor Beam VM metrics by default, using ETS tables to store the data.
-However, this means that the data is not persisted across restarts. The retention period
-for this data can be configured.
-
-By default, without a retention time set, the metrics will only show data received during the
-current session. If you'd like to persist this data for a longer period, you can configure
-a retention time.
-
-To configure the retention period, use the following optional setting:
-
-```elixir
-config :observer_web, ObserverWeb.Telemetry,
-  data_retention_period: :timer.minutes(5)
-```
-
 ### Embedding Observer Web in your app page
 
 In some cases, you may prefer to run the Observer in the same page as your app rather than in 
@@ -139,6 +122,81 @@ path `/observer"`. However, using the iframe approach allows you to display
 your application's information alongside the Observer in your main page, 
 providing a more integrated monitoring experience.
 
+### Metrics
+
+#### Retention period for metrics
+
+Observer Web can monitor Beam VM metrics (along with many others) and uses ETS 
+tables to store the data and there is a possibility of configuration for the retention
+period while the application is running.
+
+By default, without a retention time set, the metrics will only show data received during the
+current session. If you'd like to persist this data for a longer period, you can configure
+a retention time.
+
+To configure the retention period, use the following optional setting:
+
+```elixir
+config :observer_web, ObserverWeb.Telemetry,
+  data_retention_period: :timer.minutes(30)
+```
+
+> #### Persistence Across Restarts {: .attention}
+>
+> Please note that data is not persisted across application restarts. For persistent
+> storage, refer to the Configuration section to set up a Central Hub application,
+> which can aggregate and retain metrics.
+
+#### Configuration
+
+Observer Web can operate in two distinct metrics configurations: `Standalone` and `Metric Hub`.
+These configurations determine how metrics are collected, stored, and managed.
+
+#### Standalone Configuration (default)
+
+In this mode, all applications with Observer Web installed operate independently. Each
+application receives and stores its own metrics within its ETS tables. The image below
+illustrates this configuration:
+
+![Standalone Mode](./static/standalone.png)
+
+__**NOTE: No additional configuration is required for this mode**__
+
+#### Metric Hub Configuration
+
+In this mode, one application is designated as the central hub to store all metrics,
+while the remaining applications broadcast their data to this designated hub. This
+configuration is ideal for scenarios where you have a dedicated application for monitoring
+or deployment, such as [DeployEx][dye]. Additionally, this setup ensures that metrics
+are retained even if any of the monitored applications restart.
+
+![Metric Hub Mode](./static/metric_hub.png)
+
+To configure applications to broadcast their metrics, use the following setting:
+
+```elixir
+config :observer_web, ObserverWeb.Telemetry,
+  mode: :broadcast
+```
+
+> #### Disable Endpoint for Broadcast applications {: .attention}
+>
+> In this mode, since there is a centralized application dedicated to capturing metrics,
+> we recommend disabling the `/observer` endpoint on all applications configured in 
+> **broadcast** mode. Only the **central observer (hub)** should expose the `/observer` endpoint
+> to avoid redundancy and ensure efficient metric collection.
+
+To designate an application as the **central observer (hub)**, use the following setting:
+
+```elixir
+config :observer_web, ObserverWeb.Telemetry,
+  mode: :observer,
+  data_retention_period: :timer.minutes(30)
+```
+
+The application in `observer mode` will also retain its own metrics in addition to 
+aggregating metrics from other applications.
+
 ### Usage with Web and Clustering
 
 The Observer Web provides observer ability for the local application as well as any other that is
@@ -158,3 +216,4 @@ via OTP distribution!
 [ac]: Observer.Web.Resolver.html#c:resolve_access/1
 [ba]: https://hexdocs.pm/basic_auth/readme.html
 [oi]: installation.html
+[dye]: https://github.com/thiagoesteves/deployex
