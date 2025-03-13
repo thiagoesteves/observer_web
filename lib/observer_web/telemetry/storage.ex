@@ -11,7 +11,6 @@ defmodule ObserverWeb.Telemetry.Storage do
   @behaviour ObserverWeb.Telemetry.Adapter
 
   @metric_keys "metric-keys"
-  @metric_table :observer_web_metrics
 
   @one_minute_in_milliseconds 60_000
   @retention_data_delete_interval :timer.minutes(1)
@@ -28,10 +27,11 @@ defmodule ObserverWeb.Telemetry.Storage do
   @impl true
   def init(_args) do
     node = Node.self()
+    metric_table = metric_table(node)
 
     # Create metric tables for the node
-    :ets.new(@metric_table, [:set, :protected, :named_table])
-    :ets.insert(@metric_table, {@metric_keys, []})
+    :ets.new(metric_table, [:set, :protected, :named_table])
+    :ets.insert(metric_table, {@metric_keys, []})
 
     persist_data? =
       if data_retention_period() do
@@ -41,14 +41,14 @@ defmodule ObserverWeb.Telemetry.Storage do
         false
       end
 
-    {:ok, %{node: node, persist_data?: persist_data?}}
+    {:ok, %{node: node, persist_data?: persist_data?, metric_table: metric_table}}
   end
 
   @impl true
   def handle_cast(
         {:observer_web_telemetry,
          %{metrics: metrics, reporter: reporter, measurements: measurements}},
-        %{node: node, persist_data?: persist_data?} = state
+        %{node: node, persist_data?: persist_data?, metric_table: metric_table} = state
       )
       when reporter in [node] do
     now = System.os_time(:millisecond)
@@ -63,12 +63,12 @@ defmodule ObserverWeb.Telemetry.Storage do
         # credo:disable-for-lines:3
         if persist_data? do
           current_data =
-            case :ets.lookup(@metric_table, timed_key) do
+            case :ets.lookup(metric_table, timed_key) do
               [{_, current_list_data}] -> [data | current_list_data]
               _ -> [data]
             end
 
-          :ets.insert(@metric_table, {timed_key, current_data})
+          :ets.insert(metric_table, {timed_key, current_data})
         end
 
         Phoenix.PubSub.broadcast(
@@ -85,7 +85,7 @@ defmodule ObserverWeb.Telemetry.Storage do
       end)
 
     if new_keys != [] do
-      :ets.insert(@metric_table, {@metric_keys, new_keys ++ keys})
+      :ets.insert(metric_table, {@metric_keys, new_keys ++ keys})
 
       Phoenix.PubSub.broadcast(
         ObserverWeb.PubSub,
@@ -106,7 +106,7 @@ defmodule ObserverWeb.Telemetry.Storage do
 
     prune_keys = fn key ->
       Enum.each(deletion_period_from..deletion_period_to, fn timestamp ->
-        :ets.delete(@metric_table, metric_key(key, timestamp))
+        :ets.delete(state.metric_table, metric_key(key, timestamp))
       end)
     end
 
@@ -162,7 +162,7 @@ defmodule ObserverWeb.Telemetry.Storage do
                node,
                :ets,
                :lookup,
-               [@metric_table, metric_key(key, minute)],
+               [metric_table(node), metric_key(key, minute)],
                :infinity
              ) do
           [{_, value}] ->
@@ -180,7 +180,7 @@ defmodule ObserverWeb.Telemetry.Storage do
   def get_keys_by_node(nil), do: []
 
   def get_keys_by_node(node) do
-    case Rpc.call(node, :ets, :lookup, [@metric_table, @metric_keys], :infinity) do
+    case Rpc.call(node, :ets, :lookup, [metric_table(node), @metric_keys], :infinity) do
       [{_, value}] ->
         value
 
@@ -200,6 +200,8 @@ defmodule ObserverWeb.Telemetry.Storage do
   else
     defp data_retention_period, do: :timer.minutes(1)
   end
+
+  defp metric_table(node), do: String.to_atom("#{node}::observer-web-metrics")
 
   defp metric_key(metric, timestamp), do: "#{metric}|#{timestamp}"
 
