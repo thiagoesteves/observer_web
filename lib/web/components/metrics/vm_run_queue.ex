@@ -51,6 +51,7 @@ defmodule Observer.Web.Components.Metrics.VmRunQueue do
     """
   end
 
+  # NOTE: Streams are retrieved in the reverse order
   defp normalize(metrics) do
     {series_data, categories_data} =
       Enum.reduce(metrics, {[], []}, fn metric, {series_data, categories_data} ->
@@ -60,7 +61,7 @@ defmodule Observer.Web.Components.Metrics.VmRunQueue do
           |> DateTime.from_unix!(:millisecond)
           |> DateTime.to_string()
 
-        {series_data ++ [metric.value], categories_data ++ [timestamp]}
+        {[metric.value] ++ series_data, [timestamp] ++ categories_data}
       end)
 
     datasets =

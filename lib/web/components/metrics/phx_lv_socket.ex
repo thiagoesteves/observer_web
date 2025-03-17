@@ -47,6 +47,7 @@ defmodule Observer.Web.Components.Metrics.PhxLvSocket do
     """
   end
 
+  # NOTE: Streams are retrieved in the reverse order
   defp normalize(metrics) do
     empty_series_data = %{
       total: [],
@@ -63,10 +64,10 @@ defmodule Observer.Web.Components.Metrics.PhxLvSocket do
           |> DateTime.to_string()
 
         {%{
-           total: series_data.total ++ [metric.measurements.total],
-           supervisors: series_data.supervisors ++ [metric.measurements.supervisors],
-           connected: series_data.connected ++ [metric.measurements.connected]
-         }, categories_data ++ [timestamp]}
+           total: [metric.measurements.total] ++ series_data.total,
+           supervisors: [metric.measurements.supervisors] ++ series_data.supervisors,
+           connected: [metric.measurements.connected] ++ series_data.connected
+         }, [timestamp] ++ categories_data}
       end)
 
     datasets =

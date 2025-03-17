@@ -6,7 +6,7 @@
  * None
 
 ### Bug fixes
- * None
+ * [[`PR-12`](https://github.com/thiagoesteves/observer_web/pull/12)] Fixing bug fix reporting that graphics were displaying information in the reverse order
 
 ### Enhancements
  * [[`PR-10`](https://github.com/thiagoesteves/observer_web/pull/10)] Adding iframe configuration to allow Observer Web to run with embedded pages
