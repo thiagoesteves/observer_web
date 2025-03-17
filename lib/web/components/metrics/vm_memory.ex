@@ -57,6 +57,7 @@ defmodule Observer.Web.Components.Metrics.VmMemory do
       total: []
     }
 
+    # NOTE: Streams are retrieved in the reverse order
     {series_data, categories_data} =
       Enum.reduce(metrics, {empty_series_data, []}, fn metric, {series_data, categories_data} ->
         timestamp =
@@ -66,16 +67,16 @@ defmodule Observer.Web.Components.Metrics.VmMemory do
           |> DateTime.to_string()
 
         {%{
-           atom: series_data.atom ++ [metric.measurements.atom],
-           atom_used: series_data.atom_used ++ [metric.measurements.atom_used],
-           binary: series_data.binary ++ [metric.measurements.binary],
-           code: series_data.code ++ [metric.measurements.code],
-           ets: series_data.ets ++ [metric.measurements.ets],
-           processes: series_data.processes ++ [metric.measurements.processes],
-           processes_used: series_data.processes_used ++ [metric.measurements.processes_used],
-           system: series_data.system ++ [metric.measurements.system],
-           total: series_data.total ++ [metric.measurements.total]
-         }, categories_data ++ [timestamp]}
+           atom: [metric.measurements.atom] ++ series_data.atom,
+           atom_used: [metric.measurements.atom_used] ++ series_data.atom_used,
+           binary: [metric.measurements.binary] ++ series_data.binary,
+           code: [metric.measurements.code] ++ series_data.code,
+           ets: [metric.measurements.ets] ++ series_data.ets,
+           processes: [metric.measurements.processes] ++ series_data.processes,
+           processes_used: [metric.measurements.processes_used] ++ series_data.processes_used,
+           system: [metric.measurements.system] ++ series_data.system,
+           total: [metric.measurements.total] ++ series_data.total
+         }, [timestamp] ++ categories_data}
       end)
 
     datasets =
