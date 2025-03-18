@@ -77,7 +77,6 @@ defmodule Observer.Web.Metrics.Page do
           ]}
           show_options={@show_metric_options}
         />
-
         <div class="p-2">
           <div class="grid grid-cols-4 w-3xl gap-2 items-center ">
             <%= for service <- @node_info.selected_services_keys do %>
@@ -85,6 +84,7 @@ defmodule Observer.Web.Metrics.Page do
                 <% app = Enum.find(@node_info.node, &(&1.service == service)) %>
                 <%= if  metric in app.metrics_keys do %>
                   <% data_key = data_key(service, metric) %>
+
                   <VmMemory.content
                     title={"#{metric} [#{app.name}]"}
                     service={service}

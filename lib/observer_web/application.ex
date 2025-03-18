@@ -10,12 +10,11 @@ defmodule ObserverWeb.Application do
   @impl true
   def start(_type, _args) do
     children =
-      telemetry_servers() ++
-        [
-          Observer.Web.Telemetry,
-          {Phoenix.PubSub, [name: ObserverWeb.PubSub]},
-          ObserverWeb.Tracer.Server
-        ]
+      [
+        Observer.Web.Telemetry,
+        ObserverWeb.Tracer.Server,
+        {Phoenix.PubSub, [name: ObserverWeb.PubSub]}
+      ] ++ telemetry_servers()
 
     # # See https://hexdocs.pm/elixir/Supervisor.html
     # # for other strategies and supported options

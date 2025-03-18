@@ -11,15 +11,15 @@ defmodule ObserverWeb.Telemetry do
     """
     @type t :: %__MODULE__{
             timestamp: non_neg_integer(),
-            value: integer() | float(),
-            unit: String.t(),
+            value: nil | integer() | float(),
+            unit: nil | String.t(),
             tags: map(),
             measurements: map()
           }
 
     defstruct timestamp: nil,
-              value: "",
-              unit: "",
+              value: nil,
+              unit: nil,
               tags: %{},
               measurements: %{}
   end
