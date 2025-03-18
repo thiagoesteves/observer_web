@@ -9,4 +9,5 @@ defmodule ObserverWeb.Telemetry.Adapter do
   @callback unsubscribe_for_new_data(String.t(), String.t()) :: :ok
   @callback list_data_by_node_key(atom() | String.t(), String.t(), Keyword.t()) :: list()
   @callback get_keys_by_node(atom()) :: list()
+  @callback list_active_nodes() :: list()
 end

@@ -395,13 +395,12 @@ defmodule Observer.Web.Metrics.Page do
         selected_metrics_keys: selected_metrics_keys
     }
 
-    ([Node.self()] ++ Node.list())
-    |> Enum.reduce(initial_map, fn target_node,
-                                   %{
-                                     services_keys: services_keys,
-                                     metrics_keys: metrics_keys,
-                                     node: node
-                                   } = acc ->
+    Enum.reduce(Telemetry.list_active_nodes(), initial_map, fn target_node,
+                                                               %{
+                                                                 services_keys: services_keys,
+                                                                 metrics_keys: metrics_keys,
+                                                                 node: node
+                                                               } = acc ->
       node_metrics_keys = Telemetry.get_keys_by_node(target_node)
       service = target_node |> to_string
       [name, _hostname] = String.split(service, "@")

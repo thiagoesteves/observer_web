@@ -3,24 +3,22 @@ defmodule Observer.Web.IndexLiveTest do
 
   import Mox
 
+  alias Observer.Web.Mocks.RpcStubber
+  alias Observer.Web.Mocks.TelemetryStubber
+
   setup :verify_on_exit!
 
   test "forbidding mount using a resolver callback", %{conn: conn} do
-    ObserverWeb.TelemetryMock
-    |> stub(:push_data, fn _event -> :ok end)
+    TelemetryStubber.defaults()
 
     assert {:error, {:redirect, redirect}} = live(conn, "/observer-limited")
     assert %{to: "/", flash: %{"error" => "Access forbidden"}} = redirect
   end
 
   test "Check iframe OFF allows root buttom", %{conn: conn} do
-    ObserverWeb.RpcMock
-    |> stub(:call, fn node, module, function, args, timeout ->
-      :rpc.call(node, module, function, args, timeout)
-    end)
+    RpcStubber.defaults()
 
-    ObserverWeb.TelemetryMock
-    |> stub(:push_data, fn _event -> :ok end)
+    TelemetryStubber.defaults()
 
     {:ok, _index_live, html} = live(conn, "/observer/tracing")
 
@@ -29,13 +27,9 @@ defmodule Observer.Web.IndexLiveTest do
   end
 
   test "Check iframe ON doesn't allow root buttom", %{conn: conn} do
-    ObserverWeb.RpcMock
-    |> stub(:call, fn node, module, function, args, timeout ->
-      :rpc.call(node, module, function, args, timeout)
-    end)
+    RpcStubber.defaults()
 
-    ObserverWeb.TelemetryMock
-    |> stub(:push_data, fn _event -> :ok end)
+    TelemetryStubber.defaults()
 
     {:ok, _index_live, html} = live(conn, "/observer/tracing?iframe=true")
 

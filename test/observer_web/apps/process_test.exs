@@ -3,13 +3,13 @@ defmodule ObserverWeb.Apps.ProcessTest do
 
   import Mox
 
+  alias Observer.Web.Mocks.RpcStubber
   alias ObserverWeb.Apps.Process, as: AppsPort
 
   setup :verify_on_exit!
 
   test "info/1" do
-    ObserverWeb.RpcMock
-    |> stub(:pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
+    RpcStubber.defaults()
 
     kernel_pid = :application_controller.get_master(:kernel)
 

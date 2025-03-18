@@ -67,6 +67,12 @@ defmodule ObserverWeb.Telemetry do
   @spec get_keys_by_node(atom()) :: list()
   def get_keys_by_node(node), do: default().get_keys_by_node(node)
 
+  @doc """
+  List all available nodes considering the current metric configured mode
+  """
+  @spec list_active_nodes() :: list()
+  def list_active_nodes, do: default().list_active_nodes()
+
   ### ==========================================================================
   ### Private functions
   ### ==========================================================================

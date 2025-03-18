@@ -4,6 +4,7 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
   import Phoenix.LiveViewTest
   import Mox
 
+  alias Observer.Web.Mocks.TelemetryStubber
   alias ObserverWeb.TelemetryFixtures
 
   setup [
@@ -18,13 +19,12 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
     metric_id = String.replace(metric, ".", "-")
     telemetry_data = TelemetryFixtures.build_telemetry_data_vm_total_memory()
 
-    ObserverWeb.TelemetryMock
+    TelemetryStubber.defaults()
     |> expect(:subscribe_for_new_keys, fn -> :ok end)
     |> expect(:subscribe_for_new_data, fn ^node, ^metric -> :ok end)
     |> expect(:unsubscribe_for_new_data, fn ^node, ^metric -> :ok end)
     |> expect(:list_data_by_node_key, fn ^node, ^metric, _ -> [telemetry_data] end)
     |> stub(:get_keys_by_node, fn _node -> [metric] end)
-    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, liveview, _html} = live(conn, "/observer/metrics")
 
@@ -68,13 +68,12 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
     metric_id = String.replace(metric, ".", "-")
     telemetry_data = TelemetryFixtures.build_telemetry_data_vm_total_memory()
 
-    ObserverWeb.TelemetryMock
+    TelemetryStubber.defaults()
     |> expect(:subscribe_for_new_keys, fn -> :ok end)
     |> expect(:subscribe_for_new_data, fn ^node, ^metric -> :ok end)
     |> expect(:unsubscribe_for_new_data, fn ^node, ^metric -> :ok end)
     |> expect(:list_data_by_node_key, fn ^node, ^metric, _ -> [telemetry_data] end)
     |> stub(:get_keys_by_node, fn _ -> [metric] end)
-    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, liveview, _html} = live(conn, "/observer/metrics")
 
@@ -119,7 +118,7 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
 
     test_pid_process = self()
 
-    ObserverWeb.TelemetryMock
+    TelemetryStubber.defaults()
     |> expect(:subscribe_for_new_keys, fn -> :ok end)
     |> expect(:subscribe_for_new_data, fn ^node, ^metric ->
       send(test_pid_process, {:liveview_pid, self()})
@@ -131,7 +130,6 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
       ]
     end)
     |> stub(:get_keys_by_node, fn _ -> [metric] end)
-    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, liveview, _html} = live(conn, "/observer/metrics")
 

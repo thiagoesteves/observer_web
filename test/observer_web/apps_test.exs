@@ -2,26 +2,20 @@ defmodule ObserverWeb.AppsTest do
   use ExUnit.Case, async: true
 
   import Mox
-
   alias ObserverWeb.Apps
+
+  alias Observer.Web.Mocks.RpcStubber
 
   setup :verify_on_exit!
 
   test "list/0" do
-    ObserverWeb.RpcMock
-    |> stub(:call, fn node, module, function, args, timeout ->
-      :rpc.call(node, module, function, args, timeout)
-    end)
+    RpcStubber.defaults()
 
     assert Enum.find(Apps.list(), &(&1.name == :kernel))
   end
 
   test "info/0" do
-    ObserverWeb.RpcMock
-    |> stub(:call, fn node, module, function, args, timeout ->
-      :rpc.call(node, module, function, args, timeout)
-    end)
-    |> stub(:pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
+    RpcStubber.defaults()
 
     assert %Apps{id: _, name: _, children: _, symbol: _, lineStyle: _, itemStyle: _} =
              Apps.info()

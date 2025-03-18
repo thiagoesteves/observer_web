@@ -3,15 +3,13 @@ defmodule ObserverWeb.Apps.PortTest do
 
   import Mox
 
+  alias Observer.Web.Mocks.RpcStubber
   alias ObserverWeb.Apps.Port, as: AppsPort
 
   setup :verify_on_exit!
 
   test "info/2" do
-    ObserverWeb.RpcMock
-    |> stub(:call, fn node, module, function, args, timeout ->
-      :rpc.call(node, module, function, args, timeout)
-    end)
+    RpcStubber.defaults()
 
     invalid_port =
       "#Port<0.1000>"

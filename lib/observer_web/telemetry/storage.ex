@@ -335,6 +335,20 @@ defmodule ObserverWeb.Telemetry.Storage do
     end
   end
 
+  @impl true
+  def list_active_nodes do
+    case mode() do
+      :broadcast ->
+        []
+
+      :local ->
+        [Node.self()] ++ Node.list()
+
+      :observer ->
+        [Node.self()] ++ Node.list()
+    end
+  end
+
   ### ==========================================================================
   ### Private functions
   ### ==========================================================================

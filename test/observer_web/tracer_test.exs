@@ -3,26 +3,21 @@ defmodule ObserverWeb.TracerTest do
 
   import Mox
 
+  alias Observer.Web.Mocks.RpcStubber
   alias ObserverWeb.Tracer
   alias ObserverWeb.TracerFixtures
 
   setup :verify_on_exit!
 
   test "get_modules/1" do
-    ObserverWeb.RpcMock
-    |> stub(:call, fn node, module, function, args, timeout ->
-      :rpc.call(node, module, function, args, timeout)
-    end)
+    RpcStubber.defaults()
 
     assert list = Tracer.get_modules(Node.self())
     assert Enum.member?(list, :kernel)
   end
 
   test "get_module_functions_info/2" do
-    ObserverWeb.RpcMock
-    |> stub(:call, fn node, module, function, args, timeout ->
-      :rpc.call(node, module, function, args, timeout)
-    end)
+    RpcStubber.defaults()
 
     assert %{
              functions: %{"config_change/3" => %{arity: 3, name: :config_change}},
