@@ -73,6 +73,12 @@ defmodule ObserverWeb.Telemetry do
   @spec list_active_nodes() :: list()
   def list_active_nodes, do: default().list_active_nodes()
 
+  @doc """
+  Retrieve the current configured mode
+  """
+  @spec mode() :: :local | :broadcast | :observer
+  def mode, do: default().mode()
+
   ### ==========================================================================
   ### Private functions
   ### ==========================================================================

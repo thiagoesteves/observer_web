@@ -12,7 +12,9 @@ defmodule ObserverWeb.Telemetry.Storage do
 
   @behaviour ObserverWeb.Telemetry.Adapter
 
+  @node_registry_table :node_registry_table
   @metric_keys "metric-keys"
+  @registry_key "registry-nodes"
 
   @one_minute_in_milliseconds 60_000
   @retention_data_delete_interval :timer.minutes(1)
@@ -56,6 +58,9 @@ defmodule ObserverWeb.Telemetry.Storage do
 
     case mode do
       :local ->
+        # Create registry node table to store all nodes that are clustered
+        :ets.new(@node_registry_table, [:set, :protected, :named_table])
+
         {:ok,
          %__MODULE__{
            nodes: [node_self],
@@ -73,6 +78,9 @@ defmodule ObserverWeb.Telemetry.Storage do
 
         # Subscribe to receive notifications if any node is UP or Down
         :net_kernel.monitor_nodes(true)
+
+        # Create registry node table to store all nodes that are clustered
+        :ets.new(@node_registry_table, [:set, :protected, :named_table])
 
         {:ok,
          %{
@@ -187,16 +195,7 @@ defmodule ObserverWeb.Telemetry.Storage do
         Enum.reduce(metrics, [], fn metric, acc ->
           {key, timed_key, data} = build_telemetry_data(metric, measurements, now, minute)
 
-          # credo:disable-for-lines:3
-          if persist_data? do
-            current_data =
-              case :ets.lookup(metric_table, timed_key) do
-                [{_, current_list_data}] -> [data | current_list_data]
-                _ -> [data]
-              end
-
-            :ets.insert(metric_table, {timed_key, current_data})
-          end
+          if persist_data?, do: ets_append_to_list(metric_table, timed_key, data)
 
           Phoenix.PubSub.broadcast(
             ObserverWeb.PubSub,
@@ -204,6 +203,7 @@ defmodule ObserverWeb.Telemetry.Storage do
             {:metrics_new_data, reporter, key, data}
           )
 
+          # credo:disable-for-lines:3
           if key in keys do
             acc
           else
@@ -236,7 +236,6 @@ defmodule ObserverWeb.Telemetry.Storage do
 
     case mode() do
       :broadcast ->
-        IO.puts("broadcast")
         Phoenix.PubSub.broadcast(ObserverWeb.PubSub, broadcast_topic(), msg)
 
       mode when mode == :local or mode == :observer ->
@@ -345,9 +344,18 @@ defmodule ObserverWeb.Telemetry.Storage do
         [Node.self()] ++ Node.list()
 
       :observer ->
-        [Node.self()] ++ Node.list()
+        case :ets.lookup(@node_registry_table, @registry_key) do
+          [{_, nodes}] ->
+            nodes
+
+          _ ->
+            []
+        end
     end
   end
+
+  @impl true
+  def mode, do: Application.get_env(:observer_web, ObserverWeb.Telemetry)[:mode] || :local
 
   ### ==========================================================================
   ### Private functions
@@ -358,8 +366,6 @@ defmodule ObserverWeb.Telemetry.Storage do
   else
     defp data_retention_period, do: :timer.minutes(1)
   end
-
-  defp mode, do: Application.get_env(:observer_web, ObserverWeb.Telemetry)[:mode] || :local
 
   defp metric_table(node), do: String.to_atom("#{node}::observer-web-metrics")
 
@@ -375,6 +381,20 @@ defmodule ObserverWeb.Telemetry.Storage do
     end
   end
 
+  defp ets_append_to_list(table, key, new_item) do
+    case :ets.lookup(table, key) do
+      [{^key, current_list_data}] ->
+        updated_list = [new_item | current_list_data]
+        :ets.insert(table, {key, updated_list})
+        updated_list
+
+      [] ->
+        # Key doesn't exist yet, create new list with just this item
+        :ets.insert(table, {key, [new_item]})
+        [new_item]
+    end
+  end
+
   # NOTE: PubSub topics
   defp keys_topic, do: "metrics::keys"
   defp metrics_topic(node, key), do: "metrics::#{node}::#{key}"
@@ -383,8 +403,13 @@ defmodule ObserverWeb.Telemetry.Storage do
   defp create_update_metric_table(node, current_map) do
     table = metric_table(node)
 
+    # Create Metric table
     :ets.new(table, [:set, :protected, :named_table])
     :ets.insert(table, {@metric_keys, []})
+
+    # Add node the to registry
+    ets_append_to_list(@node_registry_table, @registry_key, node)
+
     Map.put(current_map, node, table)
   end
 
