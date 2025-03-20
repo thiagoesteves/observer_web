@@ -33,8 +33,7 @@ if config_env() == :dev do
 
   config :observer_web, ObserverWeb.Telemetry,
     adapter: ObserverWeb.Telemetry.Storage,
-    data_retention_period: :timer.minutes(5),
-    mode: :broadcast
+    data_retention_period: :timer.minutes(30)
 end
 
 # Configures Elixir's Logger

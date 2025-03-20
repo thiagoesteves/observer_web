@@ -107,7 +107,6 @@ defmodule Observer.Web.Metrics.Page do
                 <% app = Enum.find(@node_info.node, &(&1.service == service)) %>
                 <%= if  metric in app.metrics_keys do %>
                   <% data_key = data_key(service, metric) %>
-
                   <VmMemory.content
                     title={"#{metric} [#{app.name}]"}
                     service={service}

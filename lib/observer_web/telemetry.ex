@@ -74,7 +74,7 @@ defmodule ObserverWeb.Telemetry do
   def list_active_nodes, do: default().list_active_nodes()
 
   @doc """
-  Retrieve the current configured mode
+  Retrieve the configured mode (from ets table)
   """
   @spec cached_mode() :: :local | :broadcast | :observer
   def cached_mode, do: default().cached_mode()
