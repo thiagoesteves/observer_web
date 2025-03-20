@@ -38,7 +38,7 @@ defmodule ObserverWeb.BroadcastStorageTest do
 
   defp create_consumer(context) do
     node = Node.self()
-    {:ok, pid} = Storage.start_link(mode: :broadcast)
+    {:ok, pid} = Storage.start_link(mode: :broadcast, data_retention_period: :timer.minutes(1))
 
     context
     |> Map.put(:node, node)

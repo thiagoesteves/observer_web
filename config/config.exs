@@ -30,10 +30,6 @@ if config_env() == :dev do
       ),
       cd: Path.expand("../assets", __DIR__)
     ]
-
-  config :observer_web, ObserverWeb.Telemetry,
-    adapter: ObserverWeb.Telemetry.Storage,
-    data_retention_period: :timer.minutes(30)
 end
 
 # Configures Elixir's Logger

@@ -206,7 +206,7 @@ defmodule ObserverWeb.LocalStorageTest do
 
   defp create_consumer(context) do
     node = Node.self()
-    {:ok, pid} = Storage.start_link(mode: :local)
+    {:ok, pid} = Storage.start_link(mode: :local, data_retention_period: :timer.minutes(1))
 
     context
     |> Map.put(:node, node)

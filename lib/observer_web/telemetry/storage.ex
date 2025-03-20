@@ -4,10 +4,6 @@ defmodule ObserverWeb.Telemetry.Storage do
   """
   use GenServer
 
-  import ObserverWeb.Macros
-
-  require Logger
-
   alias ObserverWeb.Rpc
 
   @behaviour ObserverWeb.Telemetry.Adapter
@@ -24,13 +20,15 @@ defmodule ObserverWeb.Telemetry.Storage do
           nodes: [atom()],
           node_metric_tables: map(),
           persist_data?: boolean(),
-          mode: :local | :broadcast | :observer
+          mode: :local | :broadcast | :observer,
+          data_retention_period: nil | non_neg_integer()
         }
 
   defstruct nodes: [],
             node_metric_tables: %{},
             persist_data?: false,
-            mode: :local
+            mode: :local,
+            data_retention_period: nil
 
   ### ==========================================================================
   ### Callback functions
@@ -50,16 +48,12 @@ defmodule ObserverWeb.Telemetry.Storage do
 
     node_self = Node.self()
 
-    mode =
-      Keyword.get(
-        args,
-        :mode,
-        Application.get_env(:observer_web, ObserverWeb.Telemetry)[:mode] || :local
-      )
+    mode = Keyword.fetch!(args, :mode)
+    data_retention_period = Keyword.fetch!(args, :data_retention_period)
 
     :ets.insert(@storage_table, {@mode_key, mode})
 
-    persist_data? = fn data_retention_period ->
+    persist_data? = fn ->
       if data_retention_period do
         :timer.send_interval(@retention_data_delete_interval, :prune_expired_entries)
         true
@@ -73,9 +67,10 @@ defmodule ObserverWeb.Telemetry.Storage do
         {:ok,
          %__MODULE__{
            nodes: [node_self],
-           persist_data?: persist_data?.(data_retention_period()),
+           persist_data?: persist_data?.(),
            node_metric_tables: create_update_metric_table(node_self, %{}),
-           mode: mode
+           mode: mode,
+           data_retention_period: data_retention_period
          }}
 
       :observer ->
@@ -91,9 +86,10 @@ defmodule ObserverWeb.Telemetry.Storage do
         {:ok,
          %{
            nodes: nodes,
-           persist_data?: persist_data?.(data_retention_period()),
+           persist_data?: persist_data?.(),
            node_metric_tables: Enum.reduce(nodes, %{}, &create_update_metric_table(&1, &2)),
-           mode: mode
+           mode: mode,
+           data_retention_period: data_retention_period
          }}
 
       :broadcast ->
@@ -105,20 +101,14 @@ defmodule ObserverWeb.Telemetry.Storage do
   @impl true
   def handle_cast({:observer_web_telemetry, event}, state) do
     do_handle_metrics(event, state)
-
-    {:noreply, state}
   end
 
   @impl true
   def handle_info({:observer_web_telemetry, event}, state) do
     do_handle_metrics(event, state)
-
-    {:noreply, state}
   end
 
   def handle_info({:nodeup, node}, state) do
-    Logger.info("New node detected: #{node}")
-
     nodes = state.nodes ++ [node]
 
     if node |> metric_table() |> ets_table_exists?() do
@@ -135,8 +125,6 @@ defmodule ObserverWeb.Telemetry.Storage do
         %{nodes: nodes, persist_data?: persist_data?, node_metric_tables: node_metric_tables} =
           state
       ) do
-    Logger.info("Node removed: #{node}")
-
     metric_table = Map.get(node_metric_tables, node)
     now = System.os_time(:millisecond)
     minute = unix_to_minutes(now)
@@ -165,9 +153,12 @@ defmodule ObserverWeb.Telemetry.Storage do
     {:noreply, %{state | nodes: nodes}}
   end
 
-  def handle_info(:prune_expired_entries, %{node_metric_tables: tables} = state) do
+  def handle_info(
+        :prune_expired_entries,
+        %{node_metric_tables: tables, data_retention_period: data_retention_period} = state
+      ) do
     now_minutes = unix_to_minutes()
-    retention_period = trunc(data_retention_period() / @one_minute_in_milliseconds)
+    retention_period = trunc(data_retention_period / @one_minute_in_milliseconds)
     deletion_period_to = now_minutes - retention_period - 1
     deletion_period_from = deletion_period_to - 2
 
@@ -188,7 +179,8 @@ defmodule ObserverWeb.Telemetry.Storage do
 
   defp do_handle_metrics(
          %{metrics: metrics, reporter: reporter, measurements: measurements},
-         %{nodes: nodes, persist_data?: persist_data?, node_metric_tables: node_metric_tables}
+         %{nodes: nodes, persist_data?: persist_data?, node_metric_tables: node_metric_tables} =
+           state
        ) do
     if reporter in nodes do
       metric_table = Map.get(node_metric_tables, reporter)
@@ -226,11 +218,9 @@ defmodule ObserverWeb.Telemetry.Storage do
           {:metrics_new_keys, reporter, new_keys}
         )
       end
-    else
-      Logger.warning("Received new data from an invalid/non-registered source")
     end
 
-    :ok
+    {:noreply, state}
   end
 
   ### ==========================================================================
@@ -363,13 +353,6 @@ defmodule ObserverWeb.Telemetry.Storage do
   ### ==========================================================================
   ### Private functions
   ### ==========================================================================
-  if_not_test do
-    defp data_retention_period,
-      do: Application.get_env(:observer_web, ObserverWeb.Telemetry)[:data_retention_period]
-  else
-    defp data_retention_period, do: :timer.minutes(1)
-  end
-
   defp metric_table(node), do: String.to_atom("#{node}::observer-web-metrics")
 
   defp metric_key(metric, timestamp), do: "#{metric}|#{timestamp}"
