@@ -1,4 +1,4 @@
-defmodule ObserverWeb.TelemetryStorageTest do
+defmodule ObserverWeb.LocalStorageTest do
   use ExUnit.Case, async: false
 
   import Mock
@@ -9,7 +9,6 @@ defmodule ObserverWeb.TelemetryStorageTest do
 
   setup [
     :set_mox_global,
-    :verify_on_exit!,
     :create_consumer,
     :metric_table
   ]
@@ -77,6 +76,10 @@ defmodule ObserverWeb.TelemetryStorageTest do
 
   test "node/1 invalid node" do
     assert [] == Storage.get_keys_by_node(nil)
+  end
+
+  test "list_active_nodes/0", %{node: node} do
+    assert [^node] = Storage.list_active_nodes()
   end
 
   test "list_data_by_node_key/3", %{node: node, metric_table: metric_table} do
@@ -203,7 +206,7 @@ defmodule ObserverWeb.TelemetryStorageTest do
 
   defp create_consumer(context) do
     node = Node.self()
-    {:ok, pid} = Storage.start_link([])
+    {:ok, pid} = Storage.start_link(mode: :local)
 
     context
     |> Map.put(:node, node)

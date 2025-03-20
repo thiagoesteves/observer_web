@@ -12,7 +12,7 @@ defmodule Observer.Web.Metrics.PageLiveTest do
     :verify_on_exit!
   ]
 
-  test "GET /metrics", %{conn: conn} do
+  test "GET /metrics - default :local mode", %{conn: conn} do
     TelemetryStubber.defaults()
     |> expect(:subscribe_for_new_keys, fn -> :ok end)
     |> expect(:get_keys_by_node, fn _node -> [] end)
@@ -20,6 +20,35 @@ defmodule Observer.Web.Metrics.PageLiveTest do
     {:ok, _index_live, html} = live(conn, "/observer/metrics")
 
     assert html =~ "Live Metrics"
+    assert html =~ "local"
+  end
+
+  test "GET /metrics - :broadcast mode", %{conn: conn} do
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
+    |> stub(:list_active_nodes, fn -> [Node.self()] ++ Node.list() end)
+    |> stub(:cached_mode, fn -> :broadcast end)
+    |> expect(:subscribe_for_new_keys, fn -> :ok end)
+    |> expect(:get_keys_by_node, fn _node -> [] end)
+
+    {:ok, _index_live, html} = live(conn, "/observer/metrics")
+
+    assert html =~ "Live Metrics"
+    assert html =~ "broadcast"
+  end
+
+  test "GET /metrics :observer mode", %{conn: conn} do
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
+    |> stub(:list_active_nodes, fn -> [Node.self()] ++ Node.list() end)
+    |> stub(:cached_mode, fn -> :observer end)
+    |> expect(:subscribe_for_new_keys, fn -> :ok end)
+    |> expect(:get_keys_by_node, fn _node -> [] end)
+
+    {:ok, _index_live, html} = live(conn, "/observer/metrics")
+
+    assert html =~ "Live Metrics"
+    assert html =~ "observer"
   end
 
   test "GET /metrics + new key", %{conn: conn} do

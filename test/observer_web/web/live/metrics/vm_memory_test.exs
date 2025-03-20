@@ -151,14 +151,24 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
     # assert initial data
     assert html =~ "2025-01-27 12:52:59.123Z"
 
+    # assert live updated data
     send(
       liveview_pid,
       {:metrics_new_data, node, metric,
        TelemetryFixtures.build_telemetry_data_vm_total_memory(1_737_982_379_456)}
     )
 
-    # assert live updated data
     html = render(liveview)
     assert html =~ "2025-01-27 12:52:59.456Z"
+
+    # Assert nil data received, this will indicate the application has restarted
+    send(
+      liveview_pid,
+      {:metrics_new_data, node, metric,
+       TelemetryFixtures.build_telemetry_data(1_737_982_379_789, nil)}
+    )
+
+    html = render(liveview)
+    assert html =~ "2025-01-27 12:52:59.789Z"
   end
 end

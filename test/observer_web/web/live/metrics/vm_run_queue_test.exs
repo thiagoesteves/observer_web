@@ -173,16 +173,26 @@ defmodule Observer.Web.Metrics.VmRunQueueTest do
       assert html =~ "2025-01-27 12:53:20.666"
       assert html =~ "#{init}"
 
+      # assert live updated data
       send(
         liveview_pid,
         {:metrics_new_data, node, metric,
          TelemetryFixtures.build_telemetry_data(1_737_982_379_777, update)}
       )
 
-      # assert live updated data
       html = render(liveview)
       assert html =~ "2025-01-27 12:52:59.777Z"
       assert html =~ "#{update}"
+
+      # Assert nil data received, this will indicate the application has restarted
+      send(
+        liveview_pid,
+        {:metrics_new_data, node, metric,
+         TelemetryFixtures.build_telemetry_data(1_737_982_379_999, nil)}
+      )
+
+      html = render(liveview)
+      assert html =~ "2025-01-27 12:52:59.999Z"
     end
   end)
 end

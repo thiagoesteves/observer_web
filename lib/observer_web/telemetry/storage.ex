@@ -12,7 +12,8 @@ defmodule ObserverWeb.Telemetry.Storage do
 
   @behaviour ObserverWeb.Telemetry.Adapter
 
-  @node_registry_table :node_registry_table
+  @storage_table :storage_table
+  @mode_key "mode"
   @metric_keys "metric-keys"
   @registry_key "registry-nodes"
 
@@ -43,9 +44,20 @@ defmodule ObserverWeb.Telemetry.Storage do
   end
 
   @impl true
-  def init(_args) do
+  def init(args) do
+    # Create a general table to store information
+    :ets.new(@storage_table, [:set, :protected, :named_table])
+
     node_self = Node.self()
-    mode = mode()
+
+    mode =
+      Keyword.get(
+        args,
+        :mode,
+        Application.get_env(:observer_web, ObserverWeb.Telemetry)[:mode] || :local
+      )
+
+    :ets.insert(@storage_table, {@mode_key, mode})
 
     persist_data? = fn data_retention_period ->
       if data_retention_period do
@@ -58,9 +70,6 @@ defmodule ObserverWeb.Telemetry.Storage do
 
     case mode do
       :local ->
-        # Create registry node table to store all nodes that are clustered
-        :ets.new(@node_registry_table, [:set, :protected, :named_table])
-
         {:ok,
          %__MODULE__{
            nodes: [node_self],
@@ -78,9 +87,6 @@ defmodule ObserverWeb.Telemetry.Storage do
 
         # Subscribe to receive notifications if any node is UP or Down
         :net_kernel.monitor_nodes(true)
-
-        # Create registry node table to store all nodes that are clustered
-        :ets.new(@node_registry_table, [:set, :protected, :named_table])
 
         {:ok,
          %{
@@ -115,7 +121,7 @@ defmodule ObserverWeb.Telemetry.Storage do
 
     nodes = state.nodes ++ [node]
 
-    if node |> metric_table() |> table_exists?() do
+    if node |> metric_table() |> ets_table_exists?() do
       {:noreply, %{state | nodes: nodes}}
     else
       node_metric_tables = create_update_metric_table(node, state.node_metric_tables)
@@ -234,11 +240,11 @@ defmodule ObserverWeb.Telemetry.Storage do
   def push_data(event) do
     msg = {:observer_web_telemetry, event}
 
-    case mode() do
+    case cached_mode() do
       :broadcast ->
         Phoenix.PubSub.broadcast(ObserverWeb.PubSub, broadcast_topic(), msg)
 
-      mode when mode == :local or mode == :observer ->
+      mode when mode in [:local, :observer] ->
         GenServer.cast(__MODULE__, msg)
     end
   end
@@ -268,45 +274,52 @@ defmodule ObserverWeb.Telemetry.Storage do
   end
 
   def list_data_by_node_key(node, key, options) when is_atom(node) do
-    from = Keyword.get(options, :from, 15)
-    order = Keyword.get(options, :order, :asc)
+    case cached_mode() do
+      :broadcast ->
+        []
 
-    now_minutes = unix_to_minutes()
-    from_minutes = now_minutes - from
+      mode when mode in [:local, :observer] ->
+        from = Keyword.get(options, :from, 15)
+        order = Keyword.get(options, :order, :asc)
 
-    metric_table = metric_table(node)
+        now_minutes = unix_to_minutes()
+        from_minutes = now_minutes - from
 
-    fetch_data = fn
-      :local, node, minute ->
-        Rpc.call(node, :ets, :lookup, [metric_table, metric_key(key, minute)], :infinity)
+        metric_table = metric_table(node)
 
-      :observer, _node, minute ->
-        if table_exists?(metric_table) do
-          :ets.lookup(metric_table, metric_key(key, minute))
-        else
-          []
+        fetch_data = fn
+          :local, node, minute ->
+            Rpc.call(node, :ets, :lookup, [metric_table, metric_key(key, minute)], :infinity)
+
+          :observer, _node, minute ->
+            if ets_table_exists?(metric_table) do
+              :ets.lookup(metric_table, metric_key(key, minute))
+            else
+              []
+            end
         end
+
+        # credo:disable-for-lines:3
+        result =
+          Enum.reduce(from_minutes..now_minutes, [], fn minute, acc ->
+            case fetch_data.(mode, node, minute) do
+              [{_, value}] ->
+                value ++ acc
+
+              _ ->
+                acc
+            end
+          end)
+
+        if order == :asc, do: Enum.reverse(result), else: result
     end
-
-    result =
-      Enum.reduce(from_minutes..now_minutes, [], fn minute, acc ->
-        case fetch_data.(mode(), node, minute) do
-          [{_, value}] ->
-            value ++ acc
-
-          _ ->
-            acc
-        end
-      end)
-
-    if order == :asc, do: Enum.reverse(result), else: result
   end
 
   @impl true
   def get_keys_by_node(nil), do: []
 
   def get_keys_by_node(node) do
-    case mode() do
+    case cached_mode() do
       :broadcast ->
         []
 
@@ -322,21 +335,15 @@ defmodule ObserverWeb.Telemetry.Storage do
         end
 
       :observer ->
-        metric_table = metric_table(node)
-
-        with true <- table_exists?(metric_table),
-             [{_, value}] <- :ets.lookup(metric_table, @metric_keys) do
-          value
-        else
-          _ ->
-            []
-        end
+        node
+        |> metric_table()
+        |> ets_lookup_if_exist(@metric_keys, [])
     end
   end
 
   @impl true
   def list_active_nodes do
-    case mode() do
+    case cached_mode() do
       :broadcast ->
         []
 
@@ -344,18 +351,14 @@ defmodule ObserverWeb.Telemetry.Storage do
         [Node.self()] ++ Node.list()
 
       :observer ->
-        case :ets.lookup(@node_registry_table, @registry_key) do
-          [{_, nodes}] ->
-            nodes
-
-          _ ->
-            []
-        end
+        ets_lookup_if_exist(@storage_table, @registry_key, [])
     end
   end
 
   @impl true
-  def mode, do: Application.get_env(:observer_web, ObserverWeb.Telemetry)[:mode] || :local
+  def cached_mode do
+    ets_lookup_if_exist(@storage_table, @mode_key, nil)
+  end
 
   ### ==========================================================================
   ### Private functions
@@ -374,10 +377,22 @@ defmodule ObserverWeb.Telemetry.Storage do
   defp unix_to_minutes(time \\ System.os_time(:millisecond)),
     do: trunc(time / @one_minute_in_milliseconds)
 
-  defp table_exists?(table_name) do
+  defp ets_table_exists?(table_name) do
     case :ets.info(table_name) do
       :undefined -> false
       _info -> true
+    end
+  end
+
+  defp ets_lookup_if_exist(table, key, default_return) do
+    with true <- ets_table_exists?(table),
+         [{_, value}] <- :ets.lookup(table, key) do
+      value
+    else
+      # coveralls-ignore-start
+      _ ->
+        default_return
+        # coveralls-ignore-stop
     end
   end
 
@@ -408,7 +423,7 @@ defmodule ObserverWeb.Telemetry.Storage do
     :ets.insert(table, {@metric_keys, []})
 
     # Add node the to registry
-    ets_append_to_list(@node_registry_table, @registry_key, node)
+    ets_append_to_list(@storage_table, @registry_key, node)
 
     Map.put(current_map, node, table)
   end

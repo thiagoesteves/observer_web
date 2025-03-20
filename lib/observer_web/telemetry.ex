@@ -76,8 +76,8 @@ defmodule ObserverWeb.Telemetry do
   @doc """
   Retrieve the current configured mode
   """
-  @spec mode() :: :local | :broadcast | :observer
-  def mode, do: default().mode()
+  @spec cached_mode() :: :local | :broadcast | :observer
+  def cached_mode, do: default().cached_mode()
 
   ### ==========================================================================
   ### Private functions

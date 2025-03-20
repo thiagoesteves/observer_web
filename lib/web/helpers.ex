@@ -42,6 +42,7 @@ defmodule Observer.Web.Helpers do
   ## Examples
 
   iex> alias Observer.Web.Helpers
+  ...> assert "/" = Helpers.observer_path(:root)
   ...> assert "/" = Helpers.observer_path(:root, :any)
   ...> assert_raise RuntimeError, ~r/nothing stored in the :routing key/, fn -> Helpers.observer_path(nil, ["path", "to", "resource"]) end
   ...> Process.put(:routing, :nowhere)

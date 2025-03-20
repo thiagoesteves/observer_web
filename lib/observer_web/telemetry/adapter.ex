@@ -10,5 +10,5 @@ defmodule ObserverWeb.Telemetry.Adapter do
   @callback list_data_by_node_key(atom() | String.t(), String.t(), Keyword.t()) :: list()
   @callback get_keys_by_node(atom()) :: list()
   @callback list_active_nodes() :: list()
-  @callback mode() :: :local | :broadcast | :observer
+  @callback cached_mode() :: nil | :local | :broadcast | :observer
 end

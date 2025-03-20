@@ -7,6 +7,6 @@ defmodule Observer.Web.Mocks.TelemetryStubber do
     ObserverWeb.TelemetryMock
     |> stub(:push_data, fn _event -> :ok end)
     |> stub(:list_active_nodes, fn -> [Node.self()] ++ Node.list() end)
-    |> stub(:mode, fn -> :local end)
+    |> stub(:cached_mode, fn -> :local end)
   end
 end
