@@ -13,10 +13,7 @@ defmodule Observer.Web.Apps.Process do
     info = assigns.info
 
     map_phx_lv_socket = fn
-      nil ->
-        nil
-
-      phx_lv_socket ->
+      %Phoenix.LiveView.Socket{} = phx_lv_socket ->
         [
           %{name: "Id", value: "#{phx_lv_socket.id}"},
           %{name: "Endpoint", value: "#{inspect(phx_lv_socket.endpoint)}"},
@@ -25,22 +22,25 @@ defmodule Observer.Web.Apps.Process do
           %{name: "Connected?", value: "#{inspect(phx_lv_socket.transport_pid)}"},
           %{name: "redirected", value: "#{inspect(phx_lv_socket.redirected)}"}
         ]
+
+      _socket ->
+        nil
     end
 
     map_phx_lv_socket_uri = fn
-      nil ->
-        nil
-
-      phx_lv_socket ->
+      %Phoenix.LiveView.Socket{host_uri: %URI{} = host_uri} ->
         [
-          %{name: "Scheme", value: "#{phx_lv_socket.host_uri.scheme}"},
-          %{name: "User Info", value: "#{inspect(phx_lv_socket.host_uri.userinfo)}"},
-          %{name: "Host", value: "#{phx_lv_socket.host_uri.host}"},
-          %{name: "Port", value: "#{inspect(phx_lv_socket.host_uri.port)}"},
-          %{name: "Path", value: "#{phx_lv_socket.host_uri.path}"},
-          %{name: "Query", value: "#{inspect(phx_lv_socket.host_uri.query)}"},
-          %{name: "Fragment", value: "#{inspect(phx_lv_socket.host_uri.fragment)}"}
+          %{name: "Scheme", value: "#{host_uri.scheme}"},
+          %{name: "User Info", value: "#{inspect(host_uri.userinfo)}"},
+          %{name: "Host", value: "#{host_uri.host}"},
+          %{name: "Port", value: "#{inspect(host_uri.port)}"},
+          %{name: "Path", value: "#{host_uri.path}"},
+          %{name: "Query", value: "#{inspect(host_uri.query)}"},
+          %{name: "Fragment", value: "#{inspect(host_uri.fragment)}"}
         ]
+
+      _socket ->
+        nil
     end
 
     process_mappings =
@@ -143,6 +143,7 @@ defmodule Observer.Web.Apps.Process do
             </Core.table_process>
 
             <Core.table_process
+              :if={@process_mappings.phx_lv_socket_uri}
               id="phx-socket-socket-uri-table"
               title="Phoenix.LiveView.Socket - URI"
               title_bg_color="MediumSeaGreen"
