@@ -366,7 +366,7 @@ defmodule Observer.Web.Metrics.Page do
     {:noreply, assign(socket, :node_info, node_info)}
   end
 
-  def handle_info({:nodedown, node}, %{assigns: %{node_info: node_info}} = socket) do
+  def handle_info({:nodedown, node}, %{assigns: %{node_info: node_info, mode: :local}} = socket) do
     service_key = node |> to_string
 
     node_info =
@@ -376,6 +376,12 @@ defmodule Observer.Web.Metrics.Page do
       )
 
     {:noreply, assign(socket, :node_info, node_info)}
+  end
+
+  def handle_info({:nodedown, _node}, socket) do
+    # NOTE: Do nothing, nodedown MUST NOT change the current
+    #       socket information
+    {:noreply, socket}
   end
 
   defp data_key(service, metric), do: "#{service}::#{metric}"

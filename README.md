@@ -38,13 +38,13 @@ mix assets.build
 
 Since Observer Web uses the OTP distribution, it is required to have a name when running.
 ```
-elixir --sname hello -S mix run --no-halt dev.exs
+elixir --sname observer -S mix run --no-halt dev.exs
 ```
 
 Now you can visit [`localhost:4000/observer`](http://localhost:4000/observer) from your browser.
 
 
-### Run multiple nodes to validate locally the Telemetry configuration
+### Run multiple nodes with Metric Hub configuration
 
 1. Start the nodes
 

@@ -145,6 +145,8 @@ defmodule ObserverWeb.Telemetry.Storage do
           end
 
         :ets.insert(metric_table, {metric_key, current_data})
+
+        notify_new_metric_data(node, key, data)
       end
     end)
 
@@ -195,11 +197,7 @@ defmodule ObserverWeb.Telemetry.Storage do
 
           if persist_data?, do: ets_append_to_list(metric_table, timed_key, data)
 
-          Phoenix.PubSub.broadcast(
-            ObserverWeb.PubSub,
-            metrics_topic(reporter, key),
-            {:metrics_new_data, reporter, key, data}
-          )
+          notify_new_metric_data(reporter, key, data)
 
           # credo:disable-for-lines:3
           if key in keys do
@@ -397,6 +395,14 @@ defmodule ObserverWeb.Telemetry.Storage do
   defp keys_topic, do: "metrics::keys"
   defp metrics_topic(node, key), do: "metrics::#{node}::#{key}"
   defp broadcast_topic, do: "metrics::broadcast"
+
+  defp notify_new_metric_data(reporter, key, data) do
+    Phoenix.PubSub.broadcast(
+      ObserverWeb.PubSub,
+      metrics_topic(reporter, key),
+      {:metrics_new_data, reporter, key, data}
+    )
+  end
 
   defp create_update_metric_table(node, current_map) do
     table = metric_table(node)

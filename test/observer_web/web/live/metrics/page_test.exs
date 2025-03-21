@@ -194,6 +194,41 @@ defmodule Observer.Web.Metrics.PageLiveTest do
     refute render(liveview) =~ "services:#{node}"
   end
 
+  test "Testing NodeDown in oberver mode MUST NOT affect selected services", %{conn: conn} do
+    node = Node.self() |> to_string
+    service_id = String.replace(node, "@", "-")
+    test_pid_process = self()
+
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
+    |> stub(:list_active_nodes, fn -> [Node.self()] ++ Node.list() end)
+    |> stub(:cached_mode, fn -> :observer end)
+    |> expect(:subscribe_for_new_keys, fn ->
+      send(test_pid_process, {:liveview_pid, self()})
+      :ok
+    end)
+    |> stub(:get_keys_by_node, fn _node -> [] end)
+
+    {:ok, liveview, _html} = live(conn, "/observer/metrics")
+
+    liveview
+    |> element("#metrics-multi-select-toggle-options")
+    |> render_click()
+
+    assert_receive {:liveview_pid, liveview_pid}, 1_000
+
+    html =
+      liveview
+      |> element("#metrics-multi-select-services-#{service_id}-add-item")
+      |> render_click()
+
+    assert html =~ "services:#{node}"
+
+    send(liveview_pid, {:nodedown, Node.self()})
+
+    assert render(liveview) =~ "services:#{node}"
+  end
+
   test "Testing NodeUp, no previous service is removed", %{conn: conn} do
     node = Node.self() |> to_string
     service_id = String.replace(node, "@", "-")
