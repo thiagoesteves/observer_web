@@ -4,6 +4,8 @@ defmodule Observer.Web.Components.Metrics.VmMemory do
 
   use Phoenix.Component
 
+  alias Observer.Web.Components.Metrics.Common
+
   attr :title, :string, required: true
   attr :service, :string, required: true
   attr :metric, :string, required: true
@@ -59,24 +61,36 @@ defmodule Observer.Web.Components.Metrics.VmMemory do
 
     # NOTE: Streams are retrieved in the reverse order
     {series_data, categories_data} =
-      Enum.reduce(metrics, {empty_series_data, []}, fn metric, {series_data, categories_data} ->
-        timestamp =
-          metric.timestamp
-          |> trunc()
-          |> DateTime.from_unix!(:millisecond)
-          |> DateTime.to_string()
+      Enum.reduce(metrics, {empty_series_data, []}, fn
+        %ObserverWeb.Telemetry.Data{value: nil} = metric, {series_data, categories_data} ->
+          timestamp = Common.timestamp_to_string(metric.timestamp)
 
-        {%{
-           atom: [metric.measurements.atom] ++ series_data.atom,
-           atom_used: [metric.measurements.atom_used] ++ series_data.atom_used,
-           binary: [metric.measurements.binary] ++ series_data.binary,
-           code: [metric.measurements.code] ++ series_data.code,
-           ets: [metric.measurements.ets] ++ series_data.ets,
-           processes: [metric.measurements.processes] ++ series_data.processes,
-           processes_used: [metric.measurements.processes_used] ++ series_data.processes_used,
-           system: [metric.measurements.system] ++ series_data.system,
-           total: [metric.measurements.total] ++ series_data.total
-         }, [timestamp] ++ categories_data}
+          {%{
+             atom: [nil] ++ series_data.atom,
+             atom_used: [nil] ++ series_data.atom_used,
+             binary: [nil] ++ series_data.binary,
+             code: [nil] ++ series_data.code,
+             ets: [nil] ++ series_data.ets,
+             processes: [nil] ++ series_data.processes,
+             processes_used: [nil] ++ series_data.processes_used,
+             system: [nil] ++ series_data.system,
+             total: [nil] ++ series_data.total
+           }, [timestamp] ++ categories_data}
+
+        metric, {series_data, categories_data} ->
+          timestamp = Common.timestamp_to_string(metric.timestamp)
+
+          {%{
+             atom: [metric.measurements.atom] ++ series_data.atom,
+             atom_used: [metric.measurements.atom_used] ++ series_data.atom_used,
+             binary: [metric.measurements.binary] ++ series_data.binary,
+             code: [metric.measurements.code] ++ series_data.code,
+             ets: [metric.measurements.ets] ++ series_data.ets,
+             processes: [metric.measurements.processes] ++ series_data.processes,
+             processes_used: [metric.measurements.processes_used] ++ series_data.processes_used,
+             system: [metric.measurements.system] ++ series_data.system,
+             total: [metric.measurements.total] ++ series_data.total
+           }, [timestamp] ++ categories_data}
       end)
 
     datasets =

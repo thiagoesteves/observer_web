@@ -4,15 +4,13 @@ defmodule ObserverWeb.PhxLvSocket do
   import Mock
   import Mox
 
-  setup :verify_on_exit!
-
+  alias Observer.Web.Mocks.RpcStubber
   alias ObserverWeb.Telemetry.Producer.PhxLvSocket
 
+  setup :verify_on_exit!
+
   test "Check the phoenix liveview socket info is being published" do
-    ObserverWeb.RpcMock
-    |> stub(:call, fn node, module, function, args, timeout ->
-      :rpc.call(node, module, function, args, timeout)
-    end)
+    RpcStubber.defaults()
 
     with_mock :telemetry,
       execute: fn [:phoenix, :liveview, :socket, :"observer.web"],

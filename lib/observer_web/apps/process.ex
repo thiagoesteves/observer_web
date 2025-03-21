@@ -46,8 +46,9 @@ defmodule ObserverWeb.Apps.Process do
         state = :sys.get_state(pid, 100)
         {:ok, state}
       catch
-        _, _ ->
-          {:error, "Could not retrieve the state for pid: #{inspect(pid)}"}
+        _, reason ->
+          {:error,
+           "Could not retrieve the state for pid: #{inspect(pid)} reason: #{inspect(reason)}"}
       end
     else
       {:error,

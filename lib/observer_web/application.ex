@@ -10,12 +10,11 @@ defmodule ObserverWeb.Application do
   @impl true
   def start(_type, _args) do
     children =
-      telemetry_servers() ++
-        [
-          Observer.Web.Telemetry,
-          {Phoenix.PubSub, [name: ObserverWeb.PubSub]},
-          ObserverWeb.Tracer.Server
-        ]
+      [
+        Observer.Web.Telemetry,
+        ObserverWeb.Tracer.Server,
+        {Phoenix.PubSub, [name: ObserverWeb.PubSub]}
+      ] ++ telemetry_servers()
 
     # # See https://hexdocs.pm/elixir/Supervisor.html
     # # for other strategies and supported options
@@ -24,10 +23,17 @@ defmodule ObserverWeb.Application do
 
   # NOTE: DO NOT start these servers when running tests.
   if_not_test do
-    defp telemetry_servers,
-      do: [
-        ObserverWeb.Telemetry.Storage
+    defp telemetry_servers do
+      [{ObserverWeb.Telemetry.Storage, telemetry_server_config()}]
+    end
+
+    defp telemetry_server_config do
+      [
+        mode: Application.get_env(:observer_web, ObserverWeb.Telemetry)[:mode] || :local,
+        data_retention_period:
+          Application.get_env(:observer_web, ObserverWeb.Telemetry)[:data_retention_period]
       ]
+    end
   else
     defp telemetry_servers, do: []
   end

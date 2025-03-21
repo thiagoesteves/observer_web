@@ -11,15 +11,15 @@ defmodule ObserverWeb.Telemetry do
     """
     @type t :: %__MODULE__{
             timestamp: non_neg_integer(),
-            value: integer() | float(),
-            unit: String.t(),
+            value: nil | integer() | float(),
+            unit: nil | String.t(),
             tags: map(),
             measurements: map()
           }
 
     defstruct timestamp: nil,
-              value: "",
-              unit: "",
+              value: nil,
+              unit: nil,
               tags: %{},
               measurements: %{}
   end
@@ -66,6 +66,18 @@ defmodule ObserverWeb.Telemetry do
   """
   @spec get_keys_by_node(atom()) :: list()
   def get_keys_by_node(node), do: default().get_keys_by_node(node)
+
+  @doc """
+  List all available nodes considering the current metric configured mode
+  """
+  @spec list_active_nodes() :: list()
+  def list_active_nodes, do: default().list_active_nodes()
+
+  @doc """
+  Retrieve the configured mode (from ets table)
+  """
+  @spec cached_mode() :: :local | :broadcast | :observer
+  def cached_mode, do: default().cached_mode()
 
   ### ==========================================================================
   ### Private functions

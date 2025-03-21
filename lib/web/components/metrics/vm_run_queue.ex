@@ -4,6 +4,8 @@ defmodule Observer.Web.Components.Metrics.VmRunQueue do
 
   use Phoenix.Component
 
+  alias Observer.Web.Components.Metrics.Common
+
   attr :title, :string, required: true
   attr :service, :string, required: true
   attr :metric, :string, required: true
@@ -54,14 +56,16 @@ defmodule Observer.Web.Components.Metrics.VmRunQueue do
   # NOTE: Streams are retrieved in the reverse order
   defp normalize(metrics) do
     {series_data, categories_data} =
-      Enum.reduce(metrics, {[], []}, fn metric, {series_data, categories_data} ->
-        timestamp =
-          metric.timestamp
-          |> trunc()
-          |> DateTime.from_unix!(:millisecond)
-          |> DateTime.to_string()
+      Enum.reduce(metrics, {[], []}, fn
+        %ObserverWeb.Telemetry.Data{value: nil} = metric, {series_data, categories_data} ->
+          timestamp = Common.timestamp_to_string(metric.timestamp)
 
-        {[metric.value] ++ series_data, [timestamp] ++ categories_data}
+          {[nil] ++ series_data, [timestamp] ++ categories_data}
+
+        metric, {series_data, categories_data} ->
+          timestamp = Common.timestamp_to_string(metric.timestamp)
+
+          {[metric.value] ++ series_data, [timestamp] ++ categories_data}
       end)
 
     datasets =

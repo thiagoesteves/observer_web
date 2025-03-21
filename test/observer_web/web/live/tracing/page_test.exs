@@ -2,6 +2,8 @@ defmodule Observer.Web.Tracing.PageLiveTest do
   use Observer.Web.ConnCase, async: false
 
   import Mox
+  alias Observer.Web.Mocks.RpcStubber
+  alias Observer.Web.Mocks.TelemetryStubber
   alias ObserverWeb.Tracer
 
   setup [
@@ -17,13 +19,8 @@ defmodule Observer.Web.Tracing.PageLiveTest do
   end
 
   test "GET /tracing - fallback on the default", %{conn: conn} do
-    ObserverWeb.RpcMock
-    |> stub(:call, fn node, module, function, args, timeout ->
-      :rpc.call(node, module, function, args, timeout)
-    end)
-
-    ObserverWeb.TelemetryMock
-    |> stub(:push_data, fn _event -> :ok end)
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
 
     {:ok, _index_live, html} = live(conn, "/observer")
 
@@ -31,13 +28,8 @@ defmodule Observer.Web.Tracing.PageLiveTest do
   end
 
   test "GET /tracing", %{conn: conn} do
-    ObserverWeb.RpcMock
-    |> stub(:call, fn node, module, function, args, timeout ->
-      :rpc.call(node, module, function, args, timeout)
-    end)
-
-    ObserverWeb.TelemetryMock
-    |> stub(:push_data, fn _event -> :ok end)
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
 
     {:ok, _index_live, html} = live(conn, "/observer/tracing")
 
@@ -48,13 +40,8 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     node = Node.self() |> to_string
     service = String.replace(node, "@", "-")
 
-    ObserverWeb.RpcMock
-    |> stub(:call, fn node, module, function, args, timeout ->
-      :rpc.call(node, module, function, args, timeout)
-    end)
-
-    ObserverWeb.TelemetryMock
-    |> stub(:push_data, fn _event -> :ok end)
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
 
     {:ok, index_live, _html} = live(conn, "/observer/tracing")
 
@@ -129,13 +116,8 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     node = Node.self() |> to_string
     service = String.replace(node, "@", "-")
 
-    ObserverWeb.RpcMock
-    |> stub(:call, fn node, module, function, args, timeout ->
-      :rpc.call(node, module, function, args, timeout)
-    end)
-
-    ObserverWeb.TelemetryMock
-    |> stub(:push_data, fn _event -> :ok end)
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
 
     {:ok, index_live, _html} = live(conn, "/observer/tracing")
 
@@ -166,13 +148,8 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     node = Node.self() |> to_string
     service = String.replace(node, "@", "-")
 
-    ObserverWeb.RpcMock
-    |> stub(:call, fn node, module, function, args, timeout ->
-      :rpc.call(node, module, function, args, timeout)
-    end)
-
-    ObserverWeb.TelemetryMock
-    |> stub(:push_data, fn _event -> :ok end)
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
 
     {:ok, index_live, _html} = live(conn, "/observer/tracing")
 
@@ -207,13 +184,8 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     node = Node.self() |> to_string
     service = String.replace(node, "@", "-")
 
-    ObserverWeb.RpcMock
-    |> stub(:call, fn node, module, function, args, timeout ->
-      :rpc.call(node, module, function, args, timeout)
-    end)
-
-    ObserverWeb.TelemetryMock
-    |> stub(:push_data, fn _event -> :ok end)
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
 
     {:ok, index_live, _html} = live(conn, "/observer/tracing")
 
@@ -258,13 +230,8 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     node = Node.self() |> to_string
     service = String.replace(node, "@", "-")
 
-    ObserverWeb.RpcMock
-    |> stub(:call, fn node, module, function, args, timeout ->
-      :rpc.call(node, module, function, args, timeout)
-    end)
-
-    ObserverWeb.TelemetryMock
-    |> stub(:push_data, fn _event -> :ok end)
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
 
     {:ok, index_live, _html} = live(conn, "/observer/tracing")
 
@@ -308,13 +275,8 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     node = Node.self() |> to_string
     service = String.replace(node, "@", "-")
 
-    ObserverWeb.RpcMock
-    |> stub(:call, fn node, module, function, args, timeout ->
-      :rpc.call(node, module, function, args, timeout)
-    end)
-
-    ObserverWeb.TelemetryMock
-    |> stub(:push_data, fn _event -> :ok end)
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
 
     {:ok, index_live, _html} = live(conn, "/observer/tracing")
 
@@ -355,13 +317,8 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     node = Node.self() |> to_string
     service = String.replace(node, "@", "-")
 
-    ObserverWeb.RpcMock
-    |> stub(:call, fn node, module, function, args, timeout ->
-      :rpc.call(node, module, function, args, timeout)
-    end)
-
-    ObserverWeb.TelemetryMock
-    |> stub(:push_data, fn _event -> :ok end)
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
 
     {:ok, index_live, _html} = live(conn, "/observer/tracing")
 
@@ -404,13 +361,8 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     node = Node.self() |> to_string
     service = String.replace(node, "@", "-")
 
-    ObserverWeb.RpcMock
-    |> stub(:call, fn node, module, function, args, timeout ->
-      :rpc.call(node, module, function, args, timeout)
-    end)
-
-    ObserverWeb.TelemetryMock
-    |> stub(:push_data, fn _event -> :ok end)
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
 
     {:ok, index_live, _html} = live(conn, "/observer/tracing")
 
@@ -466,8 +418,7 @@ defmodule Observer.Web.Tracing.PageLiveTest do
       :rpc.call(node, module, function, args, timeout)
     end)
 
-    ObserverWeb.TelemetryMock
-    |> stub(:push_data, fn _event -> :ok end)
+    TelemetryStubber.defaults()
 
     {:ok, index_live, _html} = live(conn, "/observer/tracing")
 

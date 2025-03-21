@@ -4,6 +4,7 @@ defmodule Observer.Web.Metrics.PageLiveTest do
   import Phoenix.LiveViewTest
   import Mox
 
+  alias Observer.Web.Mocks.TelemetryStubber
   alias ObserverWeb.TelemetryFixtures
 
   setup [
@@ -11,15 +12,43 @@ defmodule Observer.Web.Metrics.PageLiveTest do
     :verify_on_exit!
   ]
 
-  test "GET /metrics", %{conn: conn} do
-    ObserverWeb.TelemetryMock
+  test "GET /metrics - default :local mode", %{conn: conn} do
+    TelemetryStubber.defaults()
     |> expect(:subscribe_for_new_keys, fn -> :ok end)
     |> expect(:get_keys_by_node, fn _node -> [] end)
-    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, _index_live, html} = live(conn, "/observer/metrics")
 
     assert html =~ "Live Metrics"
+    assert html =~ "local"
+  end
+
+  test "GET /metrics - :broadcast mode", %{conn: conn} do
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
+    |> stub(:list_active_nodes, fn -> [Node.self()] ++ Node.list() end)
+    |> stub(:cached_mode, fn -> :broadcast end)
+    |> expect(:subscribe_for_new_keys, fn -> :ok end)
+    |> expect(:get_keys_by_node, fn _node -> [] end)
+
+    {:ok, _index_live, html} = live(conn, "/observer/metrics")
+
+    assert html =~ "Live Metrics"
+    assert html =~ "broadcast"
+  end
+
+  test "GET /metrics :observer mode", %{conn: conn} do
+    ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
+    |> stub(:list_active_nodes, fn -> [Node.self()] ++ Node.list() end)
+    |> stub(:cached_mode, fn -> :observer end)
+    |> expect(:subscribe_for_new_keys, fn -> :ok end)
+    |> expect(:get_keys_by_node, fn _node -> [] end)
+
+    {:ok, _index_live, html} = live(conn, "/observer/metrics")
+
+    assert html =~ "Live Metrics"
+    assert html =~ "observer"
   end
 
   test "GET /metrics + new key", %{conn: conn} do
@@ -27,7 +56,7 @@ defmodule Observer.Web.Metrics.PageLiveTest do
 
     metric = "fake.phoenix.metric"
 
-    ObserverWeb.TelemetryMock
+    TelemetryStubber.defaults()
     |> expect(:subscribe_for_new_keys, fn ->
       send(test_pid_process, {:liveview_pid, self()})
       :ok
@@ -44,7 +73,6 @@ defmodule Observer.Web.Metrics.PageLiveTest do
 
       [metric]
     end)
-    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, liveview, html} = live(conn, "/observer/metrics")
 
@@ -72,7 +100,7 @@ defmodule Observer.Web.Metrics.PageLiveTest do
     metric_id = String.replace(metric, ".", "-")
     test_pid_process = self()
 
-    ObserverWeb.TelemetryMock
+    TelemetryStubber.defaults()
     |> expect(:subscribe_for_new_keys, fn ->
       send(test_pid_process, {:liveview_pid, self()})
       :ok
@@ -86,7 +114,6 @@ defmodule Observer.Web.Metrics.PageLiveTest do
       ]
     end)
     |> stub(:get_keys_by_node, fn _node -> [metric] end)
-    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, liveview, _html} = live(conn, "/observer/metrics")
 
@@ -140,13 +167,12 @@ defmodule Observer.Web.Metrics.PageLiveTest do
     service_id = String.replace(node, "@", "-")
     test_pid_process = self()
 
-    ObserverWeb.TelemetryMock
+    TelemetryStubber.defaults()
     |> expect(:subscribe_for_new_keys, fn ->
       send(test_pid_process, {:liveview_pid, self()})
       :ok
     end)
     |> stub(:get_keys_by_node, fn _node -> [] end)
-    |> stub(:push_data, fn _event -> :ok end)
 
     {:ok, liveview, _html} = live(conn, "/observer/metrics")
 
@@ -168,18 +194,52 @@ defmodule Observer.Web.Metrics.PageLiveTest do
     refute render(liveview) =~ "services:#{node}"
   end
 
-  test "Testing NodeUp, no previous service is removed", %{conn: conn} do
+  test "Testing NodeDown in oberver mode MUST NOT affect selected services", %{conn: conn} do
     node = Node.self() |> to_string
     service_id = String.replace(node, "@", "-")
     test_pid_process = self()
 
     ObserverWeb.TelemetryMock
+    |> stub(:push_data, fn _event -> :ok end)
+    |> stub(:list_active_nodes, fn -> [Node.self()] ++ Node.list() end)
+    |> stub(:cached_mode, fn -> :observer end)
     |> expect(:subscribe_for_new_keys, fn ->
       send(test_pid_process, {:liveview_pid, self()})
       :ok
     end)
     |> stub(:get_keys_by_node, fn _node -> [] end)
-    |> stub(:push_data, fn _event -> :ok end)
+
+    {:ok, liveview, _html} = live(conn, "/observer/metrics")
+
+    liveview
+    |> element("#metrics-multi-select-toggle-options")
+    |> render_click()
+
+    assert_receive {:liveview_pid, liveview_pid}, 1_000
+
+    html =
+      liveview
+      |> element("#metrics-multi-select-services-#{service_id}-add-item")
+      |> render_click()
+
+    assert html =~ "services:#{node}"
+
+    send(liveview_pid, {:nodedown, Node.self()})
+
+    assert render(liveview) =~ "services:#{node}"
+  end
+
+  test "Testing NodeUp, no previous service is removed", %{conn: conn} do
+    node = Node.self() |> to_string
+    service_id = String.replace(node, "@", "-")
+    test_pid_process = self()
+
+    TelemetryStubber.defaults()
+    |> expect(:subscribe_for_new_keys, fn ->
+      send(test_pid_process, {:liveview_pid, self()})
+      :ok
+    end)
+    |> stub(:get_keys_by_node, fn _node -> [] end)
 
     {:ok, liveview, _html} = live(conn, "/observer/metrics")
 

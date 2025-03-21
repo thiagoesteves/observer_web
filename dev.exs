@@ -75,6 +75,22 @@ Application.put_env(:phoenix, :serve_endpoints, true)
 Application.put_env(:phoenix, :persistent, true)
 
 Task.async(fn ->
+  # Stop the default Telemetry server to start a new one with new defaults
+  mode = "OBSERVER_WEB_TELEMETRY_MODE" |> System.get_env("local") |> String.to_atom()
+
+  retention_period =
+    "OBSERVER_WEB_TELEMETRY_RETENTION_PERIOD" |> System.get_env("1800000") |> String.to_integer()
+
+  telemetry_module = ObserverWeb.Telemetry.Storage
+  :ok = Supervisor.terminate_child(ObserverWeb.Application, telemetry_module)
+  :ok = Supervisor.delete_child(ObserverWeb.Application, telemetry_module)
+
+  {:ok, _} =
+    Supervisor.start_child(
+      ObserverWeb.Application,
+      {telemetry_module, [mode: mode, data_retention_period: retention_period]}
+    )
+
   {:ok, _} = Supervisor.start_child(ObserverWeb.Application, WebDev.Endpoint)
 
   Process.sleep(:infinity)

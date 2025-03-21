@@ -4,6 +4,8 @@ defmodule Observer.Web.Components.Metrics.PhxLvSocket do
 
   use Phoenix.Component
 
+  alias Observer.Web.Components.Metrics.Common
+
   attr :title, :string, required: true
   attr :service, :string, required: true
   attr :metric, :string, required: true
@@ -56,18 +58,24 @@ defmodule Observer.Web.Components.Metrics.PhxLvSocket do
     }
 
     {series_data, categories_data} =
-      Enum.reduce(metrics, {empty_series_data, []}, fn metric, {series_data, categories_data} ->
-        timestamp =
-          metric.timestamp
-          |> trunc()
-          |> DateTime.from_unix!(:millisecond)
-          |> DateTime.to_string()
+      Enum.reduce(metrics, {empty_series_data, []}, fn
+        %ObserverWeb.Telemetry.Data{value: nil} = metric, {series_data, categories_data} ->
+          timestamp = Common.timestamp_to_string(metric.timestamp)
 
-        {%{
-           total: [metric.measurements.total] ++ series_data.total,
-           supervisors: [metric.measurements.supervisors] ++ series_data.supervisors,
-           connected: [metric.measurements.connected] ++ series_data.connected
-         }, [timestamp] ++ categories_data}
+          {%{
+             total: [nil] ++ series_data.total,
+             supervisors: [nil] ++ series_data.supervisors,
+             connected: [nil] ++ series_data.connected
+           }, [timestamp] ++ categories_data}
+
+        metric, {series_data, categories_data} ->
+          timestamp = Common.timestamp_to_string(metric.timestamp)
+
+          {%{
+             total: [metric.measurements.total] ++ series_data.total,
+             supervisors: [metric.measurements.supervisors] ++ series_data.supervisors,
+             connected: [metric.measurements.connected] ++ series_data.connected
+           }, [timestamp] ++ categories_data}
       end)
 
     datasets =

@@ -4,17 +4,31 @@ defmodule ObserverWeb.Telemetry.Storage do
   """
   use GenServer
 
-  import ObserverWeb.Macros
-
   alias ObserverWeb.Rpc
 
   @behaviour ObserverWeb.Telemetry.Adapter
 
+  @storage_table :storage_table
+  @mode_key "mode"
   @metric_keys "metric-keys"
-  @metric_table :observer_web_metrics
+  @registry_key "registry-nodes"
 
   @one_minute_in_milliseconds 60_000
   @retention_data_delete_interval :timer.minutes(1)
+
+  @type t :: %__MODULE__{
+          nodes: [atom()],
+          node_metric_tables: map(),
+          persist_data?: boolean(),
+          mode: :local | :broadcast | :observer,
+          data_retention_period: nil | non_neg_integer()
+        }
+
+  defstruct nodes: [],
+            node_metric_tables: %{},
+            persist_data?: false,
+            mode: :local,
+            data_retention_period: nil
 
   ### ==========================================================================
   ### Callback functions
@@ -22,97 +36,187 @@ defmodule ObserverWeb.Telemetry.Storage do
 
   @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
   def start_link(args) do
-    GenServer.start_link(__MODULE__, args, name: __MODULE__)
+    name = Keyword.get(args, :name, __MODULE__)
+
+    GenServer.start_link(__MODULE__, args, name: name)
   end
 
   @impl true
-  def init(_args) do
-    node = Node.self()
+  def init(args) do
+    # Create a general table to store information
+    :ets.new(@storage_table, [:set, :protected, :named_table])
 
-    # Create metric tables for the node
-    :ets.new(@metric_table, [:set, :protected, :named_table])
-    :ets.insert(@metric_table, {@metric_keys, []})
+    node_self = Node.self()
 
-    persist_data? =
-      if data_retention_period() do
+    mode = Keyword.fetch!(args, :mode)
+    data_retention_period = Keyword.fetch!(args, :data_retention_period)
+
+    :ets.insert(@storage_table, {@mode_key, mode})
+
+    persist_data? = fn ->
+      if data_retention_period do
         :timer.send_interval(@retention_data_delete_interval, :prune_expired_entries)
         true
       else
         false
       end
+    end
 
-    {:ok, %{node: node, persist_data?: persist_data?}}
+    case mode do
+      :local ->
+        {:ok,
+         %__MODULE__{
+           nodes: [node_self],
+           persist_data?: persist_data?.(),
+           node_metric_tables: create_update_metric_table(node_self, %{}),
+           mode: mode,
+           data_retention_period: data_retention_period
+         }}
+
+      :observer ->
+        # List all nodes including self()
+        nodes = [node_self] ++ Node.list()
+
+        # Subscribe to receive metrics data via PubSub
+        Phoenix.PubSub.subscribe(ObserverWeb.PubSub, broadcast_topic())
+
+        # Subscribe to receive notifications if any node is UP or Down
+        :net_kernel.monitor_nodes(true)
+
+        {:ok,
+         %{
+           nodes: nodes,
+           persist_data?: persist_data?.(),
+           node_metric_tables: Enum.reduce(nodes, %{}, &create_update_metric_table(&1, &2)),
+           mode: mode,
+           data_retention_period: data_retention_period
+         }}
+
+      :broadcast ->
+        # NOTE: In Broadcast mode, data is not stored.
+        {:ok, %__MODULE__{nodes: [node_self], mode: mode}}
+    end
   end
 
   @impl true
-  def handle_cast(
-        {:observer_web_telemetry,
-         %{metrics: metrics, reporter: reporter, measurements: measurements}},
-        %{node: node, persist_data?: persist_data?} = state
-      )
-      when reporter in [node] do
+  def handle_cast({:observer_web_telemetry, event}, state) do
+    do_handle_metrics(event, state)
+  end
+
+  @impl true
+  def handle_info({:observer_web_telemetry, event}, state) do
+    do_handle_metrics(event, state)
+  end
+
+  def handle_info({:nodeup, node}, state) do
+    nodes = state.nodes ++ [node]
+
+    if node |> metric_table() |> ets_table_exists?() do
+      {:noreply, %{state | nodes: nodes}}
+    else
+      node_metric_tables = create_update_metric_table(node, state.node_metric_tables)
+
+      {:noreply, %{state | nodes: nodes, node_metric_tables: node_metric_tables}}
+    end
+  end
+
+  def handle_info(
+        {:nodedown, node},
+        %{nodes: nodes, persist_data?: persist_data?, node_metric_tables: node_metric_tables} =
+          state
+      ) do
+    metric_table = Map.get(node_metric_tables, node)
     now = System.os_time(:millisecond)
     minute = unix_to_minutes(now)
 
-    keys = get_keys_by_node(reporter)
+    node
+    |> get_keys_by_node()
+    |> Enum.each(fn key ->
+      if persist_data? do
+        metric_key = metric_key(key, minute)
 
-    new_keys =
-      Enum.reduce(metrics, [], fn metric, acc ->
-        {key, timed_key, data} = build_telemetry_data(metric, measurements, now, minute)
+        data = %ObserverWeb.Telemetry.Data{timestamp: now}
 
-        # credo:disable-for-lines:3
-        if persist_data? do
-          current_data =
-            case :ets.lookup(@metric_table, timed_key) do
-              [{_, current_list_data}] -> [data | current_list_data]
-              _ -> [data]
-            end
+        # credo:disable-for-lines:2
+        current_data =
+          case :ets.lookup(metric_table, metric_key) do
+            [{_, current_list_data}] -> [data | current_list_data]
+            _ -> [data]
+          end
 
-          :ets.insert(@metric_table, {timed_key, current_data})
-        end
+        :ets.insert(metric_table, {metric_key, current_data})
 
-        Phoenix.PubSub.broadcast(
-          ObserverWeb.PubSub,
-          metrics_topic(reporter, key),
-          {:metrics_new_data, reporter, key, data}
-        )
+        notify_new_metric_data(node, key, data)
+      end
+    end)
 
-        if key in keys do
-          acc
-        else
-          [key | acc]
-        end
+    nodes = nodes -- [node]
+
+    {:noreply, %{state | nodes: nodes}}
+  end
+
+  def handle_info(
+        :prune_expired_entries,
+        %{node_metric_tables: tables, data_retention_period: data_retention_period} = state
+      ) do
+    now_minutes = unix_to_minutes()
+    retention_period = trunc(data_retention_period / @one_minute_in_milliseconds)
+    deletion_period_to = now_minutes - retention_period - 1
+    deletion_period_from = deletion_period_to - 2
+
+    prune_keys = fn key, table ->
+      Enum.each(deletion_period_from..deletion_period_to, fn timestamp ->
+        :ets.delete(table, metric_key(key, timestamp))
       end)
-
-    if new_keys != [] do
-      :ets.insert(@metric_table, {@metric_keys, new_keys ++ keys})
-
-      Phoenix.PubSub.broadcast(
-        ObserverWeb.PubSub,
-        keys_topic(),
-        {:metrics_new_keys, reporter, new_keys}
-      )
     end
+
+    Enum.each(tables, fn {node, table} ->
+      node
+      |> get_keys_by_node()
+      |> Enum.each(&prune_keys.(&1, table))
+    end)
 
     {:noreply, state}
   end
 
-  @impl true
-  def handle_info(:prune_expired_entries, state) do
-    now_minutes = unix_to_minutes()
-    retention_period = trunc(data_retention_period() / @one_minute_in_milliseconds)
-    deletion_period_to = now_minutes - retention_period - 1
-    deletion_period_from = deletion_period_to - 2
+  defp do_handle_metrics(
+         %{metrics: metrics, reporter: reporter, measurements: measurements},
+         %{nodes: nodes, persist_data?: persist_data?, node_metric_tables: node_metric_tables} =
+           state
+       ) do
+    if reporter in nodes do
+      metric_table = Map.get(node_metric_tables, reporter)
+      now = System.os_time(:millisecond)
+      minute = unix_to_minutes(now)
 
-    prune_keys = fn key ->
-      Enum.each(deletion_period_from..deletion_period_to, fn timestamp ->
-        :ets.delete(@metric_table, metric_key(key, timestamp))
-      end)
+      keys = get_keys_by_node(reporter)
+
+      new_keys =
+        Enum.reduce(metrics, [], fn metric, acc ->
+          {key, timed_key, data} = build_telemetry_data(metric, measurements, now, minute)
+
+          if persist_data?, do: ets_append_to_list(metric_table, timed_key, data)
+
+          notify_new_metric_data(reporter, key, data)
+
+          # credo:disable-for-lines:3
+          if key in keys do
+            acc
+          else
+            [key | acc]
+          end
+        end)
+
+      if new_keys != [] do
+        :ets.insert(metric_table, {@metric_keys, new_keys ++ keys})
+
+        Phoenix.PubSub.broadcast(
+          ObserverWeb.PubSub,
+          keys_topic(),
+          {:metrics_new_keys, reporter, new_keys}
+        )
+      end
     end
-
-    Node.self()
-    |> get_keys_by_node()
-    |> Enum.each(&prune_keys.(&1))
 
     {:noreply, state}
   end
@@ -122,7 +226,15 @@ defmodule ObserverWeb.Telemetry.Storage do
   ### ==========================================================================
   @impl true
   def push_data(event) do
-    GenServer.cast(__MODULE__, {:observer_web_telemetry, event})
+    msg = {:observer_web_telemetry, event}
+
+    case cached_mode() do
+      :broadcast ->
+        Phoenix.PubSub.broadcast(ObserverWeb.PubSub, broadcast_topic(), msg)
+
+      mode when mode in [:local, :observer] ->
+        GenServer.cast(__MODULE__, msg)
+    end
   end
 
   @impl true
@@ -150,64 +262,160 @@ defmodule ObserverWeb.Telemetry.Storage do
   end
 
   def list_data_by_node_key(node, key, options) when is_atom(node) do
-    from = Keyword.get(options, :from, 15)
-    order = Keyword.get(options, :order, :asc)
+    case cached_mode() do
+      :broadcast ->
+        []
 
-    now_minutes = unix_to_minutes()
-    from_minutes = now_minutes - from
+      mode when mode in [:local, :observer] ->
+        from = Keyword.get(options, :from, 15)
+        order = Keyword.get(options, :order, :asc)
 
-    result =
-      Enum.reduce(from_minutes..now_minutes, [], fn minute, acc ->
-        case Rpc.call(
-               node,
-               :ets,
-               :lookup,
-               [@metric_table, metric_key(key, minute)],
-               :infinity
-             ) do
-          [{_, value}] ->
-            value ++ acc
+        now_minutes = unix_to_minutes()
+        from_minutes = now_minutes - from
 
-          _ ->
-            acc
+        metric_table = metric_table(node)
+
+        fetch_data = fn
+          :local, node, minute ->
+            Rpc.call(node, :ets, :lookup, [metric_table, metric_key(key, minute)], :infinity)
+
+          :observer, _node, minute ->
+            if ets_table_exists?(metric_table) do
+              :ets.lookup(metric_table, metric_key(key, minute))
+            else
+              []
+            end
         end
-      end)
 
-    if order == :asc, do: Enum.reverse(result), else: result
+        # credo:disable-for-lines:3
+        result =
+          Enum.reduce(from_minutes..now_minutes, [], fn minute, acc ->
+            case fetch_data.(mode, node, minute) do
+              [{_, value}] ->
+                value ++ acc
+
+              _ ->
+                acc
+            end
+          end)
+
+        if order == :asc, do: Enum.reverse(result), else: result
+    end
   end
 
   @impl true
   def get_keys_by_node(nil), do: []
 
   def get_keys_by_node(node) do
-    case Rpc.call(node, :ets, :lookup, [@metric_table, @metric_keys], :infinity) do
-      [{_, value}] ->
-        value
-
-      # coveralls-ignore-start
-      _ ->
+    case cached_mode() do
+      :broadcast ->
         []
-        # coveralls-ignore-stop
+
+      :local ->
+        case Rpc.call(node, :ets, :lookup, [metric_table(node), @metric_keys], :infinity) do
+          [{_, value}] ->
+            value
+
+          # coveralls-ignore-start
+          _ ->
+            []
+            # coveralls-ignore-stop
+        end
+
+      :observer ->
+        node
+        |> metric_table()
+        |> ets_lookup_if_exist(@metric_keys, [])
     end
+  end
+
+  @impl true
+  def list_active_nodes do
+    case cached_mode() do
+      :broadcast ->
+        []
+
+      :local ->
+        [Node.self()] ++ Node.list()
+
+      :observer ->
+        ets_lookup_if_exist(@storage_table, @registry_key, [])
+    end
+  end
+
+  @impl true
+  def cached_mode do
+    ets_lookup_if_exist(@storage_table, @mode_key, nil)
   end
 
   ### ==========================================================================
   ### Private functions
   ### ==========================================================================
-  if_not_test do
-    defp data_retention_period,
-      do: Application.get_env(:observer_web, ObserverWeb.Telemetry)[:data_retention_period]
-  else
-    defp data_retention_period, do: :timer.minutes(1)
-  end
+  defp metric_table(node), do: String.to_atom("#{node}::observer-web-metrics")
 
   defp metric_key(metric, timestamp), do: "#{metric}|#{timestamp}"
 
   defp unix_to_minutes(time \\ System.os_time(:millisecond)),
     do: trunc(time / @one_minute_in_milliseconds)
 
+  defp ets_table_exists?(table_name) do
+    case :ets.info(table_name) do
+      :undefined -> false
+      _info -> true
+    end
+  end
+
+  defp ets_lookup_if_exist(table, key, default_return) do
+    with true <- ets_table_exists?(table),
+         [{_, value}] <- :ets.lookup(table, key) do
+      value
+    else
+      # coveralls-ignore-start
+      _ ->
+        default_return
+        # coveralls-ignore-stop
+    end
+  end
+
+  defp ets_append_to_list(table, key, new_item) do
+    case :ets.lookup(table, key) do
+      [{^key, current_list_data}] ->
+        updated_list = [new_item | current_list_data]
+        :ets.insert(table, {key, updated_list})
+        updated_list
+
+      [] ->
+        # Key doesn't exist yet, create new list with just this item
+        :ets.insert(table, {key, [new_item]})
+        [new_item]
+    end
+  end
+
+  # NOTE: PubSub topics
   defp keys_topic, do: "metrics::keys"
   defp metrics_topic(node, key), do: "metrics::#{node}::#{key}"
+  defp broadcast_topic, do: "metrics::broadcast"
+
+  defp notify_new_metric_data(reporter, key, data) do
+    Phoenix.PubSub.broadcast(
+      ObserverWeb.PubSub,
+      metrics_topic(reporter, key),
+      {:metrics_new_data, reporter, key, data}
+    )
+  end
+
+  defp create_update_metric_table(node, current_map) do
+    table = metric_table(node)
+
+    # Create Metric table
+    :ets.new(table, [:set, :protected, :named_table])
+    :ets.insert(table, {@metric_keys, []})
+
+    # Add node the to registry
+    ets_append_to_list(@storage_table, @registry_key, node)
+
+    Map.put(current_map, node, table)
+  end
 
   defp build_telemetry_data(%{name: name} = metric, measurements, now, minute) do
     {name, metric_key(name, minute),
