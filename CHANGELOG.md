@@ -1,16 +1,18 @@
 # CHANGELOG (v0.1.X)
 
-## 0.1.7 🚀 (2025-03-21)
+## 0.1.8 ()
 
-### Backwards incompatible changes for 0.1.6
+### Backwards incompatible changes for 0.1.7
  * None
 
 ### Bug fixes
- * Fixing possible pattern match error with Liveview Socket without URI
+ * None
 
 ### Enhancements
+ * [[`PR-13`](https://github.com/thiagoesteves/deployex/pull/13)] Fixed dialyzer configuration
 
 # 🚀 Previous Releases
+ * [0.1.7 (2025-03-21)](https://github.com/thiagoesteves/observer_web/blob/v0.1.7/CHANGELOG.md)
  * [0.1.6 (2025-03-21)](https://github.com/thiagoesteves/observer_web/blob/v0.1.6/CHANGELOG.md)
  * [0.1.5 (2025-02-26)](https://github.com/thiagoesteves/observer_web/blob/v0.1.5/CHANGELOG.md)
  * [0.1.4 (2025-02-11)](https://github.com/thiagoesteves/observer_web/blob/v0.1.4/CHANGELOG.md)

@@ -5,6 +5,7 @@ on:
     branches: [main]
 
 env:
+  MIX_ENV: test
   elixir_version: '1.17.0'
   otp_version: '26.2.5.6'
 
@@ -122,12 +123,12 @@ jobs:
         uses: actions/cache@v4
         id: plt_cache
         with:
-          key: plt-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}-${{ hashFiles('**/*.ex') }}
+          key: plt-${{ env.otp_version }}-${{ env.elixir_version }}-${{ hashFiles('**/mix.lock') }}-${{ hashFiles('**/*.ex') }}
           restore-keys: |
-            plt-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}-${{ hashFiles('**/*.ex') }}
-            plt-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}-
-            plt-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-
-            plt-${{ steps.beam.outputs.otp-version }}-
+            plt-${{ env.otp_version }}-${{ env.elixir_version }}-${{ hashFiles('**/mix.lock') }}-${{ hashFiles('**/*.ex') }}
+            plt-${{ env.otp_version }}-${{ env.elixir_version }}-${{ hashFiles('**/mix.lock') }}-
+            plt-${{ env.otp_version }}-${{ env.elixir_version }}-
+            plt-${{ env.otp_version }}-
           path: priv/plts
 
       - name: Create PLTs
