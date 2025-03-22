@@ -41,6 +41,10 @@ priv/static/*
 # Ignore local .db files
 /priv/*.db*
 
+# Dialyzer
+/priv/plts/*.plt
+/priv/plts/*.plt.hash
+
 # Ignore .tool-versions file
 .tool-versions
 
