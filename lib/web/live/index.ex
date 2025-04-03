@@ -3,7 +3,6 @@ defmodule Observer.Web.IndexLive do
   This module provides Observer context
 
   ## References:
-   * https://github.com/thiagoesteves/deployex/blob/main/lib/deployex_web/live/tracing/index.ex
    * https://github.com/oban-bg/oban_web/blob/main/lib/oban/web/dashboard_live.ex
   """
 

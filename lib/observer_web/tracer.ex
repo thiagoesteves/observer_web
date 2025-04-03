@@ -1,9 +1,6 @@
 defmodule ObserverWeb.Tracer do
   @moduledoc """
   This module provides Tracer context
-
-  ## References:
-   * https://github.com/thiagoesteves/deployex/blob/main/lib/deployex/tracer.ex
   """
 
   alias ObserverWeb.Rpc
