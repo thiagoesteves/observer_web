@@ -9,7 +9,9 @@
  * None
 
 ### Enhancements
- * [[`PR-13`](https://github.com/thiagoesteves/deployex/pull/13)] Fixed dialyzer configuration
+ * [[`PR-13`](https://github.com/thiagoesteves/observer_web/pull/13)] Fixed dialyzer configuration
+ * [[`PR-14`](https://github.com/thiagoesteves/observer_web/pull/14)] Improvements from code review
+ and integration
 
 # 🚀 Previous Releases
  * [0.1.7 (2025-03-21)](https://github.com/thiagoesteves/observer_web/blob/v0.1.7/CHANGELOG.md)

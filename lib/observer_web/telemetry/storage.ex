@@ -8,7 +8,7 @@ defmodule ObserverWeb.Telemetry.Storage do
 
   @behaviour ObserverWeb.Telemetry.Adapter
 
-  @storage_table :storage_table
+  @storage_table :observer_web_metrics_table
   @mode_key "mode"
   @metric_keys "metric-keys"
   @registry_key "registry-nodes"
@@ -74,14 +74,14 @@ defmodule ObserverWeb.Telemetry.Storage do
          }}
 
       :observer ->
+        # Subscribe to receive notifications if any node is UP or Down
+        :net_kernel.monitor_nodes(true)
+
         # List all nodes including self()
         nodes = [node_self] ++ Node.list()
 
         # Subscribe to receive metrics data via PubSub
         Phoenix.PubSub.subscribe(ObserverWeb.PubSub, broadcast_topic())
-
-        # Subscribe to receive notifications if any node is UP or Down
-        :net_kernel.monitor_nodes(true)
 
         {:ok,
          %{
@@ -234,6 +234,9 @@ defmodule ObserverWeb.Telemetry.Storage do
 
       mode when mode in [:local, :observer] ->
         GenServer.cast(__MODULE__, msg)
+
+      _mode_not_defined_yet ->
+        :ok
     end
   end
 

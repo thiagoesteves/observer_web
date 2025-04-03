@@ -1,4 +1,4 @@
-defmodule ObserverWeb.LocalStorageTest do
+defmodule ObserverWeb.Telemetry.LocalStorageTest do
   use ExUnit.Case, async: false
 
   import Mock

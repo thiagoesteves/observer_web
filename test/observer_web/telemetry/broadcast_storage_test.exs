@@ -1,4 +1,4 @@
-defmodule ObserverWeb.BroadcastStorageTest do
+defmodule ObserverWeb.Telemetry.BroadcastStorageTest do
   use ExUnit.Case, async: false
 
   alias ObserverWeb.Telemetry.Storage
