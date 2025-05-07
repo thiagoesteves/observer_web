@@ -1,5 +1,16 @@
 # CHANGELOG (v0.1.X)
 
+## 0.1.9 🚀 ()
+
+### Backwards incompatible changes for 0.1.8
+ * None
+
+### Bug fixes
+ * None
+
+### Enhancements
+ * [[`PR-16`](https://github.com/thiagoesteves/observer_web/pull/16)] Adding Beam VM statistics (ports, atoms and processes)
+
 ## 0.1.8 🚀 (2025-04-03)
 
 ### Backwards incompatible changes for 0.1.7

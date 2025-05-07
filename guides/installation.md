@@ -124,7 +124,7 @@ providing a more integrated monitoring experience.
 
 ### Metrics
 
-#### Retention period for metrics
+#### 1. Retention period for metrics
 
 Observer Web can monitor Beam VM metrics (along with many others) and uses ETS 
 tables to store the data and there is a possibility of configuration for the retention
@@ -147,12 +147,12 @@ config :observer_web, ObserverWeb.Telemetry,
 > storage, refer to the Configuration section to set up a Central Hub application,
 > which can aggregate and retain metrics.
 
-#### Configuration
+#### 2. Configuration
 
 Observer Web can operate in two distinct metrics configurations: `Standalone` and `Metric Hub`.
 These configurations determine how metrics are collected, stored, and managed.
 
-#### Standalone Configuration (default)
+##### Standalone Configuration (default)
 
 In this mode, all applications with Observer Web installed operate independently. Each
 application receives and stores its own metrics within its ETS tables. The image below
@@ -162,7 +162,7 @@ illustrates this configuration:
 
 __**NOTE: No additional configuration is required for this mode**__
 
-#### Metric Hub Configuration
+##### Metric Hub Configuration
 
 In this mode, one application is designated as the central hub to store all metrics,
 while the remaining applications broadcast their data to this designated hub. This
@@ -197,6 +197,22 @@ config :observer_web, ObserverWeb.Telemetry,
 The application in `observer mode` will also retain its own metrics in addition to 
 aggregating metrics from other applications.
 
+#### 3. Metrics Polling Interval
+
+Observer Web allows configuration of two polling intervals:
+ * Phoenix Liveview sockets - Default: `5_000` ms
+ * Beam VM statistics - Default: `1_000` ms
+
+```elixir
+config :observer_web, ObserverWeb.Telemetry,
+  phx_lv_sckt_poller_interval_ms: 5_000,
+  beam_vm_poller_interval_ms: 1_000
+```
+
+> #### For applications running by [DeployEx][dye] {: .attention}
+>
+> When using DeployEx, the BEAM VM statistics polling is also used to monitor and, if necessary, restart the application. The polling interval directly affects how quickly these actions are performed. While ports, atoms, and processes are configured via Observer Web, the memory check interval (also used by [DeployEx][dye]) is configured separately—refer to the relevant [documentation][mtc] for details.
+
 ### Usage with Web and Clustering
 
 The Observer Web provides observer ability for the local application as well as any other that is
@@ -217,3 +233,4 @@ via OTP distribution!
 [ba]: https://hexdocs.pm/basic_auth/readme.html
 [oi]: installation.html
 [dye]: https://github.com/thiagoesteves/deployex
+[mtc]: https://hexdocs.pm/telemetry_metrics/Telemetry.Metrics.html

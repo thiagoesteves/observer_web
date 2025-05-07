@@ -22,9 +22,24 @@ defmodule Observer.Web.Telemetry do
   end
 
   if_not_test do
+    alias ObserverWeb.Telemetry.Producer.BeamVm
+    alias ObserverWeb.Telemetry.Producer.PhxLvSocket
+
     defp add_telemetry_poller,
       do: [
-        {:telemetry_poller, measurements: periodic_measurements(), period: 5_000}
+        {:telemetry_poller,
+         name: :observer_web_phoenix_liveview_sockets,
+         measurements: [{PhxLvSocket, :process, []}],
+         period:
+           Application.get_env(:observer_web, ObserverWeb.Telemetry)[
+             :phx_lv_sckt_poller_interval_ms
+           ] || 5_000},
+        {:telemetry_poller,
+         name: :observer_web_beam_vm,
+         measurements: [{BeamVm, :process, []}],
+         period:
+           Application.get_env(:observer_web, ObserverWeb.Telemetry)[:beam_vm_poller_interval_ms] ||
+             1_000}
       ]
   else
     defp add_telemetry_poller, do: []
@@ -66,17 +81,10 @@ defmodule Observer.Web.Telemetry do
       summary("vm.memory.total", unit: {:byte, :kilobyte}),
       summary("vm.total_run_queue_lengths.total"),
       summary("vm.total_run_queue_lengths.cpu"),
-      summary("vm.total_run_queue_lengths.io")
+      summary("vm.total_run_queue_lengths.io"),
+      summary("vm.port.total"),
+      summary("vm.atom.total"),
+      summary("vm.process.total")
     ]
-  end
-
-  if_not_test do
-    defp periodic_measurements do
-      [
-        # A module, function and arguments to be invoked periodically.
-        # This function must call :telemetry.execute/3 and a metric must be added above.
-        {ObserverWeb.Telemetry.Producer.PhxLvSocket, :process_phoenix_liveview_sockets, []}
-      ]
-    end
   end
 end
