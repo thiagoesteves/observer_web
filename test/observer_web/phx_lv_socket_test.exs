@@ -1,4 +1,4 @@
-defmodule ObserverWeb.PhxLvSocket do
+defmodule ObserverWeb.PhxLvSocketTest do
   use ExUnit.Case, async: false
 
   import Mock
@@ -25,7 +25,7 @@ defmodule ObserverWeb.PhxLvSocket do
       attach: fn _id, _event, _handler, _config ->
         :ok
       end do
-      assert :ok == PhxLvSocket.process_phoenix_liveview_sockets()
+      assert :ok == PhxLvSocket.process()
     end
   end
 end

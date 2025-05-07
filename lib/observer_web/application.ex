@@ -24,7 +24,9 @@ defmodule ObserverWeb.Application do
   # NOTE: DO NOT start these servers when running tests.
   if_not_test do
     defp telemetry_servers do
-      [{ObserverWeb.Telemetry.Storage, telemetry_server_config()}]
+      [
+        {ObserverWeb.Telemetry.Storage, telemetry_server_config()}
+      ]
     end
 
     defp telemetry_server_config do

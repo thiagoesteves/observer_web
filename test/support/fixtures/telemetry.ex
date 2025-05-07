@@ -70,6 +70,22 @@ defmodule ObserverWeb.TelemetryFixtures do
     }
   end
 
+  def build_telemetry_beam_vm_total(
+        timestamp \\ :rand.uniform(2_000_000_000_000),
+        value \\ 555
+      ) do
+    %ObserverWeb.Telemetry.Data{
+      timestamp: timestamp,
+      value: value,
+      unit: "",
+      tags: %{},
+      measurements: %{
+        limit: value,
+        total: value
+      }
+    }
+  end
+
   def build_telemetry_data(
         timestamp \\ :rand.uniform(2_000_000_000_000),
         value \\ 70_973.064,

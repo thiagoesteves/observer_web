@@ -21,7 +21,7 @@ defmodule ObserverWeb.Telemetry.Producer.PhxLvSocket do
   ### Public functions
   ### ==========================================================================
 
-  def process_phoenix_liveview_sockets do
+  def process do
     cached_phx_endpoints = Process.get(@cache_key, [])
 
     # Check if the cache is populated, if not, verify if there is any
