@@ -118,8 +118,8 @@ defmodule Observer.Web.Apps.Page do
             %{name: "apps", keys: @node_info.selected_apps_keys}
           ]}
           unselected={[
-            %{name: "services", keys: @unselected_services_keys},
-            %{name: "apps", keys: @unselected_apps_keys}
+            %{name: "services", keys: @unselected_services_keys, unselected_highlight: []},
+            %{name: "apps", keys: @unselected_apps_keys, unselected_highlight: []}
           ]}
           show_options={@show_observer_options}
         />

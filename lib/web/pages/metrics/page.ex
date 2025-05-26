@@ -46,6 +46,10 @@ defmodule Observer.Web.Metrics.Page do
       |> assign(unselected_metrics_keys: unselected_metrics_keys)
       |> assign(attention_msg: attention_msg)
       |> assign(mode_color: mode_color)
+      |> assign(
+        services_unselected_highlight:
+          (Node.list() ++ [Node.self()]) |> Enum.map(&Atom.to_string/1)
+      )
 
     ~H"""
     <div class="min-h-screen bg-white">
@@ -96,8 +100,12 @@ defmodule Observer.Web.Metrics.Page do
             %{name: "metrics", keys: @node_info.selected_metrics_keys}
           ]}
           unselected={[
-            %{name: "services", keys: @unselected_services_keys},
-            %{name: "metrics", keys: @unselected_metrics_keys}
+            %{
+              name: "services",
+              keys: @unselected_services_keys,
+              unselected_highlight: @services_unselected_highlight
+            },
+            %{name: "metrics", keys: @unselected_metrics_keys, unselected_highlight: []}
           ]}
           show_options={@show_metric_options}
         />

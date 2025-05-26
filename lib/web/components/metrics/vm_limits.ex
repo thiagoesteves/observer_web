@@ -5,6 +5,7 @@ defmodule Observer.Web.Components.Metrics.VmLimits do
   use Phoenix.Component
 
   alias Observer.Web.Components.Metrics.Common
+  alias Observer.Web.Helpers
 
   attr :title, :string, required: true
   attr :service, :string, required: true
@@ -22,7 +23,7 @@ defmodule Observer.Web.Components.Metrics.VmLimits do
   def content(assigns) do
     ~H"""
     <div :if={@metric in @supported_metrics} style={"grid-column: span #{@cols};"}>
-      <% id = String.replace("#{@service}-#{@metric}", ["@", ".", "/"], "-") %>
+      <% id = Helpers.normalize_id("#{@service}-#{@metric}") %>
       <div class="relative flex flex-col min-w-0 break-words bg-white w-full shadow-lg rounded">
         <div class="rounded-t mb-0 px-4 py-3 border border-b border-solid">
           <div class="flex flex-wrap items-center">

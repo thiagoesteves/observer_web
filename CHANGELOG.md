@@ -1,5 +1,16 @@
 # CHANGELOG (v0.1.X)
 
+## 0.1.10 🚀 (2025-05-26)
+
+### Backwards incompatible changes for 0.1.9
+ * None
+
+### Bug fixes
+ * None
+
+### Enhancements
+ * [[`PR-18`](https://github.com/thiagoesteves/observer_web/pull/18)] Normalizing functions and adding highlight to nodes that are current online for metrics
+
 ## 0.1.9 🚀 (2025-05-07)
 
 ### Backwards incompatible changes for 0.1.8

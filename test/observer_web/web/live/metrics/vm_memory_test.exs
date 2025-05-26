@@ -14,9 +14,9 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
 
   test "Add/Remove Service + vm.memory.total", %{conn: conn} do
     node = Node.self() |> to_string
-    service_id = String.replace(node, "@", "-")
+    service_id = Helpers.normalize_id(node)
     metric = "vm.memory.total"
-    metric_id = String.replace(metric, ".", "-")
+    metric_id = Helpers.normalize_id(metric)
     telemetry_data = TelemetryFixtures.build_telemetry_data_vm_total_memory()
 
     TelemetryStubber.defaults()
@@ -63,9 +63,9 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
 
   test "Add/Remove vm.memory.total + Service", %{conn: conn} do
     node = Node.self() |> to_string
-    service_id = String.replace(node, "@", "-")
+    service_id = Helpers.normalize_id(node)
     metric = "vm.memory.total"
-    metric_id = String.replace(metric, ".", "-")
+    metric_id = Helpers.normalize_id(metric)
     telemetry_data = TelemetryFixtures.build_telemetry_data_vm_total_memory()
 
     TelemetryStubber.defaults()
@@ -112,9 +112,9 @@ defmodule Observer.Web.Metrics.VmMemoryTest do
 
   test "Init and Push vm.memory.total data", %{conn: conn} do
     node = Node.self() |> to_string
-    service_id = String.replace(node, "@", "-")
+    service_id = Helpers.normalize_id(node)
     metric = "vm.memory.total"
-    metric_id = String.replace(metric, ".", "-")
+    metric_id = Helpers.normalize_id(metric)
 
     test_pid_process = self()
 

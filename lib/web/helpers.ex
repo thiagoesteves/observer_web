@@ -34,6 +34,19 @@ defmodule Observer.Web.Helpers do
   end
 
   @doc """
+  This function exchange "@", ".", "/" to "-"
+
+  ## Examples
+
+    iex> alias Observer.Web.Helpers
+    ...> assert Helpers.normalize_id("my_app-1@host") == "my_app-1-host"
+    ...> assert Helpers.normalize_id("my_app-2@host") == "my_app-2-host"
+  """
+  def normalize_id(text) do
+    String.replace(text, ["@", ".", "/"], "-")
+  end
+
+  @doc """
   Construct a path to a dashboard page with optional params.
 
   Routing is based on a socket and prefix tuple stored in the process dictionary. Proper routing

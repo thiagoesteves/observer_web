@@ -14,9 +14,9 @@ defmodule Observer.Web.Metrics.PhxLvSocketTest do
 
   test "Add/Remove Service + phoenix.liveview.socket.total", %{conn: conn} do
     node = Node.self() |> to_string
-    service_id = String.replace(node, "@", "-")
+    service_id = Helpers.normalize_id(node)
     metric = "phoenix.liveview.socket.total"
-    metric_id = String.replace(metric, ".", "-")
+    metric_id = Helpers.normalize_id(metric)
     telemetry_data = TelemetryFixtures.build_telemetry_data_phx_lv_socket_total()
 
     TelemetryStubber.defaults()
@@ -63,9 +63,9 @@ defmodule Observer.Web.Metrics.PhxLvSocketTest do
 
   test "Add/Remove phoenix.liveview.socket.totall + Service", %{conn: conn} do
     node = Node.self() |> to_string
-    service_id = String.replace(node, "@", "-")
+    service_id = Helpers.normalize_id(node)
     metric = "phoenix.liveview.socket.total"
-    metric_id = String.replace(metric, ".", "-")
+    metric_id = Helpers.normalize_id(metric)
     telemetry_data = TelemetryFixtures.build_telemetry_data_phx_lv_socket_total()
 
     TelemetryStubber.defaults()
@@ -112,9 +112,9 @@ defmodule Observer.Web.Metrics.PhxLvSocketTest do
 
   test "Init and Push phoenix.liveview.socket.observer.web.total data", %{conn: conn} do
     node = Node.self() |> to_string
-    service_id = String.replace(node, "@", "-")
+    service_id = Helpers.normalize_id(node)
     metric = "phoenix.liveview.socket.observer.web.total"
-    metric_id = String.replace(metric, ".", "-")
+    metric_id = Helpers.normalize_id(metric)
 
     test_pid_process = self()
 
