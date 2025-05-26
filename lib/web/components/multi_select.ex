@@ -8,6 +8,7 @@ defmodule Observer.Web.Components.MultiSelect do
   """
   use Phoenix.Component
 
+  alias Observer.Web.Helpers
   alias Phoenix.LiveView.JS
 
   attr :id, :string, required: true
@@ -42,13 +43,7 @@ defmodule Observer.Web.Components.MultiSelect do
                         {"#{item.name}:#{key}"}
                       </div>
                       <button
-                        id={
-                          String.replace(
-                            "#{@id}-#{item.name}-#{key}-remove-item",
-                            ["@", ".", "/"],
-                            "-"
-                          )
-                        }
+                        id={Helpers.normalize_id("#{@id}-#{item.name}-#{key}-remove-item")}
                         class="flex flex-auto flex-row-reverse"
                         phx-click="multi-select-remove-item"
                         phx-value-key={key}
@@ -85,7 +80,7 @@ defmodule Observer.Web.Components.MultiSelect do
               </div>
               <div class="text-gray-300 w-8 py-1 pl-2 pr-1 border-l flex items-center border-gray-200 ">
                 <button
-                  id={"#{@id}-toggle-options"}
+                  id={Helpers.normalize_id("#{@id}-toggle-options")}
                   class="cursor-pointer w-6 h-6 text-gray-600 outline-none focus:outline-none"
                   phx-click="toggle-options"
                 >
@@ -128,14 +123,11 @@ defmodule Observer.Web.Components.MultiSelect do
                     <div class="flex flex-wrap">
                       <%= for key <- item.keys do %>
                         <button
-                          id={
-                            String.replace(
-                              "#{@id}-#{item.name}-#{key}-add-item",
-                              ["@", ".", "/"],
-                              "-"
-                            )
-                          }
-                          class="flex justify-center items-center m-1 font-medium px-2 rounded-full text-gray-700 bg-gray-100 border border-gray-300"
+                          id={Helpers.normalize_id("#{@id}-#{item.name}-#{key}-add-item")}
+                          class={[
+                            "flex justify-center items-center m-1 font-medium px-2 rounded-full",
+                            unselected_highlight_color(key, item.unselected_highlight)
+                          ]}
                           phx-click="multi-select-add-item"
                           phx-value-key={key}
                           phx-value-item={item.name}
@@ -175,24 +167,32 @@ defmodule Observer.Web.Components.MultiSelect do
     """
   end
 
-  def border_item_color("services"), do: "border-teal-300"
-  def border_item_color("apps"), do: "border-blue-400"
-  def border_item_color("metrics"), do: "border-orange-400"
+  defp border_item_color("services"), do: "border-teal-300"
+  defp border_item_color("apps"), do: "border-blue-400"
+  defp border_item_color("metrics"), do: "border-orange-400"
   # coveralls-ignore-start
-  def border_item_color(_), do: "border-gray-300"
+  defp border_item_color(_), do: "border-gray-300"
   # coveralls-ignore-stop
 
-  def bg_item_color("services"), do: "bg-teal-50"
-  def bg_item_color("apps"), do: "bg-blue-50"
-  def bg_item_color("metrics"), do: "bg-orange-50"
+  defp bg_item_color("services"), do: "bg-teal-50"
+  defp bg_item_color("apps"), do: "bg-blue-50"
+  defp bg_item_color("metrics"), do: "bg-orange-50"
   # coveralls-ignore-start
-  def bg_item_color(_), do: "bg-gray-50"
+  defp bg_item_color(_), do: "bg-gray-50"
   # coveralls-ignore-stop
 
-  def text_item_color("services"), do: "text-teal-700"
-  def text_item_color("apps"), do: "text-blue-700"
-  def text_item_color("metrics"), do: "text-orange-700"
+  defp text_item_color("services"), do: "text-teal-700"
+  defp text_item_color("apps"), do: "text-blue-700"
+  defp text_item_color("metrics"), do: "text-orange-700"
   # coveralls-ignore-start
-  def text_item_color(_), do: "text-teal-700"
+  defp text_item_color(_), do: "text-teal-700"
   # coveralls-ignore-stop
+
+  defp unselected_highlight_color(key, unselected_highlight) do
+    if key in unselected_highlight do
+      "text-gray-700 bg-green-100 borde border-green-300"
+    else
+      "text-gray-700 bg-gray-100 borde border-gray-300"
+    end
+  end
 end

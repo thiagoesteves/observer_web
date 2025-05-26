@@ -9,6 +9,7 @@ defmodule Observer.Web.Components.MultiSelectList do
   use Phoenix.Component
 
   alias Observer.Web.Components.Core
+  alias Observer.Web.Helpers
   alias Phoenix.LiveView.JS
 
   attr :id, :string, required: true
@@ -63,13 +64,7 @@ defmodule Observer.Web.Components.MultiSelectList do
                         {"#{item.name}:#{key}"}
                       </div>
                       <button
-                        id={
-                          String.replace(
-                            "#{@id}-#{item.name}-#{key}-remove-item",
-                            ["@", ".", "/"],
-                            "-"
-                          )
-                        }
+                        id={Helpers.normalize_id("#{@id}-#{item.name}-#{key}-remove-item")}
                         class="flex flex-auto flex-row-reverse"
                         phx-click="multi-select-remove-item"
                         phx-value-key={key}
@@ -168,13 +163,7 @@ defmodule Observer.Web.Components.MultiSelectList do
 
                       <%= for key <- item.keys do %>
                         <button
-                          id={
-                            String.replace(
-                              "#{@id}-#{item.name}-#{key}-add-item",
-                              ["@", ".", "/"],
-                              "-"
-                            )
-                          }
+                          id={Helpers.normalize_id("#{@id}-#{item.name}-#{key}-add-item")}
                           class="flex justify-center items-center m-1 font-medium  px-2 rounded-full text-gray-700 bg-gray-100 border border-gray-300"
                           phx-click="multi-select-add-item"
                           phx-value-key={key}

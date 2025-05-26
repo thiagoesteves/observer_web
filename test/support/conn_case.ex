@@ -24,6 +24,8 @@ defmodule Observer.Web.ConnCase do
       import Observer.Web.ConnCase
       import Phoenix.LiveViewTest
 
+      alias Observer.Web.Helpers
+
       @endpoint Observer.Web.Endpoint
     end
   end

@@ -38,7 +38,7 @@ defmodule Observer.Web.Tracing.PageLiveTest do
 
   test "Add/Remove Local Service + Module + Function + MatchSpec", %{conn: conn} do
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
 
     RpcStubber.defaults()
     TelemetryStubber.defaults()
@@ -114,7 +114,7 @@ defmodule Observer.Web.Tracing.PageLiveTest do
 
   test "Filtering by Module", %{conn: conn} do
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
 
     RpcStubber.defaults()
     TelemetryStubber.defaults()
@@ -146,7 +146,7 @@ defmodule Observer.Web.Tracing.PageLiveTest do
 
   test "Filtering by Function", %{conn: conn} do
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
 
     RpcStubber.defaults()
     TelemetryStubber.defaults()
@@ -182,7 +182,7 @@ defmodule Observer.Web.Tracing.PageLiveTest do
 
   test "Run Trace for module ObserverWeb.Common", %{conn: conn} do
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
 
     RpcStubber.defaults()
     TelemetryStubber.defaults()
@@ -228,7 +228,7 @@ defmodule Observer.Web.Tracing.PageLiveTest do
 
   test "Run Trace for function ObserverWeb.Common.uuid4/0", %{conn: conn} do
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
 
     RpcStubber.defaults()
     TelemetryStubber.defaults()
@@ -273,7 +273,7 @@ defmodule Observer.Web.Tracing.PageLiveTest do
 
   test "Run Trace for mix Elixir.Enum and function ObserverWeb.Common.uuid4/0", %{conn: conn} do
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
 
     RpcStubber.defaults()
     TelemetryStubber.defaults()
@@ -315,7 +315,7 @@ defmodule Observer.Web.Tracing.PageLiveTest do
 
   test "Observer timing out", %{conn: conn} do
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
 
     RpcStubber.defaults()
     TelemetryStubber.defaults()
@@ -359,7 +359,7 @@ defmodule Observer.Web.Tracing.PageLiveTest do
 
   test "Try to RUN tracing when it is already running", %{conn: conn} do
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
 
     RpcStubber.defaults()
     TelemetryStubber.defaults()
@@ -409,7 +409,7 @@ defmodule Observer.Web.Tracing.PageLiveTest do
   test "Testing NodeUp/NodeDown", %{conn: conn} do
     fake_node = :myapp@nohost
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
     test_pid_process = self()
 
     ObserverWeb.RpcMock

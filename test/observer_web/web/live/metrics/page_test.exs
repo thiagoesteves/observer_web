@@ -95,9 +95,9 @@ defmodule Observer.Web.Metrics.PageLiveTest do
 
   test "GET /metrics + update form", %{conn: conn} do
     node = Node.self() |> to_string
-    service_id = String.replace(node, "@", "-")
+    service_id = Helpers.normalize_id(node)
     metric = "vm.memory.total"
-    metric_id = String.replace(metric, ".", "-")
+    metric_id = Helpers.normalize_id(metric)
     test_pid_process = self()
 
     TelemetryStubber.defaults()
@@ -164,7 +164,7 @@ defmodule Observer.Web.Metrics.PageLiveTest do
 
   test "Testing NodeDown, removing the current node from the selected services", %{conn: conn} do
     node = Node.self() |> to_string
-    service_id = String.replace(node, "@", "-")
+    service_id = Helpers.normalize_id(node)
     test_pid_process = self()
 
     TelemetryStubber.defaults()
@@ -196,7 +196,7 @@ defmodule Observer.Web.Metrics.PageLiveTest do
 
   test "Testing NodeDown in oberver mode MUST NOT affect selected services", %{conn: conn} do
     node = Node.self() |> to_string
-    service_id = String.replace(node, "@", "-")
+    service_id = Helpers.normalize_id(node)
     test_pid_process = self()
 
     ObserverWeb.TelemetryMock
@@ -231,7 +231,7 @@ defmodule Observer.Web.Metrics.PageLiveTest do
 
   test "Testing NodeUp, no previous service is removed", %{conn: conn} do
     node = Node.self() |> to_string
-    service_id = String.replace(node, "@", "-")
+    service_id = Helpers.normalize_id(node)
     test_pid_process = self()
 
     TelemetryStubber.defaults()

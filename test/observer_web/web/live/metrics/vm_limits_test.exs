@@ -20,9 +20,9 @@ defmodule Observer.Web.Metrics.VmLimitsTest do
   |> Enum.each(fn {element, %{metric: metric}} ->
     test "#{element} - Add/Remove Service + #{metric}", %{conn: conn} do
       node = Node.self() |> to_string
-      service_id = String.replace(node, "@", "-")
+      service_id = Helpers.normalize_id(node)
       metric = unquote(metric)
-      metric_id = String.replace(metric, ".", "-")
+      metric_id = Helpers.normalize_id(metric)
 
       TelemetryStubber.defaults()
       |> expect(:subscribe_for_new_keys, fn -> :ok end)
@@ -75,9 +75,9 @@ defmodule Observer.Web.Metrics.VmLimitsTest do
   |> Enum.each(fn {element, %{metric: metric}} ->
     test "#{element} - #{metric} + Service", %{conn: conn} do
       node = Node.self() |> to_string
-      service_id = String.replace(node, "@", "-")
+      service_id = Helpers.normalize_id(node)
       metric = unquote(metric)
-      metric_id = String.replace(metric, ".", "-")
+      metric_id = Helpers.normalize_id(metric)
 
       TelemetryStubber.defaults()
       |> expect(:subscribe_for_new_keys, fn -> :ok end)
@@ -144,9 +144,9 @@ defmodule Observer.Web.Metrics.VmLimitsTest do
       conn: conn
     } do
       node = Node.self() |> to_string
-      service_id = String.replace(node, "@", "-")
+      service_id = Helpers.normalize_id(node)
       metric = unquote(metric)
-      metric_id = String.replace(metric, ".", "-")
+      metric_id = Helpers.normalize_id(metric)
 
       init = unquote(init)
       update = unquote(update)

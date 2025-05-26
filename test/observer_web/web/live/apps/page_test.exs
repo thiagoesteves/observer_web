@@ -45,7 +45,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
 
   test "Add/Remove Local Service + Kernel App", %{conn: conn} do
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
 
     RpcStubber.defaults()
     TelemetryStubber.defaults()
@@ -87,7 +87,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
 
   test "Add/Remove Kernel App + Local Service", %{conn: conn} do
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
 
     RpcStubber.defaults()
     TelemetryStubber.defaults()
@@ -129,7 +129,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
 
   test "Select Service+Apps and select a process to request information", %{conn: conn} do
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
     test_pid_process = self()
 
     ObserverWeb.RpcMock
@@ -182,7 +182,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     conn: conn
   } do
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
     test_pid_process = self()
 
     ObserverWeb.RpcMock
@@ -279,7 +279,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
 
   test "Select Service+Apps and select a process that is dead or doesn't exist", %{conn: conn} do
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
     test_pid_process = self()
 
     ObserverWeb.RpcMock
@@ -324,7 +324,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
 
   test "Select Service+Apps and select a port to request information", %{conn: conn} do
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
     test_pid_process = self()
 
     ObserverWeb.RpcMock
@@ -375,7 +375,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
 
   test "Select Service+Apps and select a port that is dead or doesn't exist", %{conn: conn} do
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
     test_pid_process = self()
 
     ObserverWeb.RpcMock
@@ -420,7 +420,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
 
   test "Select Service+Apps and select a reference to request information", %{conn: conn} do
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
     test_pid_process = self()
 
     ObserverWeb.RpcMock
@@ -472,7 +472,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
   @tag :capture_log
   test "Update buttom with Observer Web App + Local Service", %{conn: conn} do
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
 
     RpcStubber.defaults()
     TelemetryStubber.defaults()
@@ -503,7 +503,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
   test "Testing NodeUp/NodeDown", %{conn: conn} do
     fake_node = :myapp@nohost
     node = Node.self() |> to_string
-    service = String.replace(node, "@", "-")
+    service = Helpers.normalize_id(node)
     test_pid_process = self()
 
     ObserverWeb.RpcMock
