@@ -1,5 +1,16 @@
 # CHANGELOG (v0.1.X)
 
+## 0.1.11 🚀 ()
+
+### Backwards incompatible changes for 0.1.10
+ * None
+
+### Bug fixes
+ * None
+
+### Enhancements
+ * [[`ISSUE-19`](https://github.com/thiagoesteves/observer_web/issues/19)] Adding copy to clipboard button to copy tracing text.
+
 ## 0.1.10 🚀 (2025-05-26)
 
 ### Backwards incompatible changes for 0.1.9
