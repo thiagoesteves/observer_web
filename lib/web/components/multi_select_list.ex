@@ -25,8 +25,10 @@ defmodule Observer.Web.Components.MultiSelectList do
     filtered_unselected =
       Enum.map(assigns.unselected, fn %{name: name, keys: keys} = element ->
         if name in elements_to_filter do
+          key_to_find = String.downcase(assigns.form_search.params[name])
+
           filtered_keys =
-            Enum.filter(keys, &String.contains?(&1, assigns.form_search.params[name]))
+            Enum.filter(keys, &String.contains?(String.downcase(&1), key_to_find))
 
           %{element | keys: filtered_keys}
         else
