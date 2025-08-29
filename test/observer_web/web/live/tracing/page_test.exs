@@ -144,6 +144,38 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     refute html =~ "Elixir.Agent"
   end
 
+    test "Filtering by Module non sensitive", %{conn: conn} do
+    node = Node.self() |> to_string
+    service = Helpers.normalize_id(node)
+
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/tracing")
+
+    index_live
+    |> element("#tracing-multi-select-toggle-options")
+    |> render_click()
+
+    index_live
+    |> element("#tracing-multi-select-services-#{service}-add-item")
+    |> render_click()
+
+    html =
+      index_live
+      |> element("#tracing-multi-select-modules-Elixir-Enum-add-item")
+      |> render_click()
+
+    assert html =~ "Elixir.Agent"
+
+    html =
+      index_live
+      |> element("#multi-select-list-search-form-tracing-multi-select-modules")
+      |> render_change(%{"_target" => "modules", "modules" => "agent"})
+
+    assert html =~ "Elixir.Agent"
+  end
+
   test "Filtering by Function", %{conn: conn} do
     node = Node.self() |> to_string
     service = Helpers.normalize_id(node)

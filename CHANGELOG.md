@@ -10,6 +10,7 @@
 
 ### Enhancements
  * [[`ISSUE-19`](https://github.com/thiagoesteves/observer_web/issues/19)] Adding copy to clipboard button to copy tracing text.
+ * [[`ISSUE-21`](https://github.com/thiagoesteves/observer_web/issues/21)] Add non case sensitive search for modules and functions for tracing.
 
 ## 0.1.10 🚀 (2025-05-26)
 
