@@ -8,6 +8,7 @@ defmodule Observer.Web.Tracing.Page do
   use Observer.Web, :live_component
 
   alias Observer.Web.Components.Attention
+  alias Observer.Web.Components.CopyToClipboard
   alias Observer.Web.Components.Core
   alias Observer.Web.Components.MultiSelectList
   alias Observer.Web.Page
@@ -162,8 +163,15 @@ defmodule Observer.Web.Tracing.Page do
             <:col :let={{_id, tracing_message}} label="TYPE">
               <span>{tracing_message.type}</span>
             </:col>
-            <:col :let={{_id, tracing_message}} label="CONTENT">
-              {tracing_message.content}
+            <:col :let={{id, tracing_message}} label="CONTENT">
+              <div class="flex items-center justify-between gap-2">
+                {tracing_message.content}
+
+                <CopyToClipboard.content
+                  id={"tracing-functions-messages-#{id}"}
+                  message={tracing_message.content}
+                />
+              </div>
             </:col>
           </Core.table_tracing>
         </div>
