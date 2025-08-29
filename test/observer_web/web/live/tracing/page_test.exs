@@ -144,7 +144,7 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     refute html =~ "Elixir.Agent"
   end
 
-    test "Filtering by Module non sensitive", %{conn: conn} do
+  test "Filtering by Module non sensitive", %{conn: conn} do
     node = Node.self() |> to_string
     service = Helpers.normalize_id(node)
 
