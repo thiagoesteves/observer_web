@@ -470,7 +470,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
   end
 
   @tag :capture_log
-  test "Update buttom with Observer Web App + Local Service", %{conn: conn} do
+  test "Update button with Observer Web App + Local Service", %{conn: conn} do
     node = Node.self() |> to_string
     service = Helpers.normalize_id(node)
 

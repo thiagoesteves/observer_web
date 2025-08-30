@@ -15,7 +15,7 @@ defmodule Observer.Web.IndexLiveTest do
     assert %{to: "/", flash: %{"error" => "Access forbidden"}} = redirect
   end
 
-  test "Check iframe OFF allows root buttom", %{conn: conn} do
+  test "Check iframe OFF allows root button", %{conn: conn} do
     RpcStubber.defaults()
 
     TelemetryStubber.defaults()
@@ -26,7 +26,7 @@ defmodule Observer.Web.IndexLiveTest do
     assert html =~ "ROOT"
   end
 
-  test "Check iframe ON doesn't allow root buttom", %{conn: conn} do
+  test "Check iframe ON doesn't allow root button", %{conn: conn} do
     RpcStubber.defaults()
 
     TelemetryStubber.defaults()

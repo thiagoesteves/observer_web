@@ -12,7 +12,7 @@ defmodule Observer.Web.Tracing.PageLiveTest do
   ]
 
   setup context do
-    # Calling this function guarantess that the module is loaded
+    # Calling this function guarantees that the module is loaded
     ObserverWeb.Common.uuid4()
 
     context
