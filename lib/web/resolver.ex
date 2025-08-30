@@ -45,7 +45,7 @@ defmodule Observer.Web.Resolver do
   ## Authentication
 
   By combining `resolver_user/1` and `resolve_access/1` callbacks it's possible to build an
-  authenticaiton solution around the dashboard. For example, this resolver extracts the
+  authentication solution around the dashboard. For example, this resolver extracts the
   `current_user` from the conn's assigns map and then scopes their access based on role. If it is
   a standard user or `nil` then they're redirected to `/login` when the dashboard mounts.
 
