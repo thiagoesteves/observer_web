@@ -194,7 +194,7 @@ defmodule Observer.Web.Metrics.PageLiveTest do
     refute render(liveview) =~ "services:#{node}"
   end
 
-  test "Testing NodeDown in oberver mode MUST NOT affect selected services", %{conn: conn} do
+  test "Testing NodeDown in observer mode MUST NOT affect selected services", %{conn: conn} do
     node = Node.self() |> to_string
     service_id = Helpers.normalize_id(node)
     test_pid_process = self()

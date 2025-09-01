@@ -57,7 +57,7 @@ defmodule ObserverWeb.Apps do
   end
 
   @doc """
-  Retreives information about the application and its respective linked processes, ports and references.
+  Retrieves information about the application and its respective linked processes, ports and references.
   """
   @spec info(node :: atom(), app :: atom) :: map
   def info(node \\ Node.self(), app \\ :kernel) do
