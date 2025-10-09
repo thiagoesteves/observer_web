@@ -118,7 +118,7 @@ defmodule ObserverWeb.MixProject do
       {:esbuild, "~> 0.8", only: :dev, runtime: false},
       {:faker, "~> 0.17", only: :dev},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:tailwind, "~> 0.2", only: :dev, runtime: false},
+      {:tailwind, "~> 0.4", only: :dev, runtime: false},
 
       # Telemetry
       {:telemetry_metrics, "~> 1.0"},
