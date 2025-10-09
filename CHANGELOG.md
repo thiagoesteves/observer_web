@@ -1,5 +1,16 @@
 # CHANGELOG (v0.1.X)
 
+## 0.1.12 ()
+
+### Backwards incompatible changes for 0.1.11
+ * None
+
+### Bug fixes
+ * None
+
+### Enhancements
+ * [[`PR-27`](https://github.com/thiagoesteves/observer_web/pull/27)] Adding Igniter.
+
 ## 0.1.11 🚀 (2025-08-29)
 
 ### Backwards incompatible changes for 0.1.10
