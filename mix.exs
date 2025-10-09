@@ -55,7 +55,7 @@ defmodule ObserverWeb.MixProject do
     [
       maintainers: ["Thiago Esteves"],
       licenses: ["MIT"],
-      files: ~w(lib priv .formatter.exs mix.exs README* CHANGELOG* LICENSE*),
+      files: ~w(lib priv/static/* .formatter.exs mix.exs README* CHANGELOG* LICENSE*),
       links: %{
         Website: "https://deployex.pro",
         Changelog: "#{@source_url}/blob/main/CHANGELOG.md",
