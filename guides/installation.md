@@ -3,17 +3,48 @@
 Observer Web is delivered as a hex package named `observer_web`. The package is entirely self contained—it
 doesn't hook into your asset pipeline.
 
-## Prerequisites
+There are three installation mechanisms available:
 
-1. Ensure [Phoenix Live View][plv] is installed and working in your application. If you don't have
-   Live View, follow [these instructions][lvi] to get started.
+- [Semi-Automatic Installation](#semi-automatic-installation) using an igniter powered mix task
+- [Igniter Installation](#igniter-installation) fully automatic installation using igniter
+- [Manual Installation](#manual-installation) add Observer Web and handle all steps manually
 
-> #### Clustering Required {: .info}
->
-> The Observer Web **requires your app to be clustered**. Otherwise, observability will only be 
-> available on the current node.
+## Semi-Automatic Installation
 
-## Configuration
+You can use the `observer_web.install` task without the `igniter.install` escript available.
+First, add `observer_web` and `igniter` to your deps in `mix.exs`:
+
+```elixir
+{:observer_web, "~> 0.1.0"},
+{:igniter, "~> 0.5", only: [:dev]},
+```
+
+Run `mix deps.get` to fetch `observer_web`, then run the install task:
+
+```bash
+mix observer_web.install
+```
+
+This will automate all of the manual setup steps for you!
+
+## Igniter Installation
+
+For projects that have [igniter][igniter] available, Observer Web can be installed and configured with
+a single command:
+
+```bash
+mix igniter.install observer_web
+```
+
+that will add the latest version of `observer_web` to your dependencies before running the installer,
+then mount it as `/observer` within the `:dev_routes` conditional.
+
+## Manual Installation
+
+Before installing Observer Web, ensure you have:
+
+1. **Phoenix Live View** - Ensure [Phoenix Live View][plv] is installed and working. If you
+  don't have Live View yet, follow [these instructions][lvi].
 
 Add `observer_web` as a dependency for your application. Open `mix.exs` and add the following line:
 
@@ -49,10 +80,6 @@ end
 
 Here we're using `"/observer"` as the mount point, but it can be anywhere you like. See the
 `Observer.Web.Router` docs for additional options.
-
-After you've verified that the dashboard is loading you'll probably want to restrict access to the
-dashboard via authentication, either with a [custom resolver's][ac] access controls or [Basic
-Auth][ba].
 
 ### Embedding Observer Web in your app page
 
@@ -121,6 +148,28 @@ You can still access the Observer as a separate page by navigating directly to t
 path `/observer"`. However, using the iframe approach allows you to display 
 your application's information alongside the Observer in your main page, 
 providing a more integrated monitoring experience.
+
+> ## Clustering Required {: .info}
+>
+> The Observer Web **requires your app to be clustered**. Otherwise, observability will only be 
+> available on the current node.
+
+## Post-Installation
+
+After installation (by any method), you should consider the following configuration steps:
+
+### Secure Dashboard Access
+
+After you've verified that the dashboard is loading you'll probably want to restrict access to the
+dashboard via authentication, either with a [custom resolver's][ac] access controls or [Basic
+Auth][ba].
+
+### Customize the Dashboard
+
+Web customization is done through the `Observer.Web.Resolver` behaviour. It allows you to enable
+access controls, control formatting, and provide query limits for filtering and searching. Using a
+custom resolver is optional, but you should familiarize yourself with the default limits
+and functionality.
 
 ### Metrics
 

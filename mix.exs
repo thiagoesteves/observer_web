@@ -68,6 +68,7 @@ defmodule ObserverWeb.MixProject do
     [
       main: "overview",
       source_ref: "v#{@version}",
+      source_url: @source_url,
       formatters: ["html"],
       api_reference: false,
       extra_section: "GUIDES",
@@ -108,7 +109,7 @@ defmodule ObserverWeb.MixProject do
     [
       {:jason, "~> 1.2"},
       {:phoenix, "~> 1.7"},
-      {:phoenix_html, "~> 4.0"},
+      {:phoenix_html, "~> 3.3 or ~> 4.0"},
       {:phoenix_live_view, "~> 1.0"},
       {:phoenix_pubsub, "~> 2.1"},
 
@@ -132,6 +133,7 @@ defmodule ObserverWeb.MixProject do
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
       {:mock, "~> 0.3.0", only: :test},
+      {:igniter, "~> 0.5", only: [:dev, :test]},
 
       # Docs and Publishing
       {:ex_doc, "~> 0.34", only: [:dev, :test], runtime: false},
