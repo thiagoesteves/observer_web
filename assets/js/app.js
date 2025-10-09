@@ -15,11 +15,7 @@
 //     import "some-package"
 //
 
-// Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
-import "phoenix_html"
 // Establish Phoenix Socket and LiveView configuration.
-import { Socket, LongPoll } from "phoenix"
-import { LiveSocket } from "phoenix_live_view"
 import topbar from "topbar"
 import * as echarts from "echarts"
 
@@ -126,8 +122,8 @@ hooks.LiveMetricsEChart = {
   }
 };
 
-const liveSocket = new LiveSocket(livePath, Socket, {
-  transport: liveTran === "longpoll" ? LongPoll : WebSocket,
+const liveSocket = new LiveView.LiveSocket(livePath, Phoenix.Socket, {
+  transport: liveTran === "longpoll" ? Phoenix.LongPoll : WebSocket,
   params: { _csrf_token: csrfToken },
   hooks
 })
