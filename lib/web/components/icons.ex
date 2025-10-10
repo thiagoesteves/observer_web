@@ -24,7 +24,7 @@ defmodule Observer.Web.Components.Icons do
         </svg>
       <% :tracing -> %>
         <svg
-          class="flex-shrink-0 w-5 h-5 mr-4"
+          class="flex-shrink-0 w-5 h-5 mr-4 text-gray-900 dark:text-white"
           width="24px"
           height="24px"
           viewBox="0 0 256 256"
@@ -60,7 +60,7 @@ defmodule Observer.Web.Components.Icons do
         </svg>
       <% :metrics -> %>
         <svg
-          class="flex-shrink-0 w-5 h-5 mr-4"
+          class="flex-shrink-0 w-5 h-5 mr-4 text-gray-900 dark:text-white"
           width="24px"
           height="24px"
           viewBox="0 0 256 256"
@@ -126,7 +126,7 @@ defmodule Observer.Web.Components.Icons do
         </svg>
       <% :applications -> %>
         <svg
-          class="flex-shrink-0 w-5 h-5 mr-4"
+          class="flex-shrink-0 w-5 h-5 mr-4 text-gray-900 dark:text-white"
           width="24px"
           height="24px"
           viewBox="0 0 512 512"
@@ -161,7 +161,7 @@ defmodule Observer.Web.Components.Icons do
         </svg>
       <% :root -> %>
         <svg
-          class="flex-shrink-0 w-5 h-5 mr-4"
+          class="flex-shrink-0 w-5 h-5 mr-4 text-gray-900 dark:text-white"
           width="256"
           height="256"
           viewBox="0 0 256 256"

@@ -52,18 +52,18 @@ defmodule Observer.Web.Metrics.Page do
       )
 
     ~H"""
-    <div class="min-h-screen bg-white">
+    <div class="min-h-screen bg-white dark:bg-gray-800">
       <Attention.content
         id="metrics"
         title="Configuration"
-        class="border-orange-400 text-orange-500 rounded-r-xl w-full"
+        class="border-orange-400 dark:border-orange-600 text-orange-500 dark:text-orange-200 rounded-r-xl w-full"
         message={@attention_msg}
       >
         <:inner_form>
           <.form
             for={@form}
             id="metrics-update-form"
-            class="flex ml-2 mr-2 text-xs rounded-r-xl text-center text-black whitespace-nowrap gap-5"
+            class="flex ml-2 mr-2 text-xs rounded-r-xl text-center text-zinc-800 dark:text-white whitespace-nowrap gap-5"
             phx-change="form-update"
           >
             <Core.input

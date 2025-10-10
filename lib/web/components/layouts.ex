@@ -31,8 +31,8 @@ defmodule Observer.Web.Layouts do
       <div>
         <Icons.content name={:logo} />
       </div>
-      <h3 class="class ml-2 items-center tracking-tight text-gray-900">
-        <span class="block text-4xl font-oswald">
+      <h3 class="class ml-2 items-center tracking-tight ">
+        <span class="block text-4xl text-gray-900 dark:text-white font-oswald">
           Observer
           <span class="text-transparent text-4xl font-bold bg-clip-text bg-gradient-to-tr to-cyan-500 from-blue-600">
             WEB
@@ -97,12 +97,12 @@ defmodule Observer.Web.Layouts do
 
   defp link_class(curr, page) do
     base =
-      "flex items-center px-4 py-2.5 text-sm font-bold transition-all duration-200 text-gray-900 rounded-lg group"
+      "flex items-center px-4 py-2.5 text-sm font-bold transition-all duration-200 text-gray-900 dark:text-white rounded-lg group"
 
     if curr == page do
-      base <> " bg-gray-100"
+      base <> " bg-gray-100 dark:bg-gray-700"
     else
-      base <> " hover:text-white hover:bg-indigo-500"
+      base <> " hover:text-white hover:bg-indigo-500 dark:hover:bg-indigo-800"
     end
   end
 
