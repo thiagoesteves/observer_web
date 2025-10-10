@@ -46,9 +46,9 @@ defmodule Observer.Web.Components.MultiSelectList do
       <div class="w-full px-2">
         <div class="flex flex-col items-center relative">
           <div class="w-full  ">
-            <div class="my-2 p-1 flex border border-gray-300 bg-white dark:bg-gray-900 rounded ">
+            <div class="my-2 p-1 flex border border-gray-300 bg-white dark:bg-gray-900 rounded">
               <div class="flex flex-auto p-0.5 flex-wrap">
-                <div class="flex text-ms font-normal items-center p-2 py-1 bg-gray-200 dark:bg-gray-600 rounded border border-gray-200 dark:border-gray-600 ">
+                <div class="flex text-ms font-normal items-center p-2 py-1 bg-gray-200 dark:bg-gray-600 rounded border border-gray-200 dark:border-gray-600">
                   {@selected_text}
                 </div>
 

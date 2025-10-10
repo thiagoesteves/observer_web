@@ -121,9 +121,9 @@ defmodule Observer.Web.Components.Core do
       end
 
     ~H"""
-    <div class="px-4 sm:overflow-visible sm:px-0 rounded border border-solid border-blueGray-100">
+    <div class="px-4 sm:overflow-visible sm:px-0 rounded  border border-solid border-blueGray-100">
       <div id={"#{@id}-table"} class="block max-h-[600px]" phx-hook="ScrollBottom">
-        <table class="items-center w-full border-collapse ">
+        <table class="items-center w-full border-collapse bg-white dark:bg-gray-800">
           <div
             class="text-center text-sm font-mono font-semibold px-6 py-1"
             style={"background-color: #{@title_bg_color};"}
