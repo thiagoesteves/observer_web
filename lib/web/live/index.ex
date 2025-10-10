@@ -19,6 +19,7 @@ defmodule Observer.Web.IndexLive do
     %{"user" => user, "access" => access, "csp_nonces" => csp_nonces} = session
 
     page = resolve_page(params)
+    theme = restore_state(socket, "theme", "system")
 
     Process.put(:routing, {socket, prefix})
 
@@ -27,9 +28,23 @@ defmodule Observer.Web.IndexLive do
       |> assign(params: params, page: page)
       |> assign(live_path: live_path, live_transport: live_transport)
       |> assign(access: access, csp_nonces: csp_nonces, resolver: resolver, user: user)
+      |> assign(theme: theme)
       |> page.comp.handle_mount()
 
     {:ok, socket}
+  end
+
+  defp init_state(socket) do
+    case get_connect_params(socket) do
+      %{"init_state" => state} -> state
+      _ -> %{}
+    end
+  end
+
+  defp restore_state(socket, key, default) do
+    socket
+    |> init_state()
+    |> Map.get("observer:" <> key, default)
   end
 
   @impl Phoenix.LiveView
@@ -50,6 +65,13 @@ defmodule Observer.Web.IndexLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_info({:update_theme, theme}, socket) do
+    {:noreply,
+     socket
+     |> assign(theme: theme)
+     |> push_event("update-theme", %{theme: theme})}
+  end
+
   def handle_info(message, socket) do
     socket.assigns.page.comp.handle_info(message, socket)
   end
