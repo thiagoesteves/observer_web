@@ -42,10 +42,7 @@ defmodule Observer.Web.Components.Core do
         <table class="items-center w-full border-collapse ">
           <thead class="text-xs text-left align-middle leading-6 bg-white text-blueGray-500 uppercase sticky top-0 z-10">
             <tr>
-              <th
-                :for={col <- @col}
-                class="p-1 pb-1 pr-6 font-semibold border border-solid border-blueGray-100 border-l-0 border-r-0 font-normal"
-              >
+              <th :for={col <- @col} class="p-1 pb-1 pr-6 font-semibold font-normal">
                 {col[:label]}
               </th>
             </tr>

@@ -32,7 +32,7 @@ defmodule Observer.Web.Components.MultiSelect do
                 <%= for item <- @selected do %>
                   <%= for key <- item.keys do %>
                     <div class={[
-                      "flex justify-center items-center m-1 font-medium py-1 px-2 rounded-full border",
+                      "flex justify-center items-center m-1 font-medium py-1 px-2 bg-white rounded-full border",
                       border_item_color(item.name),
                       bg_item_color(item.name)
                     ]}>
@@ -103,10 +103,7 @@ defmodule Observer.Web.Components.MultiSelect do
               </div>
             </div>
 
-            <div
-              :if={@show_options}
-              class="relative shadow top-100 bg-white z-40 lef-0 rounded max-h-select"
-            >
+            <div :if={@show_options} class="relative shadow bg-white z-40 lef-0 rounded max-h-select">
               <div phx-mounted={
                 JS.transition(
                   {"first:ease-in duration-300", "first:opacity-0 first:p-0 first:h-0",
