@@ -91,7 +91,7 @@ defmodule Observer.Web.Metrics.Page do
           </.form>
         </:inner_form>
       </Attention.content>
-      <div class="bg-white ">
+      <div class="bg-white dark:bg-gray-800">
         <MultiSelect.content
           id="metrics-multi-select"
           selected_text="Selected metrics"
