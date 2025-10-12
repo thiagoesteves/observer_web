@@ -206,7 +206,7 @@ defmodule Observer.Web.Components.Core do
       end
 
     ~H"""
-    <div class="px-4 sm:overflow-visible sm:px-0 border border-solid border-t-0 border-blueGray-100 dark:border-white">
+    <div class="px-4 sm:overflow-visible sm:px-0">
       <div
         id={"#{@id}-table"}
         class={["block overflow-y-auto", "#{@h_max_size}"]}

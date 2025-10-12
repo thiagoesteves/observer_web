@@ -24,8 +24,8 @@ defmodule Observer.Web.Components.Metrics.VmLimits do
     ~H"""
     <div :if={@metric in @supported_metrics} style={"grid-column: span #{@cols};"}>
       <% id = Helpers.normalize_id("#{@service}-#{@metric}") %>
-      <div class="relative flex flex-col min-w-0 break-words bg-white w-full shadow-lg rounded">
-        <div class="rounded-t mb-0 px-4 py-3 border border-b border-solid">
+      <div class="relative flex flex-col min-w-0 break-words bg-white w-full shadow-lg rounded border border-blueGray-100 dark:border-neutral-400">
+        <div class="rounded-t mb-0 px-4 py-3 border-b">
           <div class="flex flex-wrap items-center">
             <div class="relative w-full px-4 max-w-full flex-grow flex-1">
               <h3 class="font-semibold text-base text-blueGray-700 dark:text-neutral-600">
