@@ -114,7 +114,7 @@ jobs:
         run: mix deps.audit
 
       - name: Mix Sobelow
-        run: mix sobelow --exit --threshold medium --skip -i Config.HTTPS
+        run: mix sobelow --exit --threshold medium
 
       - name: Formatted
         run: mix format --check-formatted
