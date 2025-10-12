@@ -24,7 +24,6 @@ defmodule Observer.Web.ThemeComponent do
         class="text-gray-500 dark:text-gray-400 focus:outline-none hover:text-gray-600 dark:hover:text-gray-200 hidden md:block"
         data-title="Change theme"
         id="theme-menu-toggle"
-        phx-hook="Tippy"
         phx-click={JS.toggle(to: "#theme-menu")}
         type="button"
       >

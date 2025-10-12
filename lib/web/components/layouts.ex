@@ -32,7 +32,7 @@ defmodule Observer.Web.Layouts do
         <Icons.content name={:logo} />
       </div>
       <h3 class="class ml-2 items-center tracking-tight ">
-        <span class="block text-4xl text-gray-900 dark:text-white font-oswald">
+        <span class="block text-4xl text-gray-900 dark:text-white">
           Observer
           <span class="text-transparent text-4xl font-bold bg-clip-text bg-gradient-to-tr to-cyan-500 from-blue-600">
             WEB
@@ -102,7 +102,7 @@ defmodule Observer.Web.Layouts do
     if curr == page do
       base <> " bg-gray-100 dark:bg-gray-700"
     else
-      base <> " hover:text-white hover:bg-indigo-500 dark:hover:bg-indigo-800"
+      base <> " hover:text-black dark:hover:text-white hover:bg-cyan-500 dark:hover:bg-cyan-800"
     end
   end
 

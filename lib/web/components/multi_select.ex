@@ -74,7 +74,7 @@ defmodule Observer.Web.Components.MultiSelect do
                   <input
                     placeholder=""
                     phx-click="toggle-options"
-                    class="p-0.5 bg-transparent border border-white dark:border-black p-1 px-2 appearance-none outline-none h-full w-full text-gray-800"
+                    class="p-0.5 bg-transparent border border-white dark:border-black p-1 px-2 appearance-none outline-none h-full w-full text-gray-800 focus:border-teal-500 dark:focus:border-teal-300"
                   />
                 </div>
               </div>

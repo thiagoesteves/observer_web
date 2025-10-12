@@ -1,3 +1,7 @@
+@import url('https://fonts.googleapis.com/css?family=Oswald&display=swap');
+
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Tailwind */
 
 @import "tailwindcss";
@@ -6,7 +10,7 @@
 @source "../../lib/**/*.*ex";
 
 @theme {
-  --font-family-sans: "Inter var", sans-serif;
+  --font-family-sans: "Oswald", sans-serif;
   --font-family-mono: "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", monospace;
 
   --spacing-72: 18rem;
