@@ -3,7 +3,7 @@ defmodule Mix.Tasks.ObserverWeb.InstallTest do
 
   import Igniter.Test
 
-  test "installation adds the route the neccessary setup to the router" do
+  test "installation adds the route the necessary setup to the router" do
     test_project()
     |> Igniter.Project.Module.create_module(TestWeb.Router, """
     use TestWeb, :router
