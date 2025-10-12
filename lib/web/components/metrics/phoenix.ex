@@ -28,11 +28,11 @@ defmodule Observer.Web.Components.Metrics.Phoenix do
   def content(assigns) do
     ~H"""
     <div :if={@metric in @supported_metrics} style={"grid-column: span #{@cols};"}>
-      <div class="relative flex flex-col min-w-0 break-words bg-white w-full shadow-lg rounded">
-        <div class="rounded-t mb-0 px-4 py-3 border border-b border-solid">
+      <div class="relative flex flex-col min-w-0 break-words bg-white dark:bg-gray-800 w-full shadow-lg rounded border border-blueGray-100 dark:border-neutral-400">
+        <div class="rounded-t mb-0 px-4 py-3 border-b">
           <div class="flex flex-wrap items-center">
             <div class="relative w-full px-4 max-w-full flex-grow flex-1">
-              <h3 class="font-semibold text-base text-blueGray-700">
+              <h3 class="font-semibold text-base text-blueGray-700 dark:text-neutral-400">
                 {@title}
               </h3>
             </div>
@@ -116,8 +116,8 @@ defmodule Observer.Web.Components.Metrics.Phoenix do
 
   defp timestamp(assigns) do
     ~H"""
-    <div class="flex px-4 py-1 items-center rounded-full bg-gray-200">
-      <span class="text-cyan-600 font-semibold text-[9px] ">
+    <div class="flex px-4 py-1 items-center rounded-full bg-gray-200 dark:bg-gray-600">
+      <span class="text-cyan-600 dark:text-cyan-400 font-semibold text-[9px] ">
         {@timestamp |> DateTime.from_unix!(:millisecond) |> DateTime.to_string()}
       </span>
     </div>
@@ -126,7 +126,7 @@ defmodule Observer.Web.Components.Metrics.Phoenix do
 
   defp method(assigns) do
     ~H"""
-    <span class="text-black  font-semibold text-sm ">
+    <span class="text-black dark:text-neutral-400 font-semibold text-sm ">
       {@value}
     </span>
     """
@@ -145,7 +145,7 @@ defmodule Observer.Web.Components.Metrics.Phoenix do
       |> assign(unit: unit)
 
     ~H"""
-    <span class="text-black  font-semibold text-sm ">
+    <span class="text-black dark:text-neutral-400 font-semibold text-sm ">
       {"#{:erlang.float_to_binary(@value, [{:decimals, 2}])} #{@unit}"}
     </span>
     """

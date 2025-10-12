@@ -5,6 +5,7 @@ defmodule Observer.Web.Apps.Process do
   use Phoenix.Component
 
   alias Observer.Web.Components.Attention
+  alias Observer.Web.Components.CopyToClipboard
 
   attr :info, :map, required: true
   attr :id, :map, required: true
@@ -112,7 +113,7 @@ defmodule Observer.Web.Apps.Process do
                   {item.value}
                 </:col>
               </Core.table_process>
-              <.relations title="State" value={"#{inspect(@info.state)}"} />
+              <.relations title="State" value={"#{inspect(@info.state)}"} copy_id={@id} />
             </div>
 
             <div class="flex grid grid-cols-4 mt-1 gap-1 items-top">
@@ -131,7 +132,7 @@ defmodule Observer.Web.Apps.Process do
             <Core.table_process
               id="phx-socket-socket-overview-table"
               title="Phoenix.LiveView.Socket"
-              title_bg_color="MediumSeaGreen"
+              title_bg_color="liveview"
               rows={@process_mappings.phx_lv_socket}
             >
               <:col :let={item}>
@@ -146,7 +147,7 @@ defmodule Observer.Web.Apps.Process do
               :if={@process_mappings.phx_lv_socket_uri}
               id="phx-socket-socket-uri-table"
               title="Phoenix.LiveView.Socket - URI"
-              title_bg_color="MediumSeaGreen"
+              title_bg_color="liveview"
               rows={@process_mappings.phx_lv_socket_uri}
             >
               <:col :let={item}>
@@ -158,8 +159,9 @@ defmodule Observer.Web.Apps.Process do
             </Core.table_process>
             <.relations
               title="Phoenix.LiveView.Socket - Assigns"
-              title_bg_color="MediumSeaGreen"
+              title_bg_color="liveview"
               value={to_string(:io_lib.format("~tp", [@info.phx_lv_socket.assigns]))}
+              copy_id={"lv-assigns-#{@id}"}
             />
           </div>
       <% end %>
@@ -169,16 +171,28 @@ defmodule Observer.Web.Apps.Process do
 
   attr :title, :string, required: true
   attr :value, :string, required: true
-  attr :title_bg_color, :string, default: "LightGray"
+  attr :copy_id, :string, default: nil
+  attr :title_bg_color, :string, default: "standard"
 
   defp relations(assigns) do
     ~H"""
-    <div class=" text-sm text-center block rounded-lg bg-white border border-solid border-blueGray-100 shadow-secondary-1 text-surface">
-      <div
-        class="font-mono font-semibold border-b-2 border-neutral-100 px-6 py-1"
-        style={"background-color: #{@title_bg_color};"}
-      >
-        {@title}
+    <div class=" text-sm text-center block rounded bg-white dark:bg-gray-800 border border-solid border-blueGray-100 shadow-secondary-1 text-surface">
+      <div class={[
+        "font-mono font-semibold border-b-1 rounded-t border-neutral-100 px-6 py-1",
+        title_bg_color(@title_bg_color)
+      ]}>
+        <%= if @copy_id do %>
+          <div class="flex items-center justify-between  w-full">
+            {@title}
+            <CopyToClipboard.content
+              :if={@copy_id}
+              id={"process-state-messages-#{@copy_id}"}
+              message={@value}
+            />
+          </div>
+        <% else %>
+          {@title}
+        <% end %>
       </div>
       <div class="p-2" style="max-height: 200px; overflow-y: auto;">
         <span class="text-xs font-mono leading-tight">
@@ -188,4 +202,7 @@ defmodule Observer.Web.Apps.Process do
     </div>
     """
   end
+
+  defp title_bg_color("liveview"), do: "bg-green-200 dark:bg-green-900"
+  defp title_bg_color(_any), do: "bg-zinc-200 dark:bg-zinc-500"
 end

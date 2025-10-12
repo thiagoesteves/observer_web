@@ -10,6 +10,9 @@
 
 ### Enhancements
  * [[`PR-27`](https://github.com/thiagoesteves/observer_web/pull/27)] Adding Igniter.
+ * [[`PR-28`](https://github.com/thiagoesteves/observer_web/pull/28)] Updating Tailwind.
+ * [[`PR-28`](https://github.com/thiagoesteves/observer_web/pull/28)] Adding theme support.
+ * [[`PR-28`](https://github.com/thiagoesteves/observer_web/pull/28)] Assets organization.
 
 ## 0.1.11 🚀 (2025-08-29)
 

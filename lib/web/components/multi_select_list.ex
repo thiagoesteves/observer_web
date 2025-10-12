@@ -46,9 +46,9 @@ defmodule Observer.Web.Components.MultiSelectList do
       <div class="w-full px-2">
         <div class="flex flex-col items-center relative">
           <div class="w-full  ">
-            <div class="my-2 p-1 flex border border-gray-300 bg-white rounded ">
-              <div class="flex flex-auto flex-wrap">
-                <div class="flex text-ms font-normal items-center p-2 py-1 bg-gray-200  rounded border-gray-200 ">
+            <div class="my-2 p-1 flex border border-gray-300 bg-white dark:bg-gray-900 rounded">
+              <div class="flex flex-auto p-0.5 flex-wrap">
+                <div class="flex text-ms font-normal items-center p-2 py-1 bg-gray-200 dark:bg-gray-600 rounded border border-gray-200 dark:border-gray-600">
                   {@selected_text}
                 </div>
 
@@ -83,7 +83,7 @@ defmodule Observer.Web.Components.MultiSelectList do
                             stroke-width="2"
                             stroke-linecap="round"
                             stroke-linejoin="round"
-                            class="feather feather-x cursor-pointer hover:text-teal-400 rounded-full w-4 h-4 ml-2"
+                            class="feather feather-x text-gray-900 dark:text-black cursor-pointer hover:text-teal-400 rounded-full w-4 h-4 ml-2"
                           >
                             <line x1="18" y1="6" x2="6" y2="18"></line>
                             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -97,7 +97,7 @@ defmodule Observer.Web.Components.MultiSelectList do
                   <input
                     placeholder=""
                     phx-click="toggle-options"
-                    class="bg-transparent p-1 px-2 appearance-none outline-none h-full w-full text-gray-800"
+                    class="p-0.5 bg-transparent border border-white dark:border-black p-1 px-2 appearance-none outline-none h-full w-full text-gray-800 focus:border-teal-500 dark:focus:border-teal-300"
                   />
                 </div>
               </div>
@@ -117,7 +117,7 @@ defmodule Observer.Web.Components.MultiSelectList do
                     stroke-width="2"
                     stroke-linecap="round"
                     stroke-linejoin="round"
-                    class="feather feather-chevron-up w-4 h-4"
+                    class="feather text-gray-900 dark:text-white feather-chevron-up w-4 h-4"
                   >
                     <polyline :if={!@show_options} points="18 15 12 9 6 15"></polyline>
                     <polyline :if={@show_options} points="6 9 12 15 18 9"></polyline>
@@ -128,7 +128,7 @@ defmodule Observer.Web.Components.MultiSelectList do
 
             <div
               :if={@show_options}
-              class="relative shadow top-100 bg-white z-40 lef-0 rounded max-h-select"
+              class="relative shadow bg-white dark:bg-gray-800 z-40 lef-0 rounded max-h-select"
             >
               <div phx-mounted={
                 JS.transition(
@@ -139,8 +139,8 @@ defmodule Observer.Web.Components.MultiSelectList do
               }>
                 <div class="flex grid mt-1 gap-1 items-top grid-cols-4">
                   <%= for item <- @unselected do %>
-                    <div class="rounded-lg bg-white border border-solid border-blueGray-100 block overflow-y-auto max-h-[300px]">
-                      <div class="flex items-start items-center bg-white p-2 sticky top-0 z-10">
+                    <div class="rounded-lg bg-white dark:bg-gray-600 border border-solid border-blueGray-100 block overflow-y-auto max-h-[300px]">
+                      <div class="flex items-start items-center bg-white dark:bg-gray-600 p-2 sticky top-0 z-10">
                         <.form
                           for={@form_search}
                           id={"multi-select-list-search-form-#{@id}-#{item.name}"}
@@ -148,10 +148,12 @@ defmodule Observer.Web.Components.MultiSelectList do
                           class="flex"
                         >
                           <%= if item[:info] do %>
-                            <div class=" text-sm font-bold text-black">{item.name}
+                            <div class=" text-sm font-bold text-black dark:text-white">{item.name}
                               {item.info}:</div>
                           <% else %>
-                            <div class=" text-sm font-bold text-black">{item.name}:</div>
+                            <div class=" text-sm font-bold text-black dark:text-white">
+                              {item.name}:
+                            </div>
                           <% end %>
                           <%= if item.name in @elements_to_filter do %>
                             <Core.input
@@ -166,7 +168,7 @@ defmodule Observer.Web.Components.MultiSelectList do
                       <%= for key <- item.keys do %>
                         <button
                           id={Helpers.normalize_id("#{@id}-#{item.name}-#{key}-add-item")}
-                          class="flex justify-center items-center m-1 font-medium  px-2 rounded-full text-gray-700 bg-gray-100 border border-gray-300"
+                          class="flex justify-center items-center m-1 font-medium  px-2 rounded-full text-gray-700 dark:text-white bg-gray-100 dark:bg-gray-600 border border-gray-300"
                           phx-click="multi-select-add-item"
                           phx-value-key={key}
                           phx-value-item={item.name}
@@ -186,7 +188,7 @@ defmodule Observer.Web.Components.MultiSelectList do
                                 stroke-width="2"
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
-                                class="feather feather-x cursor-pointer hover:text-teal-400 rounded-full w-4 h-4 ml-2"
+                                class="feather feather-x text-gray-900 dark:text-white cursor-pointer hover:text-teal-400 rounded-full w-4 h-4 ml-2"
                               >
                                 <polyline points="20 6 9 17 4 12"></polyline>
                               </svg>

@@ -197,6 +197,9 @@ defmodule Observer.Web.Router do
         {session_name, session_opts, route_opts} = Observer.Web.Router.__options__(prefix, opts)
 
         live_session session_name, session_opts do
+          get "/css-:md5", Observer.Web.Assets, :css, as: :observer_web_asset
+          get "/js-:md5", Observer.Web.Assets, :js, as: :observer_web_asset
+
           live "/", Observer.Web.IndexLive, :index, route_opts
           live "/:page", Observer.Web.IndexLive, :index, route_opts
         end

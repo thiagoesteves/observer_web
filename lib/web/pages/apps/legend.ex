@@ -4,11 +4,11 @@ defmodule Observer.Web.Apps.Legend do
 
   def content(assigns) do
     ~H"""
-    <div class="p-3 border border-black relative mt-5">
-      <h2 class="absolute -top-1/2 translate-y-1/2 bg-white">Legend</h2>
+    <div class="p-3 border border-black relative mt-5 bg-white dark:bg-gray-800">
+      <h2 class="absolute -top-1/2 translate-y-1/2">Legend</h2>
       <div class="flex items-center">
-        <span class="text-gray-600 dark:text-neutral-600">Process (App)</span>
-        <div class="w-6 h-6 bg-white mr-3 flex items-center justify-center">
+        <span class="text-gray-600 dark:text-neutral-400">Process (App)</span>
+        <div class="w-6 h-6 mr-3 flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -23,8 +23,8 @@ defmodule Observer.Web.Apps.Legend do
           </svg>
         </div>
 
-        <span class="text-gray-600 dark:text-neutral-600">Supervisor</span>
-        <div class="w-6 h-6 rounded-lg bg-white mr-3 flex items-center justify-center">
+        <span class="text-gray-600 dark:text-neutral-400">Supervisor</span>
+        <div class="w-6 h-6 rounded-lg mr-3 flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -39,8 +39,8 @@ defmodule Observer.Web.Apps.Legend do
           </svg>
         </div>
 
-        <span class="text-gray-600 dark:text-neutral-600">Process (Worker)</span>
-        <div class="w-6 h-6 rounded-full bg-white mr-3 flex items-center justify-center">
+        <span class="text-gray-600 dark:text-neutral-400">Process (Worker)</span>
+        <div class="w-6 h-6 rounded-full mr-3 flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -55,8 +55,8 @@ defmodule Observer.Web.Apps.Legend do
           </svg>
         </div>
 
-        <span class="text-gray-600 dark:text-neutral-600">Port</span>
-        <div class="w-6 h-6 bg-white mr-2 flex items-center justify-center">
+        <span class="text-gray-600 dark:text-neutral-400">Port</span>
+        <div class="w-6 h-6 mr-2 flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -71,8 +71,8 @@ defmodule Observer.Web.Apps.Legend do
           </svg>
         </div>
 
-        <span class="text-gray-600 dark:text-neutral-600">Reference</span>
-        <div class="w-6 h-6 rounded-lg bg-white mr-3 flex items-center justify-center">
+        <span class="text-gray-600 dark:text-neutral-400">Reference</span>
+        <div class="w-6 h-6 rounded-lg mr-3 flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -87,8 +87,8 @@ defmodule Observer.Web.Apps.Legend do
           </svg>
         </div>
 
-        <span class="text-gray-600 dark:text-neutral-600">Link</span>
-        <div class="w-6 h-6 bg-white mr-2 flex items-center justify-center">
+        <span class="text-gray-600 dark:text-neutral-400">Link</span>
+        <div class="w-6 h-6 mr-2 flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -103,8 +103,8 @@ defmodule Observer.Web.Apps.Legend do
           </svg>
         </div>
 
-        <span class="text-gray-600 dark:text-neutral-600">Monitor</span>
-        <div class="w-6 h-6 bg-white mr-2 flex items-center justify-center">
+        <span class="text-gray-600 dark:text-neutral-400">Monitor</span>
+        <div class="w-6 h-6 mr-2 flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -119,8 +119,8 @@ defmodule Observer.Web.Apps.Legend do
           </svg>
         </div>
 
-        <span class="text-gray-600 dark:text-neutral-600">Monitored by</span>
-        <div class="w-6 h-6 bg-white mr-2 flex items-center justify-center">
+        <span class="text-gray-600 dark:text-neutral-400">Monitored by</span>
+        <div class="w-6 h-6 mr-2 flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"

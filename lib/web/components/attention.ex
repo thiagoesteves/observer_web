@@ -11,10 +11,10 @@ defmodule Observer.Web.Components.Attention do
 
   def content(assigns) do
     ~H"""
-    <div class="flex items-center justify-between bg-gray-200 w-full">
+    <div class="flex items-center justify-between bg-gray-200 dark:bg-gray-800 w-full">
       <div
         id={"live-#{@id}-alert"}
-        class={["p-2 bg-gray-300 border-l-8 rounded-l-lg", @class]}
+        class={["p-2 bg-gray-300 dark:bg-gray-700 border-l-8 rounded-l-lg", @class]}
         role="alert"
       >
         <div class="flex items-center">

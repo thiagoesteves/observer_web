@@ -40,12 +40,9 @@ defmodule Observer.Web.Components.Core do
     <div class="px-4 sm:overflow-visible sm:px-0 ">
       <div id={"#{@id}-table"} class="block" phx-hook="ScrollBottom">
         <table class="items-center w-full border-collapse ">
-          <thead class="text-xs text-left align-middle leading-6 bg-white text-blueGray-500 uppercase sticky top-0 z-10">
+          <thead class="text-xs text-left align-middle leading-6 text-blueGray-500 uppercase sticky top-0 z-10">
             <tr>
-              <th
-                :for={col <- @col}
-                class="p-1 pb-1 pr-6 font-semibold border border-solid border-blueGray-100 border-l-0 border-r-0 font-normal"
-              >
+              <th :for={col <- @col} class="p-1 pb-1 pr-6 font-semibold font-normal">
                 {col[:label]}
               </th>
             </tr>
@@ -53,12 +50,12 @@ defmodule Observer.Web.Components.Core do
           <tbody
             id={"#{@id}-tbody"}
             phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
-            class=" relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700"
+            class=" relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700 dark:text-zinc-100"
           >
             <tr
               :for={row <- @rows}
               id={@row_id && @row_id.(row)}
-              class="group hover:bg-zinc-50"
+              class="group bg-white dark:bg-gray-800 "
               phx-mounted={
                 @transition &&
                   JS.transition(
@@ -74,8 +71,11 @@ defmodule Observer.Web.Components.Core do
                 class={["relative p-0", @row_click && "hover:cursor-pointer"]}
               >
                 <div class="block px-1 py-1 pr-6 text-xs font-mono ">
-                  <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
-                  <span class={["relative", i == 0 && "whitespace-nowrap font-semibold text-zinc-900"]}>
+                  <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-700 sm:rounded-l-xl" />
+                  <span class={[
+                    "relative",
+                    i == 0 && "whitespace-nowrap font-semibold text-zinc-900 dark:text-zinc-100"
+                  ]}>
                     {render_slot(col, @row_item.(row))}
                   </span>
                 </div>
@@ -104,7 +104,7 @@ defmodule Observer.Web.Components.Core do
   attr :row_id, :any, default: nil, doc: "the function for generating the row id"
   attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
   attr :transition, :boolean, default: false
-  attr :title_bg_color, :string, default: "LightGray"
+  attr :title_bg_color, :string, default: "standard"
 
   attr :row_item, :any,
     default: &Function.identity/1,
@@ -121,19 +121,19 @@ defmodule Observer.Web.Components.Core do
       end
 
     ~H"""
-    <div class="px-4 sm:overflow-visible sm:px-0 rounded border border-solid border-blueGray-100">
-      <div id={"#{@id}-table"} class="block max-h-[600px]" phx-hook="ScrollBottom">
-        <table class="items-center w-full border-collapse ">
-          <div
-            class="text-center text-sm font-mono font-semibold px-6 py-1"
-            style={"background-color: #{@title_bg_color};"}
-          >
+    <div class="px-4 sm:overflow-visible sm:px-0 rounded bg-white dark:bg-gray-800 border border-solid border-blueGray-100">
+      <div id={"#{@id}-table"} class="block max-h-[600px]">
+        <table class="items-center w-full border-collapse">
+          <div class={[
+            "text-center text-sm font-mono font-semibold rounded-t px-6 py-1",
+            title_bg_color(@title_bg_color)
+          ]}>
             {@title}
           </div>
           <tbody
             id={"#{@id}-tbody"}
             phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
-            class=" relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700"
+            class=" relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700 dark:text-zinc-200"
           >
             <tr
               :for={row <- @rows}
@@ -154,8 +154,11 @@ defmodule Observer.Web.Components.Core do
                 class={["relative p-0", @row_click && "hover:cursor-pointer"]}
               >
                 <div class="block px-1 py-1 pr-6 text-xs font-mono ">
-                  <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
-                  <span class={["relative", i == 0 && "font-semibold text-zinc-900"]}>
+                  <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-700 sm:rounded-l-xl" />
+                  <span class={[
+                    "relative",
+                    i == 0 && "font-semibold text-zinc-900 dark:text-zinc-300"
+                  ]}>
                     {render_slot(col, @row_item.(row))}
                   </span>
                 </div>
@@ -167,6 +170,9 @@ defmodule Observer.Web.Components.Core do
     </div>
     """
   end
+
+  defp title_bg_color("liveview"), do: "bg-green-200 dark:bg-green-900"
+  defp title_bg_color(_any), do: "bg-zinc-200 dark:bg-zinc-500"
 
   @doc ~S"""
   Renders a table with generic metrics styling.
@@ -200,19 +206,16 @@ defmodule Observer.Web.Components.Core do
       end
 
     ~H"""
-    <div class="px-4 sm:overflow-visible sm:px-0 ">
+    <div class="px-4 sm:overflow-visible sm:px-0">
       <div
         id={"#{@id}-table"}
         class={["block overflow-y-auto", "#{@h_max_size}"]}
         phx-hook="ScrollBottom"
       >
         <table class="items-center w-full border-collapse">
-          <thead class="text-xs text-left align-middle leading-6 bg-white bg-blueGray-50 text-blueGray-500 uppercase sticky top-0 z-10">
+          <thead class="text-xs text-left align-middle leading-6 bg-white bg-blueGray-50 dark:bg-gray-800 text-blueGray-500 dark:text-blueGray-700 uppercase sticky top-0 z-10">
             <tr>
-              <th
-                :for={col <- @col}
-                class="p-1 pb-1 pr-6 font-semibold border border-solid border-blueGray-100 border-l-0 border-t-0 border-r-0 font-normal"
-              >
+              <th :for={col <- @col} class="p-1 pb-1 pr-6 font-semibold font-normal">
                 {col[:label]}
               </th>
             </tr>
@@ -220,7 +223,7 @@ defmodule Observer.Web.Components.Core do
           <tbody
             id={@id}
             phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
-            class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700"
+            class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700 dark:text-neutral-400"
           >
             <tr
               :for={row <- @rows}
@@ -241,8 +244,11 @@ defmodule Observer.Web.Components.Core do
                 class={["relative p-0", @row_click && "hover:cursor-pointer"]}
               >
                 <div class="block px-1 py-1 pr-6 text-xs font-mono ">
-                  <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
-                  <span class={["relative", i == 0 && "font-semibold text-zinc-900"]}>
+                  <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-700 sm:rounded-l-xl" />
+                  <span class={[
+                    "relative",
+                    i == 0 && "font-semibold text-zinc-900 dark:text-zinc-100"
+                  ]}>
                     {render_slot(col, @row_item.(row))}
                   </span>
                 </div>
@@ -324,7 +330,7 @@ defmodule Observer.Web.Components.Core do
 
     ~H"""
     <div phx-feedback-for={@name}>
-      <label class="flex items-center gap-4 text-sm leading-6 text-zinc-600">
+      <label class="flex items-center bg-white dark:bg-gray-800 gap-4 text-sm leading-6 text-zinc-600">
         <input type="hidden" name={@name} value="false" />
         <input
           type="checkbox"
@@ -332,7 +338,7 @@ defmodule Observer.Web.Components.Core do
           name={@name}
           value="true"
           checked={@checked}
-          class="rounded border-zinc-300 text-zinc-900 focus:ring-0"
+          class="rounded border-zinc-300 focus:ring-0"
           {@rest}
         /> {@label}
       </label>
@@ -347,7 +353,7 @@ defmodule Observer.Web.Components.Core do
       <select
         id={@id}
         name={@name}
-        class="mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm"
+        class="mt-2 block bg-white dark:bg-gray-800  w-full rounded-md border border-gray-300 shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm"
         multiple={@multiple}
         {@rest}
       >
@@ -378,7 +384,7 @@ defmodule Observer.Web.Components.Core do
         id={@id}
         name={@name}
         class={[
-          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
+          "mt-2 block bg-white dark:bg-gray-800  w-full rounded-lg focus:ring-0 sm:text-sm sm:leading-6",
           "min-h-[6rem] phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
           @errors == [] && "border-zinc-300 focus:border-zinc-400",
           @errors != [] && "border-rose-400 focus:border-rose-400"
@@ -399,7 +405,7 @@ defmodule Observer.Web.Components.Core do
         id={@id}
         value={Form.normalize_value(@type, @value)}
         class={[
-          "ml-2 mr-2 h-2 block rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
+          "ml-2 mr-2 h-2 bg-white dark:bg-gray-800  block rounded-lg focus:ring-0 sm:text-sm sm:leading-6",
           "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
           @errors == [] && "border-zinc-300 focus:border-zinc-400",
           @errors != [] && "border-rose-400 focus:border-rose-400"
@@ -421,7 +427,7 @@ defmodule Observer.Web.Components.Core do
         id={@id}
         value={Form.normalize_value(@type, @value)}
         class={[
-          "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6",
+          "mt-2 block bg-white dark:bg-gray-800 w-full rounded-lg focus:ring-0 sm:text-sm sm:leading-6",
           "phx-no-feedback:border-zinc-300 phx-no-feedback:focus:border-zinc-400",
           @errors == [] && "border-zinc-300 focus:border-zinc-400",
           @errors != [] && "border-rose-400 focus:border-rose-400"
@@ -440,7 +446,7 @@ defmodule Observer.Web.Components.Core do
 
   def label(assigns) do
     ~H"""
-    <label for={@for} class="block text-sm font-semibold leading-6 text-zinc-800">
+    <label for={@for} class="block text-sm font-semibold leading-6">
       {render_slot(@inner_block)}
     </label>
     """

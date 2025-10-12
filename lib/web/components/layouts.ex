@@ -7,31 +7,23 @@ defmodule Observer.Web.Layouts do
   """
   use Observer.Web, :html
 
+  embed_templates "layouts/*"
+
+  alias Observer.Web.Assets
   alias Observer.Web.Components.Icons
 
-  phoenix_js_paths =
-    for app <- ~w(phoenix phoenix_html phoenix_live_view)a do
-      path = Application.app_dir(app, ["priv", "static", "#{app}.js"])
-      Module.put_attribute(__MODULE__, :external_resource, path)
-      path
-    end
+  defp asset_path(conn, asset) when asset in [:css, :js] do
+    hash = Assets.current_hash(asset)
 
-  @static_path Application.app_dir(:observer_web, ["priv", "static"])
+    # prefix = conn.private.phoenix_router.__live_dashboard_prefix__()
+    prefix = "/observer"
 
-  @external_resource css_path = Path.join(@static_path, "app.css")
-  @external_resource js_path = Path.join(@static_path, "app.js")
-
-  @css File.read!(css_path)
-
-  @js """
-  #{for path <- phoenix_js_paths, do: path |> File.read!() |> String.replace("//# sourceMappingURL=", "// ")}
-  #{File.read!(js_path)}
-  """
-
-  def render("app.css"), do: @css
-  def render("app.js"), do: @js
-
-  embed_templates "layouts/*"
+    Phoenix.VerifiedRoutes.unverified_path(
+      conn,
+      conn.private.phoenix_router,
+      "#{prefix}/#{asset}-#{hash}"
+    )
+  end
 
   def logo(assigns) do
     ~H"""
@@ -39,8 +31,8 @@ defmodule Observer.Web.Layouts do
       <div>
         <Icons.content name={:logo} />
       </div>
-      <h3 class="class ml-2 items-center tracking-tight text-gray-900">
-        <span class="block text-4xl font-oswald">
+      <h3 class="class ml-2 items-center tracking-tight ">
+        <span class="block text-4xl text-gray-900 dark:text-white">
           Observer
           <span class="text-transparent text-4xl font-bold bg-clip-text bg-gradient-to-tr to-cyan-500 from-blue-600">
             WEB
@@ -105,12 +97,12 @@ defmodule Observer.Web.Layouts do
 
   defp link_class(curr, page) do
     base =
-      "flex items-center px-4 py-2.5 text-sm font-bold transition-all duration-200 text-gray-900 rounded-lg group"
+      "flex items-center px-4 py-2.5 text-sm font-bold transition-all duration-200 text-gray-900 dark:text-white rounded-lg group"
 
     if curr == page do
-      base <> " bg-gray-100"
+      base <> " bg-gray-100 dark:bg-gray-700"
     else
-      base <> " hover:text-white hover:bg-indigo-500"
+      base <> " hover:text-black dark:hover:text-white hover:bg-cyan-500 dark:hover:bg-cyan-800"
     end
   end
 

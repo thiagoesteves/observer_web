@@ -23,9 +23,9 @@ defmodule Observer.Web.Components.MultiSelect do
       <div class="w-full px-2">
         <div class="flex flex-col items-center relative">
           <div class="w-full  ">
-            <div class="my-2 p-1 flex border border-gray-300 bg-white rounded ">
+            <div class="my-2 p-1 flex border border-gray-300 bg-white dark:bg-gray-900 rounded">
               <div class="flex flex-auto flex-wrap">
-                <div class="flex text-ms font-normal items-center p-2 py-1 bg-gray-200  rounded border-gray-200 ">
+                <div class="flex text-ms font-normal items-center p-2 py-1 dark:bg-gray-600 rounded border border-gray-200 dark:border-gray-600">
                   {@selected_text}
                 </div>
 
@@ -60,7 +60,7 @@ defmodule Observer.Web.Components.MultiSelect do
                             stroke-width="2"
                             stroke-linecap="round"
                             stroke-linejoin="round"
-                            class="feather feather-x cursor-pointer hover:text-teal-400 rounded-full w-4 h-4 ml-2"
+                            class="feather feather-x text-gray-900 dark:text-black cursor-pointer hover:text-teal-400 rounded-full w-4 h-4 ml-2"
                           >
                             <line x1="18" y1="6" x2="6" y2="18"></line>
                             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -74,7 +74,7 @@ defmodule Observer.Web.Components.MultiSelect do
                   <input
                     placeholder=""
                     phx-click="toggle-options"
-                    class="bg-transparent p-1 px-2 appearance-none outline-none h-full w-full text-gray-800"
+                    class="p-0.5 bg-transparent border border-white dark:border-black p-1 px-2 appearance-none outline-none h-full w-full text-gray-800 focus:border-teal-500 dark:focus:border-teal-300"
                   />
                 </div>
               </div>
@@ -94,7 +94,7 @@ defmodule Observer.Web.Components.MultiSelect do
                     stroke-width="2"
                     stroke-linecap="round"
                     stroke-linejoin="round"
-                    class="feather feather-chevron-up w-4 h-4"
+                    class="feather text-gray-900 dark:text-white feather-chevron-up w-4 h-4"
                   >
                     <polyline :if={!@show_options} points="18 15 12 9 6 15"></polyline>
                     <polyline :if={@show_options} points="6 9 12 15 18 9"></polyline>
@@ -105,7 +105,7 @@ defmodule Observer.Web.Components.MultiSelect do
 
             <div
               :if={@show_options}
-              class="relative shadow top-100 bg-white z-40 lef-0 rounded max-h-select"
+              class="relative shadow bg-white dark:bg-gray-800 z-40 lef-0 rounded max-h-select"
             >
               <div phx-mounted={
                 JS.transition(
@@ -115,9 +115,9 @@ defmodule Observer.Web.Components.MultiSelect do
                 )
               }>
                 <%= for item <- @unselected do %>
-                  <div class="w-full flex-wrap">
-                    <div class="flex items-start p-2">
-                      <div class="text-sm font-bold text-black">{item.name}:</div>
+                  <div class="w-full flex-wrap bg-white dark:bg-gray-600">
+                    <div class="flex items-start p-2 ">
+                      <div class="text-sm font-bold text-black dark:text-white">{item.name}:</div>
                     </div>
 
                     <div class="flex flex-wrap">
@@ -132,7 +132,7 @@ defmodule Observer.Web.Components.MultiSelect do
                           phx-value-key={key}
                           phx-value-item={item.name}
                         >
-                          <div class="text-sm font-normal leading-none max-w-full flex-initial">
+                          <div class="text-sm font-normal text-black dark:text-white leading-none max-w-full flex-initial">
                             {key}
                           </div>
                           <div class="flex flex-auto flex-row-reverse">
@@ -147,7 +147,7 @@ defmodule Observer.Web.Components.MultiSelect do
                                 stroke-width="2"
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
-                                class="feather feather-x cursor-pointer hover:text-teal-400 rounded-full w-4 h-4 ml-2"
+                                class="feather feather-x text-gray-900 dark:text-white cursor-pointer hover:text-teal-400 rounded-full w-4 h-4 ml-2"
                               >
                                 <polyline points="20 6 9 17 4 12"></polyline>
                               </svg>
@@ -190,9 +190,9 @@ defmodule Observer.Web.Components.MultiSelect do
 
   defp unselected_highlight_color(key, unselected_highlight) do
     if key in unselected_highlight do
-      "text-gray-700 bg-green-100 borde border-green-300"
+      "text-gray-700 dark:text-white bg-green-100 dark:bg-transparent border border-green-300"
     else
-      "text-gray-700 bg-gray-100 borde border-gray-300"
+      "text-gray-700 dark:text-white bg-gray-100 dark:bg-transparent border border-gray-300"
     end
   end
 end

@@ -14,7 +14,7 @@ defmodule Observer.Web.Components.CopyToClipboard do
     >
       <div class="flex gap-1 items-center object-center w-20">
         <div id={"default-message-#{@id}"}>
-          <div class="flex items-center gap-0.5">
+          <div class="flex items-center gap-0.5 text-gray-900 dark:text-white">
             <svg
               class="w-4 h-4"
               fill="none"
@@ -34,7 +34,7 @@ defmodule Observer.Web.Components.CopyToClipboard do
           </div>
         </div>
         <div id={"success-message-#{@id}"} hidden>
-          <div class="flex items-center gap-0.5">
+          <div class="flex items-center gap-0.5 text-gray-900 dark:text-white">
             <svg
               class="w-4 h-4 text-green-500"
               fill="none"

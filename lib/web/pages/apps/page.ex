@@ -75,18 +75,18 @@ defmodule Observer.Web.Apps.Page do
       |> assign(attention_msg: attention_msg)
 
     ~H"""
-    <div class="min-h-screen bg-white">
+    <div class="min-h-screen bg-white dark:bg-gray-800">
       <Attention.content
         id="observer"
         title="Information"
-        class="border-blue-400 text-blue-500"
+        class="border-blue-400 dark:border-blue-700 text-blue-500 dark:text-blue-200"
         message={@attention_msg}
       >
         <:inner_form>
           <.form
             for={@form}
             id="apps-update-form"
-            class="flex ml-2 mr-2 text-xs text-center whitespace-nowrap gap-5"
+            class="flex ml-2 mr-2 text-xs text-center text-zinc-800 dark:text-white whitespace-nowrap gap-5"
             phx-change="form-update"
           >
             <Core.input
