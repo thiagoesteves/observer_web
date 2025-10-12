@@ -28,19 +28,23 @@ defmodule Observer.Web.Assets do
   def init(asset), do: asset
 
   @impl Plug
-  def call(conn, asset) do
-    {contents, content_type} = contents_and_type(asset)
-
+  def call(conn, :css) do
     conn
-    |> put_resp_header("content-type", content_type)
+    |> put_resp_header("content-type", "text/css")
     |> put_resp_header("cache-control", "public, max-age=31536000, immutable")
     |> put_private(:plug_skip_csrf_protection, true)
-    |> send_resp(200, contents)
+    |> send_resp(200, @css)
     |> halt()
   end
 
-  defp contents_and_type(:css), do: {@css, "text/css"}
-  defp contents_and_type(:js), do: {@js, "text/javascript"}
+  def call(conn, :js) do
+    conn
+    |> put_resp_header("content-type", "text/javascript")
+    |> put_resp_header("cache-control", "public, max-age=31536000, immutable")
+    |> put_private(:plug_skip_csrf_protection, true)
+    |> send_resp(200, @js)
+    |> halt()
+  end
 
   for {key, val} <- [css: @css, js: @js] do
     md5 = Base.encode16(:crypto.hash(:md5, val), case: :lower)
