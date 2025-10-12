@@ -15,10 +15,7 @@ defmodule Observer.Web.Components.Metrics.PhxLvSocket do
 
   def content(assigns) do
     ~H"""
-    <div
-      :if={String.match?(@metric, ~r/^phoenix\.liveview\.socket\..+\.total$/)}
-      style={"grid-column: span #{@cols};"}
-    >
+    <div :if={String.match?(@metric, liveview_regex())} style={"grid-column: span #{@cols};"}>
       <% id = Helpers.normalize_id("#{@service}-#{@metric}") %>
       <div class="relative flex flex-col min-w-0 break-words bg-white w-full shadow-lg rounded border border-blueGray-100 dark:border-neutral-400">
         <div class="rounded-t mb-0 px-4 py-3 border-b">
@@ -49,6 +46,8 @@ defmodule Observer.Web.Components.Metrics.PhxLvSocket do
     </div>
     """
   end
+
+  defp liveview_regex(), do: ~r/^phoenix\.liveview\.socket\..+\.total$/
 
   # NOTE: Streams are retrieved in the reverse order
   defp normalize(metrics) do
