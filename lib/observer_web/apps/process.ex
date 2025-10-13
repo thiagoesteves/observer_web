@@ -9,6 +9,8 @@ defmodule ObserverWeb.Apps.Process do
   alias ObserverWeb.Apps.Helper
   alias ObserverWeb.Rpc
 
+  @default_get_state_timeout 100
+
   @process_full [
     :registered_name,
     :priority,
@@ -34,16 +36,16 @@ defmodule ObserverWeb.Apps.Process do
   @doc """
   Creates a complete overview of process stats based on the given `pid`.
   """
-  @spec info(pid :: pid()) :: :undefined | map
-  def info(pid) do
-    process_info(pid, @process_full, &structure_full/2)
+  @spec info(pid :: pid(), timeout :: non_neg_integer()) :: :undefined | map
+  def info(pid, timeout \\ @default_get_state_timeout) do
+    process_info(pid, @process_full, &structure_full/3, timeout)
   end
 
-  @spec state(pid :: pid()) :: {:ok, any()} | {:error, String.t()}
-  def state(pid) do
+  @spec state(pid :: pid(), timeout :: non_neg_integer()) :: {:ok, any()} | {:error, String.t()}
+  def state(pid, timeout \\ @default_get_state_timeout) do
     if pid != self() do
       try do
-        state = :sys.get_state(pid, 100)
+        state = :sys.get_state(pid, timeout)
         {:ok, state}
       catch
         _, reason ->
@@ -59,10 +61,10 @@ defmodule ObserverWeb.Apps.Process do
   ### ==========================================================================
   ### Private functions
   ### ==========================================================================
-  defp process_info(pid, information, structurer) do
+  defp process_info(pid, information, structurer, timeout) do
     case Rpc.pinfo(pid, information) do
       :undefined -> :undefined
-      data -> structurer.(data, pid)
+      data -> structurer.(data, pid, timeout)
     end
   end
 
@@ -93,12 +95,12 @@ defmodule ObserverWeb.Apps.Process do
 
   # Structurers
 
-  defp structure_full(data, pid) do
+  defp structure_full(data, pid, timeout) do
     gc = Keyword.get(data, :garbage_collection, [])
     dictionary = Keyword.get(data, :dictionary)
 
     {state, phx_lv_socket} =
-      case state(pid) do
+      case state(pid, timeout) do
         {:ok, %{socket: %Phoenix.LiveView.Socket{}} = state} ->
           new_state = %{state | socket: "Phoenix.LiveView.Socket", components: "hidden"}
           {to_string(:io_lib.format("~tp", [new_state])), state.socket}
