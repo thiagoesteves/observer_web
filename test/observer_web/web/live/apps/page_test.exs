@@ -54,14 +54,14 @@ defmodule Observer.Web.Apps.PageLiveTest do
       |> element("#apps-multi-select-toggle-options")
       |> render_click()
 
-    refute html =~ "8888"
+    refute html =~ "9900"
 
     html =
       index_live
       |> element("#apps-update-form")
-      |> render_change(%{get_state_timeout: "8888"})
+      |> render_change(%{get_state_timeout: "9900"})
 
-    assert html =~ "8888"
+    assert html =~ "9900"
   end
 
   test "Add/Remove Local Service + Kernel App", %{conn: conn} do
@@ -269,6 +269,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
             class: ""
           },
           state: "Phoenix.LiveView.Socket",
+          dictionary: [],
           phx_lv_socket: %Phoenix.LiveView.Socket{
             id: "my-test-id",
             assigns: %{flag: true},

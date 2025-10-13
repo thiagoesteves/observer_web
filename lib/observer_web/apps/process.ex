@@ -136,6 +136,7 @@ defmodule ObserverWeb.Apps.Process do
       },
       meta: structure_meta(data, pid),
       state: state,
+      dictionary: dictionary,
       phx_lv_socket: phx_lv_socket
     }
   end

@@ -10,6 +10,7 @@
 
 ### Enhancements
  * [[`PR-30`](https://github.com/thiagoesteves/observer_web/pull/30)] Adding configurable timeout for fetching specific states.
+ * [[`PR-31`](https://github.com/thiagoesteves/observer_web/pull/31)] Adding process dictionary information.
 
 ## 0.1.12 🚀 (2025-10-12)
 
