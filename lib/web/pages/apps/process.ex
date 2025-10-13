@@ -113,12 +113,23 @@ defmodule Observer.Web.Apps.Process do
                   {item.value}
                 </:col>
               </Core.table_process>
-              <.relations title="State" value={"#{inspect(@info.state)}"} copy_id={@id} />
+            </div>
+
+            <div class="flex grid grid-cols-2 mt-1 gap-1 items-top">
+              <.relations
+                title="State"
+                value={"#{inspect(@info.state)}"}
+                copy_id={"process-state-#{@id}"}
+              />
+              <.relations
+                title="Dictionary"
+                value={"#{inspect(@info.dictionary)}"}
+                copy_id={"process-dictionary-#{@id}"}
+              />
             </div>
 
             <div class="flex grid grid-cols-4 mt-1 gap-1 items-top">
               <.relations title="Links" value={"#{inspect(@info.relations.links)}"} />
-
               <.relations title="Ancestors" value={"#{inspect(@info.relations.ancestors)}" } />
               <.relations title="Monitors" value={"#{inspect(@info.relations.monitors)}"} />
               <.relations title="Monitored by" value={"#{inspect(@info.relations.monitored_by)}"} />
@@ -184,11 +195,7 @@ defmodule Observer.Web.Apps.Process do
         <%= if @copy_id do %>
           <div class="flex items-center justify-between  w-full">
             {@title}
-            <CopyToClipboard.content
-              :if={@copy_id}
-              id={"process-state-messages-#{@copy_id}"}
-              message={@value}
-            />
+            <CopyToClipboard.content :if={@copy_id} id={@copy_id} message={@value} />
           </div>
         <% else %>
           {@title}
