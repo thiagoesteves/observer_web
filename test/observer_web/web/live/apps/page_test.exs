@@ -43,6 +43,27 @@ defmodule Observer.Web.Apps.PageLiveTest do
     assert html =~ "4242"
   end
 
+  test "Adjust Get State Timeout", %{conn: conn} do
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
+
+    html =
+      index_live
+      |> element("#apps-multi-select-toggle-options")
+      |> render_click()
+
+    refute html =~ "8888"
+
+    html =
+      index_live
+      |> element("#apps-update-form")
+      |> render_change(%{get_state_timeout: "8888"})
+
+    assert html =~ "8888"
+  end
+
   test "Add/Remove Local Service + Kernel App", %{conn: conn} do
     node = Node.self() |> to_string
     service = Helpers.normalize_id(node)
@@ -218,7 +239,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
     with_mock ObserverWeb.Apps.Process,
-      info: fn _ ->
+      info: fn _pid, _timeout ->
         data = %{
           pid: self(),
           registered_name: "name",

@@ -47,7 +47,7 @@ defmodule Observer.Web.Components.Metrics.PhxLvSocket do
     """
   end
 
-  defp liveview_regex(), do: ~r/^phoenix\.liveview\.socket\..+\.total$/
+  defp liveview_regex, do: ~r/^phoenix\.liveview\.socket\..+\.total$/
 
   # NOTE: Streams are retrieved in the reverse order
   defp normalize(metrics) do

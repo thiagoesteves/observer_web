@@ -7,6 +7,8 @@ defmodule ObserverWeb.Telemetry.Producer.PhxLvSocket do
 
   alias ObserverWeb.Telemetry.Consumer
 
+  @default_lv_get_state_timeout 300
+
   @type t :: %__MODULE__{
           module: atom(),
           event: list()
@@ -95,7 +97,7 @@ defmodule ObserverWeb.Telemetry.Producer.PhxLvSocket do
   defp sockets_connected(sockets) do
     sockets
     |> Enum.reduce(0, fn socket, acc ->
-      case ObserverWeb.Apps.Process.state(socket) do
+      case ObserverWeb.Apps.Process.state(socket, @default_lv_get_state_timeout) do
         {:ok, %{socket: %Phoenix.LiveView.Socket{transport_pid: transport_pid}}}
         when is_pid(transport_pid) ->
           acc + 1

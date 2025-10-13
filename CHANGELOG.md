@@ -1,5 +1,16 @@
 # CHANGELOG (v0.1.X)
 
+## 0.1.13 ()
+
+### Backwards incompatible changes for 0.1.12
+ * None
+
+### Bug fixes
+ * None
+
+### Enhancements
+ * [[`PR-30`](https://github.com/thiagoesteves/observer_web/pull/30)] Adding configurable timeout for fetching specific states.
+
 ## 0.1.12 🚀 (2025-10-12)
 
 ### Backwards incompatible changes for 0.1.11

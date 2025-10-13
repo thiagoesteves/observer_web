@@ -96,6 +96,13 @@ defmodule Observer.Web.Apps.Page do
               min="-1"
               label="Initial Depth"
             />
+            <Core.input
+              field={@form[:get_state_timeout]}
+              type="number"
+              step="100"
+              min="100"
+              label="State Timeout (ms)"
+            />
           </.form>
         </:inner_form>
         <:inner_button>
@@ -196,8 +203,15 @@ defmodule Observer.Web.Apps.Page do
     {:noreply, socket |> assign(:show_observer_options, show_observer_options)}
   end
 
-  def handle_parent_event("form-update", %{"initial_tree_depth" => depth}, socket) do
-    {:noreply, assign(socket, form: to_form(%{"initial_tree_depth" => depth}))}
+  def handle_parent_event(
+        "form-update",
+        %{"initial_tree_depth" => depth, "get_state_timeout" => get_state_timeout},
+        socket
+      ) do
+    {:noreply,
+     assign(socket,
+       form: to_form(%{"initial_tree_depth" => depth, "get_state_timeout" => get_state_timeout})
+     )}
   end
 
   def handle_parent_event(
@@ -347,10 +361,18 @@ defmodule Observer.Web.Apps.Page do
   @impl Page
   def handle_info(
         {"request-process", %{"id" => request_id, "series_name" => series_name}},
-        %{assigns: %{current_selected_id: %{id_string: id_string, debouncing: debouncing}}} =
+        %{
+          assigns: %{
+            current_selected_id: %{id_string: id_string, debouncing: debouncing},
+            form: form
+          }
+        } =
           socket
       )
       when id_string != request_id or debouncing < 0 do
+    get_state_timeout = form.params["get_state_timeout"] |> String.to_integer()
+
+    # IO.inspect get_state_timeout
     pid? = String.contains?(request_id, "#PID<")
     port? = String.contains?(request_id, "#Port<")
 
@@ -364,7 +386,7 @@ defmodule Observer.Web.Apps.Page do
             |> :erlang.list_to_pid()
 
           %{
-            info: Apps.Process.info(pid),
+            info: Apps.Process.info(pid, get_state_timeout),
             id_string: request_id,
             type: "pid",
             debouncing: @tooltip_debouncing
@@ -462,7 +484,7 @@ defmodule Observer.Web.Apps.Page do
     assign(socket, :observer_data, Map.put(observer_data, data_key, updated_data))
   end
 
-  defp default_form_options, do: %{"initial_tree_depth" => "3"}
+  defp default_form_options, do: %{"initial_tree_depth" => "3", "get_state_timeout" => "100"}
 
   defp node_info_new do
     %{
