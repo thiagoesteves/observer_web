@@ -428,15 +428,9 @@ defmodule Observer.Web.Apps.Page do
       when id_string != request_id or debouncing < 0 do
     get_state_timeout = form.params["get_state_timeout"] |> String.to_integer()
 
-    # IO.inspect get_state_timeout
-    pid? = String.contains?(request_id, "#PID<")
-    port? = String.contains?(request_id, "#Port<")
-
     current_selected_id =
-      cond do
-        pid? ->
-          pid = Helpers.string_to_pid(request_id)
-
+      case Helpers.parse_identifier(request_id) do
+        {:pid, pid} ->
           %{
             info: Apps.Process.info(pid, get_state_timeout),
             id_string: request_id,
@@ -444,10 +438,8 @@ defmodule Observer.Web.Apps.Page do
             debouncing: @tooltip_debouncing
           }
 
-        port? ->
+        {:port, port} ->
           [service, _app] = String.split(series_name, "::")
-
-          port = Helpers.string_to_port(request_id)
           node = String.to_existing_atom(service)
 
           %{
@@ -457,7 +449,7 @@ defmodule Observer.Web.Apps.Page do
             debouncing: @tooltip_debouncing
           }
 
-        true ->
+        {:none, _any} ->
           reset_current_selected_id(request_id)
       end
 

@@ -96,6 +96,29 @@ defmodule Observer.Web.Helpers do
   end
 
   @doc """
+  This function converts String PID/PORT to its respective type
+
+  ## Examples
+
+    iex> alias Observer.Web.Helpers
+    ...> assert {:pid, _any} = Helpers.parse_identifier("#PID<0.308.0>")
+    ...> assert {:port, _any} = Helpers.parse_identifier("#Port<0.1>")
+    ...> assert {:none, _any} = Helpers.parse_identifier("#Ref<0.0.0.0>")
+  """
+  def parse_identifier(id) do
+    cond do
+      String.contains?(id, "#PID<") ->
+        {:pid, string_to_pid(id)}
+
+      String.contains?(id, "#Port<") ->
+        {:port, string_to_port(id)}
+
+      true ->
+        {:none, id}
+    end
+  end
+
+  @doc """
   This function converts String PID to PID type
 
   ## Examples
