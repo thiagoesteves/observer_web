@@ -19,7 +19,7 @@ const ObserverEChart = {
     // Compare the new option series with the previous one
     if (this.previousSeries && JSON.stringify(this.previousSeries) === JSON.stringify(newOption.series)) {
       // If the data is the same, skip the update
-      console.log('No changes in the data, skipping setOption');
+      // console.log('[ObserverEChart] No changes in the data, skipping setOption');
       return;  // Exit without updating the chart
     }
 

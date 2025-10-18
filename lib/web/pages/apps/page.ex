@@ -11,7 +11,9 @@ defmodule Observer.Web.Apps.Page do
   alias Observer.Web.Apps.Port
   alias Observer.Web.Apps.Process
   alias Observer.Web.Components.Attention
+  alias Observer.Web.Components.Confirm
   alias Observer.Web.Components.MultiSelect
+  alias Observer.Web.Helpers
   alias Observer.Web.Page
   alias ObserverWeb.Apps
 
@@ -147,6 +149,27 @@ defmodule Observer.Web.Apps.Page do
           <Port.content id={@current_selected_id.id_string} info={@current_selected_id.info} />
         <% end %>
       </div>
+
+      <%= if @process_kill_confirmation do %>
+        <Confirm.content id={"process-kill-modal-#{@current_selected_id.id_string}"}>
+          <:header>
+            <p>Attention</p>
+          </:header>
+          <p>
+            Are you sure you want to restart process pid: {"#{@current_selected_id.id_string}"}?
+          </p>
+          <:footer>
+            <Confirm.cancel_button id={@current_selected_id.id_string}>Cancel</Confirm.cancel_button>
+            <Confirm.confirm_button
+              event="process-kill-confirmation"
+              id={@current_selected_id.id_string}
+              value={@current_selected_id.id_string}
+            >
+              Confirm
+            </Confirm.confirm_button>
+          </:footer>
+        </Confirm.content>
+      <% end %>
     </div>
     """
   end
@@ -163,6 +186,7 @@ defmodule Observer.Web.Apps.Page do
     |> assign(:current_selected_id, reset_current_selected_id())
     |> assign(form: to_form(default_form_options()))
     |> assign(:show_observer_options, false)
+    |> assign(:process_kill_confirmation, false)
   end
 
   def handle_mount(socket) do
@@ -173,6 +197,7 @@ defmodule Observer.Web.Apps.Page do
     |> assign(:current_selected_id, reset_current_selected_id())
     |> assign(form: to_form(default_form_options()))
     |> assign(:show_observer_options, false)
+    |> assign(:process_kill_confirmation, false)
   end
 
   # coveralls-ignore-start
@@ -201,6 +226,37 @@ defmodule Observer.Web.Apps.Page do
     show_observer_options = !socket.assigns.show_observer_options
 
     {:noreply, socket |> assign(:show_observer_options, show_observer_options)}
+  end
+
+  def handle_parent_event("request_process_action", %{"action" => "kill"}, socket) do
+    {:noreply, assign(socket, :process_kill_confirmation, true)}
+  end
+
+  def handle_parent_event("request_process_action", %{"action" => "garbage_collect"}, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_parent_event("request_process_action", %{"action" => "send_message"}, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_parent_event("request_process_action", %{"action" => "toggle_monitor"}, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_parent_event("process-kill-confirmation", %{"id" => pid_string}, socket) do
+    pid_string
+    |> Helpers.string_to_pid()
+    |> Elixir.Process.exit(:kill)
+
+    {:noreply,
+     socket
+     |> assign(:process_kill_confirmation, false)
+     |> assign(:current_selected_id, reset_current_selected_id())}
+  end
+
+  def handle_parent_event("confirm-close-modal", _, socket) do
+    {:noreply, assign(socket, :process_kill_confirmation, false)}
   end
 
   def handle_parent_event(
@@ -379,11 +435,7 @@ defmodule Observer.Web.Apps.Page do
     current_selected_id =
       cond do
         pid? ->
-          pid =
-            request_id
-            |> String.trim_leading("#PID")
-            |> String.to_charlist()
-            |> :erlang.list_to_pid()
+          pid = Helpers.string_to_pid(request_id)
 
           %{
             info: Apps.Process.info(pid, get_state_timeout),
@@ -395,11 +447,7 @@ defmodule Observer.Web.Apps.Page do
         port? ->
           [service, _app] = String.split(series_name, "::")
 
-          port =
-            request_id
-            |> String.to_charlist()
-            |> :erlang.list_to_port()
-
+          port = Helpers.string_to_port(request_id)
           node = String.to_existing_atom(service)
 
           %{

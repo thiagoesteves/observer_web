@@ -94,4 +94,30 @@ defmodule Observer.Web.Helpers do
         raise RuntimeError, "nothing stored in the :routing key"
     end
   end
+
+  @doc """
+  This function converts String PID to PID type
+
+  ## Examples
+
+    iex> alias Observer.Web.Helpers
+    ...> assert "#PID<0.308.0>" |> Helpers.string_to_pid() |> is_pid()
+    ...> assert "#PID<0.308.1>" |> Helpers.string_to_pid() |> is_pid()
+  """
+  def string_to_pid(string) do
+    string |> String.trim_leading("#PID") |> String.to_charlist() |> :erlang.list_to_pid()
+  end
+
+  @doc """
+  This function converts String PORT to Port type
+
+  ## Examples
+
+    iex> alias Observer.Web.Helpers
+    ...> assert "#Port<0.1>" |> Helpers.string_to_port() |> is_port()
+    ...> assert "#Port<0.2>" |> Helpers.string_to_port() |> is_port()
+  """
+  def string_to_port(string) do
+    string |> String.to_charlist() |> :erlang.list_to_port()
+  end
 end

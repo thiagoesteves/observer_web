@@ -4,6 +4,7 @@ defmodule Observer.Web.Apps.Process do
   use Observer.Web, :html
   use Phoenix.Component
 
+  alias Observer.Web.Apps.ProcessActions
   alias Observer.Web.Components.Attention
   alias Observer.Web.Components.CopyToClipboard
 
@@ -88,6 +89,8 @@ defmodule Observer.Web.Apps.Process do
         <% true -> %>
           <div id="process-information">
             <div class="flex grid grid-cols-3 gap-1 items-top">
+              <ProcessActions.content id={@id} pid={@info.pid} on_action="request_process_action" />
+
               <Core.table_process
                 id="process-overview-table"
                 title="Overview"
