@@ -77,6 +77,10 @@ defmodule Observer.Web.IndexLive do
   end
 
   @impl Phoenix.LiveView
+  def handle_event("clear-flash", %{}, socket) do
+    {:noreply, clear_flash(socket)}
+  end
+
   def handle_event(message, value, socket) do
     socket.assigns.page.comp.handle_parent_event(message, value, socket)
   end

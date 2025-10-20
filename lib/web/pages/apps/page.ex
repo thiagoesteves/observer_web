@@ -252,6 +252,7 @@ defmodule Observer.Web.Apps.Page do
     {:noreply,
      socket
      |> assign(:process_kill_confirmation, false)
+     |> put_flash(:info, "Process pid: #{pid_string} sucessfully terminated")
      |> assign(:current_selected_id, reset_current_selected_id())}
   end
 

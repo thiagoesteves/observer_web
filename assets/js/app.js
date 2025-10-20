@@ -7,12 +7,14 @@ import LiveMetricsEChart from "./hooks/live_metrics_echart";
 import ObserverEChart from "./hooks/observer_echart";
 import ScrollBottom from "./hooks/scroll_bottom";
 import Themer from "./hooks/themer";
+import AutoDismissFlash from "./hooks/auto_dismiss_flash";
 
 const hooks = {
   LiveMetricsEChart,
   ObserverEChart,
   ScrollBottom,
   Themer,
+  AutoDismissFlash,
 };
 
 // Topbar ---
