@@ -99,17 +99,24 @@ defmodule ObserverWeb.Apps.Process do
     gc = Keyword.get(data, :garbage_collection, [])
     dictionary = Keyword.get(data, :dictionary)
 
+    meta = structure_meta(data, pid)
+
     {state, phx_lv_socket} =
-      case state(pid, timeout) do
-        {:ok, %{socket: %Phoenix.LiveView.Socket{}} = state} ->
-          new_state = %{state | socket: "Phoenix.LiveView.Socket", components: "hidden"}
-          {to_string(:io_lib.format("~tp", [new_state])), state.socket}
+      if meta.class in [:unknown, :application] do
+        {"Could not retrieve the state for pid: #{inspect(pid)}. Reason: state is not available - see Overview class for more information",
+         nil}
+      else
+        case state(pid, timeout) do
+          {:ok, %{socket: %Phoenix.LiveView.Socket{}} = state} ->
+            new_state = %{state | socket: "Phoenix.LiveView.Socket", components: "hidden"}
+            {to_string(:io_lib.format("~tp", [new_state])), state.socket}
 
-        {:ok, state} ->
-          {to_string(:io_lib.format("~tp", [state])), nil}
+          {:ok, state} ->
+            {to_string(:io_lib.format("~tp", [state])), nil}
 
-        {:error, reason} ->
-          {reason, nil}
+          {:error, reason} ->
+            {reason, nil}
+        end
       end
 
     %{
@@ -134,7 +141,7 @@ defmodule ObserverWeb.Apps.Process do
         gc_min_heap_size: Keyword.get(gc, :min_heap_size, 0),
         gc_full_sweep_after: Keyword.get(gc, :fullsweep_after, 0)
       },
-      meta: structure_meta(data, pid),
+      meta: meta,
       state: state,
       dictionary: dictionary,
       phx_lv_socket: phx_lv_socket
