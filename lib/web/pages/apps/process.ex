@@ -10,6 +10,7 @@ defmodule Observer.Web.Apps.Process do
 
   attr :info, :map, required: true
   attr :id, :map, required: true
+  attr :form, :map, required: true
 
   def content(assigns) do
     info = assigns.info
@@ -89,7 +90,12 @@ defmodule Observer.Web.Apps.Process do
         <% true -> %>
           <div id="process-information">
             <div class="flex grid grid-cols-3 gap-1 items-top">
-              <ProcessActions.content id={@id} pid={@info.pid} on_action="request_process_action" />
+              <ProcessActions.content
+                id={@id}
+                pid={@info.pid}
+                form={@form}
+                on_action="request_process_action"
+              />
 
               <Core.table_process
                 id="process-overview-table"

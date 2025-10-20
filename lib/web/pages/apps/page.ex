@@ -144,7 +144,11 @@ defmodule Observer.Web.Apps.Page do
           </div>
         </div>
         <%= if @current_selected_id.type == "pid" do %>
-          <Process.content id={@current_selected_id.id_string} info={@current_selected_id.info} />
+          <Process.content
+            id={@current_selected_id.id_string}
+            form={@process_msg_form}
+            info={@current_selected_id.info}
+          />
         <% else %>
           <Port.content id={@current_selected_id.id_string} info={@current_selected_id.info} />
         <% end %>
@@ -185,6 +189,7 @@ defmodule Observer.Web.Apps.Page do
     |> assign(:observer_data, %{})
     |> assign(:current_selected_id, reset_current_selected_id())
     |> assign(form: to_form(default_form_options()))
+    |> assign(process_msg_form: to_form(%{"message" => ""}))
     |> assign(:show_observer_options, false)
     |> assign(:process_kill_confirmation, false)
   end
@@ -196,6 +201,7 @@ defmodule Observer.Web.Apps.Page do
     |> assign(:observer_data, %{})
     |> assign(:current_selected_id, reset_current_selected_id())
     |> assign(form: to_form(default_form_options()))
+    |> assign(process_msg_form: to_form(%{"message" => ""}))
     |> assign(:show_observer_options, false)
     |> assign(:process_kill_confirmation, false)
   end
@@ -232,27 +238,66 @@ defmodule Observer.Web.Apps.Page do
     {:noreply, assign(socket, :process_kill_confirmation, true)}
   end
 
-  def handle_parent_event("request_process_action", %{"action" => "garbage_collect"}, socket) do
-    {:noreply, socket}
+  def handle_parent_event(
+        "request_process_action",
+        %{"action" => "garbage_collect"},
+        %{assigns: %{current_selected_id: current_selected_id}} = socket
+      ) do
+    pid_string = current_selected_id.id_string
+    true = pid_string |> Helpers.string_to_pid() |> :erlang.garbage_collect()
+
+    {:noreply,
+     socket
+     |> put_flash(:info, "Process pid: #{pid_string} successfully garbage collected")}
   end
 
-  def handle_parent_event("request_process_action", %{"action" => "send_message"}, socket) do
-    {:noreply, socket}
+  def handle_parent_event(
+        "request_process_action",
+        %{"process-send-message" => message},
+        %{assigns: %{current_selected_id: current_selected_id}} = socket
+      ) do
+    pid_string = current_selected_id.id_string
+    pid = Helpers.string_to_pid(pid_string)
+
+    {term, _} = Code.eval_string(message)
+    send(pid, term)
+
+    {:noreply,
+     socket
+     |> put_flash(:info, "Message sent to process pid: #{pid_string} with success")}
   end
 
   def handle_parent_event("request_process_action", %{"action" => "toggle_monitor"}, socket) do
     {:noreply, socket}
   end
 
+  def handle_parent_event(
+        "process-message-form-update",
+        %{"process-send-message" => message},
+        socket
+      ) do
+    # NOTE: Validate that the message is valid Elixir syntax by attempting to parse and evaluate it
+    errors =
+      try do
+        case Code.eval_string(message) do
+          {_term, _} ->
+            []
+        end
+      rescue
+        _exception ->
+          [{:message, {"invalid elixir format", []}}]
+      end
+
+    {:noreply, assign(socket, process_msg_form: to_form(%{"message" => message}, errors: errors))}
+  end
+
   def handle_parent_event("process-kill-confirmation", %{"id" => pid_string}, socket) do
-    pid_string
-    |> Helpers.string_to_pid()
-    |> Elixir.Process.exit(:kill)
+    true = pid_string |> Helpers.string_to_pid() |> Elixir.Process.exit(:kill)
 
     {:noreply,
      socket
      |> assign(:process_kill_confirmation, false)
-     |> put_flash(:info, "Process pid: #{pid_string} sucessfully terminated")
+     |> put_flash(:info, "Process pid: #{pid_string} successfully terminated")
      |> assign(:current_selected_id, reset_current_selected_id())}
   end
 

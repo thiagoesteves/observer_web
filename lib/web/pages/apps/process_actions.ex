@@ -9,6 +9,7 @@ defmodule Observer.Web.Apps.ProcessActions do
   attr :id, :map, required: true
   attr :pid, :any, required: true
   attr :on_action, :any, required: true
+  attr :form, :map, required: true
 
   def content(assigns) do
     ~H"""
@@ -26,21 +27,47 @@ defmodule Observer.Web.Apps.ProcessActions do
             title="Run garbage collection on this process"
           >
             <span>🧹</span>
-            <span>Clean Memory</span>
+            <span>Clean Memory (Garbage collect)</span>
           </button>
 
-          <span class="flex items-center"> Clean Memory </span>
-
-          <button
-            phx-click={@on_action}
-            phx-value-action="send_message"
-            class="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow transition-all duration-200 active:scale-95"
-            title="Send a message to this process"
+          <span class="flex items-center justify-start"> Clean Memory </span>
+          <.form
+            for={@form}
+            phx-submit={@on_action}
+            id="test"
+            phx-change="process-message-form-update"
+            class="space-y-2"
           >
-            <span>✉️</span>
-            <span>Send Message</span>
-          </button>
-          <span class="flex items-center"> Clean Memory </span>
+            <div class="flex gap-2">
+              <Core.input
+                name="process-send-message"
+                type="text"
+                value=""
+                field={@form[:message]}
+                placeholder="Message to send"
+                required
+              />
+              <button
+                type="submit"
+                phx-disable-with="Sending..."
+                class={[
+                  "flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg border shadow-sm hover:shadow transition-all duration-200 active:scale-95",
+                  if(@form.errors == [],
+                    do:
+                      "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600",
+                    else:
+                      "bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700 cursor-not-allowed"
+                  )
+                ]}
+                title="Send a message to this process"
+                disabled={@form.errors != [] or @form.params["message"] == ""}
+              >
+                <span>✉️</span>
+                <span>Send</span>
+              </button>
+            </div>
+          </.form>
+          <span class="flex items-center justify-start"> Send a message to the process </span>
 
           <button
             phx-click={@on_action}
@@ -51,7 +78,7 @@ defmodule Observer.Web.Apps.ProcessActions do
             <span>👁️</span>
             <span>Monitor</span>
           </button>
-          <span class="flex items-center"> Clean Memory </span>
+          <span class="flex items-center justify-start"> Memory monitoring for the process </span>
 
           <button
             phx-click={@on_action}
@@ -62,7 +89,7 @@ defmodule Observer.Web.Apps.ProcessActions do
             <span>⛔</span>
             <span>Kill</span>
           </button>
-          <span class="flex items-center"> Clean Memory </span>
+          <span class="flex items-center justify-start"> Kill the process </span>
         </div>
       </div>
 
