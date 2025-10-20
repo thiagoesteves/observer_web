@@ -162,24 +162,38 @@ defmodule Observer.Web.Layouts do
       phx-hook="AutoDismissFlash"
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
-      class="toast toast-top toast-end z-50"
+      class="fixed z-40 inset-0 flex items-end justify-center pointer-events-none md:py-3 md:px-4 sm:p-6 sm:items-start sm:justify-end"
       {@rest}
     >
-      <div class={[
-        "alert w-80 sm:w-96 max-w-80 sm:max-w-96 text-wrap",
-        @kind == :info && "alert-info",
-        @kind == :error && "alert-error"
-      ]}>
-        <.icon :if={@kind == :info} name="hero-information-circle" class="size-5 shrink-0" />
-        <.icon :if={@kind == :error} name="hero-exclamation-circle" class="size-5 shrink-0" />
-        <div>
-          <p :if={@title} class="font-semibold">{@title}</p>
-          <p>{msg}</p>
+      <div class="max-w-sm w-full bg-white dark:bg-black dark:bg-opacity-90 shadow-lg rounded-lg pointer-events-auto">
+        <div class="rounded-lg ring-1 ring-black/5 overflow-hidden">
+          <div class="p-4">
+            <div class="flex items-start">
+              <%= if @kind == :error  do %>
+                <div class="flex-shrink-0 text-red-400">
+                  <Icons.x_circle />
+                </div>
+              <% else %>
+                <div class="flex-shrink-0 text-green-400">
+                  <Icons.check_circle />
+                </div>
+              <% end %>
+              <div class="ml-3 w-0 flex-1 pt-0.5">
+                <p class="text-sm leading-5 font-medium text-gray-900 dark:text-gray-100">
+                  {msg}
+                </p>
+              </div>
+              <div class="ml-4 flex-shrink-0 flex">
+                <button
+                  phx-click="lv:clear-flash"
+                  class="inline-flex text-gray-400 dark:text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:text-gray-500 transition ease-in-out duration-150"
+                >
+                  <Icons.x_mark class="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="flex-1" />
-        <button type="button" class="group self-start cursor-pointer" aria-label="close">
-          <.icon name="hero-x-mark" class="size-5 opacity-40 group-hover:opacity-70" />
-        </button>
       </div>
     </div>
     """

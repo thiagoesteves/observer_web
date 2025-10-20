@@ -214,6 +214,44 @@ defmodule Observer.Web.Components.Icons do
 
   attr :rest, :global
 
+  def check_circle(assigns) do
+    ~H"""
+    <.svg_outline {@rest}>
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </.svg_outline>
+    """
+  end
+
+  attr :rest, :global
+
+  def x_mark(assigns) do
+    ~H"""
+    <.svg_outline {@rest}>
+      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+    </.svg_outline>
+    """
+  end
+
+  attr :rest, :global
+
+  def x_circle(assigns) do
+    ~H"""
+    <.svg_outline {@rest}>
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </.svg_outline>
+    """
+  end
+
+  attr :rest, :global
+
   def moon(assigns) do
     ~H"""
     <.svg_outline {@rest}>

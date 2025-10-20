@@ -24,62 +24,51 @@ defmodule Observer.Web.Apps.ProcessActions do
           <button
             phx-click={@on_action}
             phx-value-action="garbage_collect"
-            class="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow transition-all duration-200 active:scale-95"
+            class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow transition-all duration-200 active:scale-95 tooltip"
             title="Run garbage collection on this process"
           >
             <span>🧹</span>
             <span>Clean Memory</span>
           </button>
 
-          <span class="flex items-center justify-start"> Call garbage collect for the process </span>
-
           <button
             phx-click={@on_action}
             phx-value-action="kill"
-            class="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow transition-all duration-200 active:scale-95"
-            title="Terminate this process"
+            class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow transition-all duration-200 active:scale-95 tooltip"
+            title="Terminate the selected process"
           >
             <span>⛔</span>
             <span>Kill</span>
           </button>
-          <span class="flex items-center justify-start"> Kill the process </span>
         </div>
       </div>
 
       <div class="p-1">
-        <.form
-          for={@form}
-          phx-submit={@on_action}
-          id="test"
-          phx-change="process-message-form-update"
-          class="space-y-2"
-        >
-          <div class="flex gap-2 w-full">
-            <Core.input
-              name="process-send-message"
-              type="text"
-              value=""
-              field={@form[:message]}
-              placeholder="Type a valid elixir message"
-              required
-            />
-            <button
-              type="submit"
-              phx-disable-with="Sending..."
-              class={[
-                "flex items-center justify-center px-2 text-sm font-semibold rounded-lg border shadow-sm hover:shadow transition-all duration-200 active:scale-95",
-                if(@form.errors == [],
-                  do:
-                    "bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600",
-                  else:
-                    "bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700 cursor-not-allowed"
-                )
-              ]}
-              title="Send a message to this process"
-              disabled={@form.errors != [] or @form.params["message"] == ""}
-            >
-              <span>Send</span>
-            </button>
+        <.form for={@form} phx-submit={@on_action} id="test" phx-change="process-message-form-update">
+          <div class={["w-full min-w-[200px] relative"]}>
+            <div class="relative">
+              <input
+                type="text"
+                name="process-send-message"
+                value={@form.params["message"]}
+                class={[
+                  "w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border rounded-md pl-3 pr-20 py-2 transition duration-300 ease focus:outline-none shadow-sm focus:shadow",
+                  border_error(@form.errors != []),
+                  "tooltip"
+                ]}
+                placeholder="Type a valid elixir message"
+                title="Send a message to the process"
+              />
+
+              <button
+                type="submit"
+                phx-disable-with="Sending..."
+                class="absolute right-1 top-1 rounded bg-slate-800 py-1 px-2.5 border border-transparent text-center text-sm text-white transition-all shadow-sm hover:shadow focus:bg-slate-700 focus:shadow-none active:bg-slate-700 hover:bg-slate-700 active:shadow-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
+                disabled={@form.errors != [] or @form.params["message"] == ""}
+              >
+                Send
+              </button>
+            </div>
           </div>
         </.form>
       </div>
@@ -104,4 +93,7 @@ defmodule Observer.Web.Apps.ProcessActions do
     </div>
     """
   end
+
+  defp border_error(true), do: "border-red-200 focus:border-red-400 hover:border-red-300"
+  defp border_error(_false), do: "border-slate-200 focus:border-slate-400 hover:border-slate-300"
 end
