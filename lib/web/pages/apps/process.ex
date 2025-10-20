@@ -11,6 +11,7 @@ defmodule Observer.Web.Apps.Process do
   attr :info, :map, required: true
   attr :id, :map, required: true
   attr :form, :map, required: true
+  attr :process_memory_monitor, :boolean, required: true
 
   def content(assigns) do
     info = assigns.info
@@ -94,6 +95,7 @@ defmodule Observer.Web.Apps.Process do
                 id={@id}
                 pid={@info.pid}
                 form={@form}
+                process_memory_monitor={@process_memory_monitor}
                 on_action="request_process_action"
               />
 

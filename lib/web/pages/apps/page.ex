@@ -148,6 +148,7 @@ defmodule Observer.Web.Apps.Page do
             id={@current_selected_id.id_string}
             form={@process_msg_form}
             info={@current_selected_id.info}
+            process_memory_monitor={@process_memory_monitor}
           />
         <% else %>
           <Port.content id={@current_selected_id.id_string} info={@current_selected_id.info} />
@@ -191,6 +192,7 @@ defmodule Observer.Web.Apps.Page do
     |> assign(form: to_form(default_form_options()))
     |> assign(process_msg_form: to_form(%{"message" => ""}))
     |> assign(:show_observer_options, false)
+    |> assign(:process_memory_monitor, false)
     |> assign(:process_kill_confirmation, false)
   end
 
@@ -203,6 +205,7 @@ defmodule Observer.Web.Apps.Page do
     |> assign(form: to_form(default_form_options()))
     |> assign(process_msg_form: to_form(%{"message" => ""}))
     |> assign(:show_observer_options, false)
+    |> assign(:process_memory_monitor, false)
     |> assign(:process_kill_confirmation, false)
   end
 
@@ -267,8 +270,26 @@ defmodule Observer.Web.Apps.Page do
      |> put_flash(:info, "Message sent to process pid: #{pid_string} with success")}
   end
 
-  def handle_parent_event("request_process_action", %{"action" => "toggle_monitor"}, socket) do
-    {:noreply, socket}
+  def handle_parent_event(
+        "request_process_action",
+        _params,
+        %{
+          assigns: %{
+            current_selected_id: current_selected_id,
+            process_memory_monitor: process_memory_monitor
+          }
+        } = socket
+      ) do
+    new_process_memory_monitor = !process_memory_monitor
+    text = if new_process_memory_monitor, do: "enabled", else: "disabled"
+    pid_string = current_selected_id.id_string
+
+    # NOTE: Add monitor enable actions here
+
+    {:noreply,
+     socket
+     |> assign(:process_memory_monitor, new_process_memory_monitor)
+     |> put_flash(:info, "Memory monitoring #{text} for process pid: #{pid_string}")}
   end
 
   def handle_parent_event(
