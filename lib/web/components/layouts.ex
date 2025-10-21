@@ -108,4 +108,78 @@ defmodule Observer.Web.Layouts do
 
   defp list_pages_by_params(%{"iframe" => "true"}), do: [:tracing, :applications, :metrics]
   defp list_pages_by_params(_params), do: [:root, :tracing, :applications, :metrics]
+
+  @doc """
+  Renders flash notices.
+
+  ## Examples
+
+      <.flash kind={:info} flash={@flash} />
+      <.flash kind={:info} phx-mounted={show("#flash")}>Welcome Back!</.flash>
+  """
+  attr :id, :string, doc: "the optional id of flash container"
+  attr :flash, :map, default: %{}, doc: "the map of flash messages to display"
+  attr :title, :string, default: nil
+  attr :kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup"
+  attr :rest, :global, doc: "the arbitrary HTML attributes to add to the flash container"
+
+  slot :inner_block, doc: "the optional inner block that renders the flash message"
+
+  def flash(assigns) do
+    assigns = assign_new(assigns, :id, fn -> "flash-#{assigns.kind}" end)
+
+    ~H"""
+    <div
+      :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
+      id={@id}
+      phx-hook="AutoDismissFlash"
+      phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
+      role="alert"
+      class="fixed z-40 inset-0 flex items-end justify-center pointer-events-none md:py-3 md:px-4 sm:p-6 sm:items-start sm:justify-end"
+      {@rest}
+    >
+      <div class="max-w-sm w-full bg-white dark:bg-black dark:bg-opacity-90 shadow-lg rounded-lg pointer-events-auto">
+        <div class="rounded-lg ring-1 ring-black/5 overflow-hidden">
+          <div class="p-4">
+            <div class="flex items-start">
+              <%= if @kind == :error  do %>
+                <div class="flex-shrink-0 text-red-400">
+                  <Icons.x_circle />
+                </div>
+              <% else %>
+                <div class="flex-shrink-0 text-green-400">
+                  <Icons.check_circle />
+                </div>
+              <% end %>
+              <div class="ml-3 w-0 flex-1 pt-0.5">
+                <p class="text-sm leading-5 font-medium text-gray-900 dark:text-gray-100">
+                  {msg}
+                </p>
+              </div>
+              <div class="ml-4 flex-shrink-0 flex">
+                <button
+                  phx-click="lv:clear-flash"
+                  class="inline-flex text-gray-400 dark:text-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:text-gray-500 transition ease-in-out duration-150"
+                >
+                  <Icons.x_mark class="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  def hide(js \\ %JS{}, selector) do
+    JS.hide(js,
+      to: selector,
+      time: 200,
+      transition:
+        {"transition-all transform ease-in duration-200",
+         "opacity-100 translate-y-0 sm:scale-100",
+         "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"}
+    )
+  end
 end

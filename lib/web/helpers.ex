@@ -94,4 +94,83 @@ defmodule Observer.Web.Helpers do
         raise RuntimeError, "nothing stored in the :routing key"
     end
   end
+
+  @doc """
+  This function converts String PID/PORT to its respective type
+
+  ## Examples
+
+    iex> alias Observer.Web.Helpers
+    ...> assert {:pid, _any} = Helpers.parse_identifier("#PID<0.308.0>")
+    ...> assert {:port, _any} = Helpers.parse_identifier("#Port<0.1>")
+    ...> assert {:none, _any} = Helpers.parse_identifier("#Ref<0.0.0.0>")
+  """
+  def parse_identifier(id) do
+    cond do
+      String.contains?(id, "#PID<") ->
+        {:pid, string_to_pid(id)}
+
+      String.contains?(id, "#Port<") ->
+        {:port, string_to_port(id)}
+
+      true ->
+        {:none, id}
+    end
+  end
+
+  @doc """
+  This function converts String PID to safe ID to be used in HTML components
+
+  ## Examples
+
+    iex> alias Observer.Web.Helpers
+    ...> assert Helpers.identifier_to_safe_id("#PID<0.308.0>") == "pid-0-308-0"
+    ...> assert Helpers.identifier_to_safe_id("#PID<0.308.1>") == "pid-0-308-1"
+    ...> assert Helpers.identifier_to_safe_id("#Port<0.1>") == "port-0-1"
+    ...> assert_raise RuntimeError, fn -> Helpers.identifier_to_safe_id("<0.1>") end
+  """
+  def identifier_to_safe_id(identifier) when is_binary(identifier) do
+    cond do
+      String.contains?(identifier, "#PID<") ->
+        identifier
+        |> String.replace(["#PID<"], "pid-")
+        |> String.replace(["."], "-")
+        |> String.replace([">"], "")
+
+      String.contains?(identifier, "#Port<") ->
+        identifier
+        |> String.replace(["#Port<"], "port-")
+        |> String.replace(["."], "-")
+        |> String.replace([">"], "")
+
+      true ->
+        raise "Invalid identifier"
+    end
+  end
+
+  @doc """
+  This function converts String PID to PID type
+
+  ## Examples
+
+    iex> alias Observer.Web.Helpers
+    ...> assert "#PID<0.308.0>" |> Helpers.string_to_pid() |> is_pid()
+    ...> assert "#PID<0.308.1>" |> Helpers.string_to_pid() |> is_pid()
+  """
+  def string_to_pid(string) do
+    string |> String.trim_leading("#PID") |> String.to_charlist() |> :erlang.list_to_pid()
+  end
+
+  @doc """
+  This function converts String PORT to Port type
+
+  ## Examples
+
+    iex> alias Observer.Web.Helpers
+    ...> assert "#Port<0.1>" |> Helpers.string_to_port() |> is_port()
+    ...> assert "#Port<0.2>" |> Helpers.string_to_port() |> is_port()
+  """
+  def string_to_port(string) do
+    string |> String.to_charlist() |> :erlang.list_to_port()
+  end
 end

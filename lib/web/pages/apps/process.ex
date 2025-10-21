@@ -4,11 +4,14 @@ defmodule Observer.Web.Apps.Process do
   use Observer.Web, :html
   use Phoenix.Component
 
+  alias Observer.Web.Apps.ProcessActions
   alias Observer.Web.Components.Attention
   alias Observer.Web.Components.CopyToClipboard
 
   attr :info, :map, required: true
-  attr :id, :map, required: true
+  attr :id, :string, required: true
+  attr :form, :map, required: true
+  attr :process_memory_monitor, :boolean, required: true
 
   def content(assigns) do
     info = assigns.info
@@ -88,6 +91,13 @@ defmodule Observer.Web.Apps.Process do
         <% true -> %>
           <div id="process-information">
             <div class="flex grid grid-cols-3 gap-1 items-top">
+              <ProcessActions.content
+                id={@id}
+                form={@form}
+                process_memory_monitor={@process_memory_monitor}
+                on_action="request_process_action"
+              />
+
               <Core.table_process
                 id="process-overview-table"
                 title="Overview"

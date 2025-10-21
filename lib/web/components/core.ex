@@ -316,7 +316,7 @@ defmodule Observer.Web.Components.Core do
   def input(%{field: %Phoenix.HTML.FormField{} = field} = assigns) do
     assigns
     |> assign(field: nil, id: assigns.id || field.id)
-    # |> assign(:errors, Enum.map(field.errors, &translate_error(&1)))
+    |> assign(:errors, Enum.map(field.errors, &translate_error(&1)))
     |> assign_new(:name, fn -> if assigns.multiple, do: field.name <> "[]", else: field.name end)
     |> assign_new(:value, fn -> field.value end)
     |> input()
@@ -436,6 +436,20 @@ defmodule Observer.Web.Components.Core do
       />
     </div>
     """
+  end
+
+  @doc """
+  Translates an error message using gettext.
+  """
+  def translate_error({msg, _opts}) do
+    msg
+  end
+
+  @doc """
+  Translates the errors for a field from a keyword list of errors.
+  """
+  def translate_errors(errors, field) when is_list(errors) do
+    for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
   end
 
   @doc """

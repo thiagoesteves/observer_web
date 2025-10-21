@@ -2,6 +2,8 @@
 <meta name="live-path" content={@live_path} />
 
 <main class="p-4 min-h-screen flex flex-col">
+  <.flash :if={Phoenix.Flash.get(@flash, :info)} kind={:info} flash={@flash} />
+  <.flash :if={Phoenix.Flash.get(@flash, :error)} kind={:error} flash={@flash} />
   <header class="flex items-center mb-2">
     <div class="md:w-84 mr-3">
       <.logo params={@params} />
