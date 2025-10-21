@@ -10,6 +10,7 @@ defmodule Observer.Web.Apps.ProcessActions do
   attr :on_action, :any, required: true
   attr :form, :map, required: true
   attr :process_memory_monitor, :boolean, required: true
+  attr :node, :atom, required: true
 
   def content(assigns) do
     ~H"""
@@ -94,9 +95,14 @@ defmodule Observer.Web.Apps.ProcessActions do
         <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Memory Monitor</span>
       </label>
 
-      <p class="text-xs text-gray-500 dark:text-gray-400 mt-3 italic">
-        Process ID: <span class="font-mono text-gray-600 dark:text-gray-300">{@id}</span>
-      </p>
+      <div>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-3 italic">
+          Node: <span class="font-mono text-gray-700 dark:text-gray-200">{@node}</span>
+        </p>
+        <p class="text-xs text-gray-500 dark:text-gray-400 p-1 italic">
+          Process ID: <span class="font-mono text-gray-600 dark:text-gray-300">{@id}</span>
+        </p>
+      </div>
     </div>
     """
   end

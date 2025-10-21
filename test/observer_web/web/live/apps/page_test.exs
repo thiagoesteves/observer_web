@@ -547,11 +547,11 @@ defmodule Observer.Web.Apps.PageLiveTest do
 
     assert index_live
            |> element("input[type=\"checkbox\"]")
-           |> render_click() =~ "Memory monitoring enabled for process pid:"
+           |> render_click() =~ "Memory monitor enabled for process pid:"
 
     assert index_live
            |> element("input[type=\"checkbox\"]")
-           |> render_click() =~ "Memory monitoring disabled for process pid:"
+           |> render_click() =~ "Memory monitor disabled for process pid:"
   end
 
   test "Select Service+Apps and Send a message to a process", %{conn: conn} do

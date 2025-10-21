@@ -13,6 +13,7 @@ defmodule ObserverWeb.Application do
       [
         Observer.Web.Telemetry,
         ObserverWeb.Tracer.Server,
+        ObserverWeb.Monitor.Process,
         {Phoenix.PubSub, [name: ObserverWeb.PubSub]}
       ] ++ telemetry_servers()
 

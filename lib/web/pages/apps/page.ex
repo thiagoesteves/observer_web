@@ -16,6 +16,7 @@ defmodule Observer.Web.Apps.Page do
   alias Observer.Web.Helpers
   alias Observer.Web.Page
   alias ObserverWeb.Apps
+  alias ObserverWeb.Monitor
 
   @tooltip_debouncing 50
 
@@ -149,9 +150,14 @@ defmodule Observer.Web.Apps.Page do
             form={@process_msg_form}
             info={@current_selected_id.info}
             process_memory_monitor={@process_memory_monitor}
+            node={@current_selected_id.node}
           />
         <% else %>
-          <Port.content id={@current_selected_id.id_string} info={@current_selected_id.info} />
+          <Port.content
+            id={@current_selected_id.id_string}
+            info={@current_selected_id.info}
+            node={@current_selected_id.node}
+          />
         <% end %>
       </div>
 
@@ -305,15 +311,23 @@ defmodule Observer.Web.Apps.Page do
         } = socket
       ) do
     new_process_memory_monitor = !process_memory_monitor
-    text = if new_process_memory_monitor, do: "enabled", else: "disabled"
     pid_string = current_selected_id.id_string
+    pid = Helpers.string_to_pid(pid_string)
 
     # NOTE: Add monitor enable actions here
+    text =
+      if new_process_memory_monitor do
+        Monitor.start_process_monitor(pid)
+        "enabled"
+      else
+        Monitor.stop_process_monitor(pid)
+        "disabled"
+      end
 
     {:noreply,
      socket
      |> assign(:process_memory_monitor, new_process_memory_monitor)
-     |> put_flash(:info, "Memory monitoring #{text} for process pid: #{pid_string}")}
+     |> put_flash(:info, "Memory monitor #{text} for process pid: #{pid_string}")}
   end
 
   def handle_parent_event(
@@ -528,6 +542,8 @@ defmodule Observer.Web.Apps.Page do
       )
       when id_string != request_id or debouncing < 0 do
     get_state_timeout = form.params["get_state_timeout"] |> String.to_integer()
+    [service, _app] = String.split(series_name, "::")
+    node = String.to_existing_atom(service)
 
     current_selected_id =
       case Helpers.parse_identifier(request_id) do
@@ -536,25 +552,29 @@ defmodule Observer.Web.Apps.Page do
             info: Apps.Process.info(pid, get_state_timeout),
             id_string: request_id,
             type: "pid",
-            debouncing: @tooltip_debouncing
+            debouncing: @tooltip_debouncing,
+            monitor: Monitor.process_enabled?(pid),
+            node: node
           }
 
         {:port, port} ->
-          [service, _app] = String.split(series_name, "::")
-          node = String.to_existing_atom(service)
-
           %{
             info: Apps.Port.info(node, port),
             id_string: request_id,
             type: "port",
-            debouncing: @tooltip_debouncing
+            debouncing: @tooltip_debouncing,
+            monitor: false,
+            node: node
           }
 
         {:none, _any} ->
-          reset_current_selected_id(request_id)
+          reset_current_selected_id(request_id, node)
       end
 
-    {:noreply, assign(socket, :current_selected_id, current_selected_id)}
+    {:noreply,
+     socket
+     |> assign(:process_memory_monitor, current_selected_id.monitor)
+     |> assign(:current_selected_id, current_selected_id)}
   end
 
   # The debouncing added here will reduce the number of Process.info requests since
@@ -678,8 +698,15 @@ defmodule Observer.Web.Apps.Page do
     end)
   end
 
-  defp reset_current_selected_id(id_string \\ nil),
-    do: %{info: nil, id_string: id_string, type: nil, debouncing: @tooltip_debouncing}
+  defp reset_current_selected_id(id_string \\ nil, node \\ nil),
+    do: %{
+      info: nil,
+      id_string: id_string,
+      type: nil,
+      debouncing: @tooltip_debouncing,
+      monitor: false,
+      node: node
+    }
 
   defp flare_chart_data(series) do
     %{

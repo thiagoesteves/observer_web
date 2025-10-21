@@ -8,6 +8,7 @@ defmodule Observer.Web.Apps.PortActions do
 
   attr :id, :string, required: true
   attr :on_action, :any, required: true
+  attr :node, :atom, required: true
 
   def content(assigns) do
     ~H"""
