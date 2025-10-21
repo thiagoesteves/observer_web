@@ -4,10 +4,11 @@ defmodule Observer.Web.Apps.Port do
   use Observer.Web, :html
   use Phoenix.Component
 
+  alias Observer.Web.Apps.PortActions
   alias Observer.Web.Components.Attention
 
   attr :info, :map, required: true
-  attr :id, :map, required: true
+  attr :id, :string, required: true
 
   def content(assigns) do
     info = assigns.info
@@ -42,6 +43,7 @@ defmodule Observer.Web.Apps.Port do
         <% true -> %>
           <div id="port_information">
             <div class="flex grid grid-cols-3  gap-1 items-top">
+              <PortActions.content id={@id} on_action="request_port_action" />
               <Core.table_process id="port-overview-table" title="Overview" rows={@port_overview}>
                 <:col :let={item}>
                   <span>{item.name}</span>

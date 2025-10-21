@@ -155,21 +155,21 @@ defmodule Observer.Web.Apps.Page do
         <% end %>
       </div>
 
-      <%= if @process_kill_confirmation do %>
-        <Confirm.content id={"process-kill-modal-#{@current_selected_id.id_string}"}>
+      <%= if @selected_id_action_confirmation do %>
+        <Confirm.content id={"process-kill-modal-#{@selected_id_action_confirmation.id}"}>
           <:header>
             <p>Attention</p>
           </:header>
           <p>
-            Are you sure you want to restart process pid: {"#{@current_selected_id.id_string}"}?
+            {@selected_id_action_confirmation.message}
           </p>
           <:footer>
-            <Confirm.cancel_button id={Helpers.pid_string_to_safe_id(@current_selected_id.id_string)}>
+            <Confirm.cancel_button id={@selected_id_action_confirmation.id}>
               Cancel
             </Confirm.cancel_button>
             <Confirm.confirm_button
-              event="process-kill-confirmation"
-              id={Helpers.pid_string_to_safe_id(@current_selected_id.id_string)}
+              event={@selected_id_action_confirmation.event}
+              id={@selected_id_action_confirmation.id}
               value={@current_selected_id.id_string}
             >
               Confirm
@@ -195,7 +195,7 @@ defmodule Observer.Web.Apps.Page do
     |> assign(process_msg_form: to_form(%{"message" => ""}))
     |> assign(:show_observer_options, false)
     |> assign(:process_memory_monitor, false)
-    |> assign(:process_kill_confirmation, false)
+    |> assign(:selected_id_action_confirmation, nil)
   end
 
   def handle_mount(socket) do
@@ -208,7 +208,7 @@ defmodule Observer.Web.Apps.Page do
     |> assign(process_msg_form: to_form(%{"message" => ""}))
     |> assign(:show_observer_options, false)
     |> assign(:process_memory_monitor, false)
-    |> assign(:process_kill_confirmation, false)
+    |> assign(:selected_id_action_confirmation, nil)
   end
 
   # coveralls-ignore-start
@@ -239,8 +239,30 @@ defmodule Observer.Web.Apps.Page do
     {:noreply, socket |> assign(:show_observer_options, show_observer_options)}
   end
 
-  def handle_parent_event("request_process_action", %{"action" => "kill"}, socket) do
-    {:noreply, assign(socket, :process_kill_confirmation, true)}
+  def handle_parent_event(
+        "request_port_action",
+        %{"action" => "kill"},
+        %{assigns: %{current_selected_id: current_selected_id}} = socket
+      ) do
+    {:noreply,
+     assign(
+       socket,
+       :selected_id_action_confirmation,
+       action_confirmation(:port, current_selected_id.id_string)
+     )}
+  end
+
+  def handle_parent_event(
+        "request_process_action",
+        %{"action" => "kill"},
+        %{assigns: %{current_selected_id: current_selected_id}} = socket
+      ) do
+    {:noreply,
+     assign(
+       socket,
+       :selected_id_action_confirmation,
+       action_confirmation(:process, current_selected_id.id_string)
+     )}
   end
 
   def handle_parent_event(
@@ -314,18 +336,28 @@ defmodule Observer.Web.Apps.Page do
     {:noreply, assign(socket, process_msg_form: to_form(%{"message" => message}, errors: errors))}
   end
 
-  def handle_parent_event("process-kill-confirmation", %{"id" => pid_string}, socket) do
-    true = pid_string |> Helpers.string_to_pid() |> Elixir.Process.exit(:kill)
+  def handle_parent_event("port-close-confirmation", %{"id" => id_string}, socket) do
+    true = id_string |> Helpers.string_to_port() |> Elixir.Port.close()
 
     {:noreply,
      socket
-     |> assign(:process_kill_confirmation, false)
-     |> put_flash(:info, "Process pid: #{pid_string} successfully terminated")
+     |> put_flash(:info, "Port id: #{id_string} successfully closed")
+     |> assign(:selected_id_action_confirmation, nil)
+     |> assign(:current_selected_id, reset_current_selected_id())}
+  end
+
+  def handle_parent_event("process-kill-confirmation", %{"id" => id_string}, socket) do
+    true = id_string |> Helpers.string_to_pid() |> Elixir.Process.exit(:kill)
+
+    {:noreply,
+     socket
+     |> put_flash(:info, "Process pid: #{id_string} successfully terminated")
+     |> assign(:selected_id_action_confirmation, nil)
      |> assign(:current_selected_id, reset_current_selected_id())}
   end
 
   def handle_parent_event("confirm-close-modal", _, socket) do
-    {:noreply, assign(socket, :process_kill_confirmation, false)}
+    {:noreply, assign(socket, :selected_id_action_confirmation, nil)}
   end
 
   def handle_parent_event(
@@ -711,6 +743,26 @@ defmodule Observer.Web.Apps.Page do
       expandAndCollapse: true,
       animationDuration: 550,
       animationDurationUpdate: 750
+    }
+  end
+
+  defp action_confirmation(:process, id) do
+    %{
+      type: "process",
+      event: "process-kill-confirmation",
+      message: "Are you sure you want to terminate process pid: #{id}?",
+      id_string: id,
+      id: Helpers.identifier_to_safe_id(id)
+    }
+  end
+
+  defp action_confirmation(:port, id) do
+    %{
+      type: "port",
+      event: "port-close-confirmation",
+      message: "Are you sure you want to close port id: #{id}?",
+      id_string: id,
+      id: Helpers.identifier_to_safe_id(id)
     }
   end
 end

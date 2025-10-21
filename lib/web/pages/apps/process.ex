@@ -9,7 +9,7 @@ defmodule Observer.Web.Apps.Process do
   alias Observer.Web.Components.CopyToClipboard
 
   attr :info, :map, required: true
-  attr :id, :map, required: true
+  attr :id, :string, required: true
   attr :form, :map, required: true
   attr :process_memory_monitor, :boolean, required: true
 
@@ -93,7 +93,6 @@ defmodule Observer.Web.Apps.Process do
             <div class="flex grid grid-cols-3 gap-1 items-top">
               <ProcessActions.content
                 id={@id}
-                pid={@info.pid}
                 form={@form}
                 process_memory_monitor={@process_memory_monitor}
                 on_action="request_process_action"

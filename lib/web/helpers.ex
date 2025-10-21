@@ -124,14 +124,28 @@ defmodule Observer.Web.Helpers do
   ## Examples
 
     iex> alias Observer.Web.Helpers
-    ...> assert Helpers.pid_string_to_safe_id("#PID<0.308.0>") == "pid-0-308-0"
-    ...> assert Helpers.pid_string_to_safe_id("#PID<0.308.1>") == "pid-0-308-1"
+    ...> assert Helpers.identifier_to_safe_id("#PID<0.308.0>") == "pid-0-308-0"
+    ...> assert Helpers.identifier_to_safe_id("#PID<0.308.1>") == "pid-0-308-1"
+    ...> assert Helpers.identifier_to_safe_id("#Port<0.1>") == "port-0-1"
+    ...> assert_raise RuntimeError, fn -> Helpers.identifier_to_safe_id("<0.1>") end
   """
-  def pid_string_to_safe_id(pid_string) when is_binary(pid_string) do
-    pid_string
-    |> String.replace(["#PID<"], "pid-")
-    |> String.replace(["."], "-")
-    |> String.replace([">"], "")
+  def identifier_to_safe_id(identifier) when is_binary(identifier) do
+    cond do
+      String.contains?(identifier, "#PID<") ->
+        identifier
+        |> String.replace(["#PID<"], "pid-")
+        |> String.replace(["."], "-")
+        |> String.replace([">"], "")
+
+      String.contains?(identifier, "#Port<") ->
+        identifier
+        |> String.replace(["#Port<"], "port-")
+        |> String.replace(["."], "-")
+        |> String.replace([">"], "")
+
+      true ->
+        raise "Invalid identifier"
+    end
   end
 
   @doc """

@@ -7,7 +7,6 @@ defmodule Observer.Web.Apps.ProcessActions do
   use Phoenix.Component
 
   attr :id, :map, required: true
-  attr :pid, :any, required: true
   attr :on_action, :any, required: true
   attr :form, :map, required: true
   attr :process_memory_monitor, :boolean, required: true
@@ -96,7 +95,7 @@ defmodule Observer.Web.Apps.ProcessActions do
       </label>
 
       <p class="text-xs text-gray-500 dark:text-gray-400 mt-3 italic">
-        Process ID: <span class="font-mono text-gray-600 dark:text-gray-300">{inspect(@pid)}</span>
+        Process ID: <span class="font-mono text-gray-600 dark:text-gray-300">{@id}</span>
       </p>
     </div>
     """
