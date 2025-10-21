@@ -164,10 +164,12 @@ defmodule Observer.Web.Apps.Page do
             Are you sure you want to restart process pid: {"#{@current_selected_id.id_string}"}?
           </p>
           <:footer>
-            <Confirm.cancel_button id={@current_selected_id.id_string}>Cancel</Confirm.cancel_button>
+            <Confirm.cancel_button id={Helpers.pid_string_to_safe_id(@current_selected_id.id_string)}>
+              Cancel
+            </Confirm.cancel_button>
             <Confirm.confirm_button
               event="process-kill-confirmation"
-              id={@current_selected_id.id_string}
+              id={Helpers.pid_string_to_safe_id(@current_selected_id.id_string)}
               value={@current_selected_id.id_string}
             >
               Confirm

@@ -119,6 +119,22 @@ defmodule Observer.Web.Helpers do
   end
 
   @doc """
+  This function converts String PID to safe ID to be used in HTML components
+
+  ## Examples
+
+    iex> alias Observer.Web.Helpers
+    ...> assert Helpers.pid_string_to_safe_id("#PID<0.308.0>") == "pid-0-308-0"
+    ...> assert Helpers.pid_string_to_safe_id("#PID<0.308.1>") == "pid-0-308-1"
+  """
+  def pid_string_to_safe_id(pid_string) when is_binary(pid_string) do
+    pid_string
+    |> String.replace(["#PID<"], "pid-")
+    |> String.replace(["."], "-")
+    |> String.replace([">"], "")
+  end
+
+  @doc """
   This function converts String PID to PID type
 
   ## Examples

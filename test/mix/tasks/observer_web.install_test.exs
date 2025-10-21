@@ -2,6 +2,7 @@ defmodule Mix.Tasks.ObserverWeb.InstallTest do
   use ExUnit.Case, async: true
 
   import Igniter.Test
+  alias Mix.Tasks.ObserverWeb.Install.Docs
 
   test "installation adds the route the necessary setup to the router" do
     test_project()
@@ -61,5 +62,57 @@ defmodule Mix.Tasks.ObserverWeb.InstallTest do
     33 41   |end
          ...|
     """)
+  end
+
+  test "No Phoenix router found" do
+    response =
+      test_project()
+      |> apply_igniter!()
+      |> Igniter.compose_task("observer_web.install")
+
+    assert response.warnings == [
+             "No Phoenix router found, Phoenix Liveview is needed for Observer Web\n"
+           ]
+  end
+
+  test "No dev routes found" do
+    assert_raise CaseClauseError, fn ->
+      test_project()
+      |> Igniter.Project.Module.create_module(TestWeb.Router, """
+      use TestWeb, :router
+
+      pipeline :browser do
+        plug :accepts, ["html"]
+        plug :fetch_session
+        plug :fetch_live_flash
+        plug :put_root_layout, {DevWeb.LayoutView, :root}
+        plug :protect_from_forgery
+        plug :put_secure_browser_headers
+      end
+
+      pipeline :api do
+        plug :accepts, ["json"]
+      end
+
+      scope "/" do
+        pipe_through :browser
+
+        live_dashboard "/dashboard", metrics: testWeb.Telemetry
+        forward "/mailbox", Plug.Swoosh.MailboxPreview
+      end
+      """)
+      |> apply_igniter!()
+      |> Igniter.compose_task("observer_web.install")
+    end
+  end
+
+  test "Validate info methods" do
+    description_text = Docs.long_doc()
+    assert description_text =~ "Installs Observer Web into your Phoenix application"
+
+    assert description_text =~
+             "This task configures your Phoenix application to use the Observer Web dashboard"
+
+    assert description_text =~ "mix observer_web.install"
   end
 end

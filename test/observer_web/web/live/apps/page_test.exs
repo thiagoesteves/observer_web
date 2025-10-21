@@ -5,6 +5,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
   import Mox
   import Mock
 
+  alias Observer.Web.Helpers
   alias Observer.Web.Mocks.RpcStubber
   alias Observer.Web.Mocks.TelemetryStubber
 
@@ -342,6 +343,319 @@ defmodule Observer.Web.Apps.PageLiveTest do
 
     # Check the Process information is not being shown
     assert html =~ "Process #PID&lt;0.0.11111&gt; is either dead or protected"
+  end
+
+  test "Select Service+Apps and Kill a process", %{conn: conn} do
+    node = Node.self() |> to_string
+    service = Helpers.normalize_id(node)
+    test_pid_process = self()
+
+    ObserverWeb.RpcMock
+    |> stub(:call, fn node, module, function, args, timeout ->
+      :rpc.call(node, module, function, args, timeout)
+    end)
+    |> stub(:pinfo, fn pid, information ->
+      send(test_pid_process, {:apps_page_pid, self()})
+      :rpc.pinfo(pid, information)
+    end)
+
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
+
+    index_live
+    |> element("#apps-multi-select-toggle-options")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-apps-kernel-add-item")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-services-#{service}-add-item")
+    |> render_click()
+
+    {:ok, pid} =
+      Task.start(fn ->
+        # Perform a long-running operation
+        :timer.sleep(30_000)
+        "Long-running task complete!"
+      end)
+
+    # Send the request 2 times to validate the path where the request
+    # was already executed.
+    id = "#{inspect(pid)}"
+    series_name = "#{Node.self()}::kernel"
+
+    assert_receive {:apps_page_pid, apps_page_pid}, 1_000
+
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+
+    assert index_live
+           |> element("#process-kill-button")
+           |> render_click() =~ "Are you sure you want to restart process pid:"
+
+    assert index_live
+           |> element("#confirm-button-#{Helpers.pid_string_to_safe_id(id)}")
+           |> render_click() =~ "successfully terminated"
+
+    refute Process.alive?(pid)
+  end
+
+  test "Select Service+Apps and Cancel before killing a process", %{conn: conn} do
+    node = Node.self() |> to_string
+    service = Helpers.normalize_id(node)
+    test_pid_process = self()
+
+    ObserverWeb.RpcMock
+    |> stub(:call, fn node, module, function, args, timeout ->
+      :rpc.call(node, module, function, args, timeout)
+    end)
+    |> stub(:pinfo, fn pid, information ->
+      send(test_pid_process, {:apps_page_pid, self()})
+      :rpc.pinfo(pid, information)
+    end)
+
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
+
+    index_live
+    |> element("#apps-multi-select-toggle-options")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-apps-kernel-add-item")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-services-#{service}-add-item")
+    |> render_click()
+
+    pid = Enum.random(:erlang.processes())
+
+    # Send the request 2 times to validate the path where the request
+    # was already executed.
+    id = "#{inspect(pid)}"
+    series_name = "#{Node.self()}::kernel"
+
+    assert_receive {:apps_page_pid, apps_page_pid}, 1_000
+
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+
+    assert index_live
+           |> element("#process-kill-button")
+           |> render_click() =~ "Are you sure you want to restart process pid:"
+
+    index_live
+    |> element("#cancel-button-#{Helpers.pid_string_to_safe_id(id)}")
+    |> render_click()
+
+    assert Process.alive?(pid)
+  end
+
+  test "Select Service+Apps and Garbage Collect a process", %{conn: conn} do
+    node = Node.self() |> to_string
+    service = Helpers.normalize_id(node)
+    test_pid_process = self()
+
+    ObserverWeb.RpcMock
+    |> stub(:call, fn node, module, function, args, timeout ->
+      :rpc.call(node, module, function, args, timeout)
+    end)
+    |> stub(:pinfo, fn pid, information ->
+      send(test_pid_process, {:apps_page_pid, self()})
+      :rpc.pinfo(pid, information)
+    end)
+
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
+
+    index_live
+    |> element("#apps-multi-select-toggle-options")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-apps-kernel-add-item")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-services-#{service}-add-item")
+    |> render_click()
+
+    pid = Enum.random(:erlang.processes())
+
+    # Send the request 2 times to validate the path where the request
+    # was already executed.
+    id = "#{inspect(pid)}"
+    series_name = "#{Node.self()}::kernel"
+
+    assert_receive {:apps_page_pid, apps_page_pid}, 1_000
+
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+
+    assert index_live
+           |> element("#process-clean-memory-button")
+           |> render_click() =~ "successfully garbage collected"
+  end
+
+  test "Select Service+Apps and Toggle process Monitor", %{conn: conn} do
+    node = Node.self() |> to_string
+    service = Helpers.normalize_id(node)
+    test_pid_process = self()
+
+    ObserverWeb.RpcMock
+    |> stub(:call, fn node, module, function, args, timeout ->
+      :rpc.call(node, module, function, args, timeout)
+    end)
+    |> stub(:pinfo, fn pid, information ->
+      send(test_pid_process, {:apps_page_pid, self()})
+      :rpc.pinfo(pid, information)
+    end)
+
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
+
+    index_live
+    |> element("#apps-multi-select-toggle-options")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-apps-kernel-add-item")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-services-#{service}-add-item")
+    |> render_click()
+
+    pid = Enum.random(:erlang.processes())
+
+    # Send the request 2 times to validate the path where the request
+    # was already executed.
+    id = "#{inspect(pid)}"
+    series_name = "#{Node.self()}::kernel"
+
+    assert_receive {:apps_page_pid, apps_page_pid}, 1_000
+
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+
+    assert index_live
+           |> element("input[type=\"checkbox\"]")
+           |> render_click() =~ "Memory monitoring enabled for process pid:"
+
+    assert index_live
+           |> element("input[type=\"checkbox\"]")
+           |> render_click() =~ "Memory monitoring disabled for process pid:"
+  end
+
+  test "Select Service+Apps and Send a message to a process", %{conn: conn} do
+    node = Node.self() |> to_string
+    service = Helpers.normalize_id(node)
+    test_pid_process = self()
+
+    ObserverWeb.RpcMock
+    |> stub(:call, fn node, module, function, args, timeout ->
+      :rpc.call(node, module, function, args, timeout)
+    end)
+    |> stub(:pinfo, fn pid, information ->
+      send(test_pid_process, {:apps_page_pid, self()})
+      :rpc.pinfo(pid, information)
+    end)
+
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
+
+    index_live
+    |> element("#apps-multi-select-toggle-options")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-apps-kernel-add-item")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-services-#{service}-add-item")
+    |> render_click()
+
+    {:ok, pid} =
+      Task.start_link(fn ->
+        # Perform a long-running operation
+        :timer.sleep(30_000)
+        "Long-running task complete!"
+      end)
+
+    # Send the request 2 times to validate the path where the request
+    # was already executed.
+    id = "#{inspect(pid)}"
+    series_name = "#{Node.self()}::kernel"
+
+    assert_receive {:apps_page_pid, apps_page_pid}, 1_000
+
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+
+    index_live
+    |> element("#process-send-msg-form")
+    |> render_change(%{"process-send-message" => "{:hello, :world}"})
+
+    assert index_live
+           |> element("#process-send-msg-form")
+           |> render_submit() =~ "Message sent to process pid:"
+  end
+
+  test "Select Service+Apps and cannot send an invalid message to a process", %{conn: conn} do
+    node = Node.self() |> to_string
+    service = Helpers.normalize_id(node)
+    test_pid_process = self()
+
+    ObserverWeb.RpcMock
+    |> stub(:call, fn node, module, function, args, timeout ->
+      :rpc.call(node, module, function, args, timeout)
+    end)
+    |> stub(:pinfo, fn pid, information ->
+      send(test_pid_process, {:apps_page_pid, self()})
+      :rpc.pinfo(pid, information)
+    end)
+
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
+
+    index_live
+    |> element("#apps-multi-select-toggle-options")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-apps-kernel-add-item")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-services-#{service}-add-item")
+    |> render_click()
+
+    pid = Enum.random(:erlang.processes())
+
+    # Send the request 2 times to validate the path where the request
+    # was already executed.
+    id = "#{inspect(pid)}"
+    series_name = "#{Node.self()}::kernel"
+
+    assert_receive {:apps_page_pid, apps_page_pid}, 1_000
+
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+
+    assert index_live
+           |> element("#process-send-msg-form")
+           |> render_change(%{"process-send-message" => "invalid"}) =~
+             "border-red-200 focus:border-red-400 hover:border-red-300"
   end
 
   test "Select Service+Apps and select a port to request information", %{conn: conn} do
