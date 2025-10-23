@@ -6,6 +6,8 @@ defmodule Observer.Web.Apps.PortActions do
   use Observer.Web, :html
   use Phoenix.Component
 
+  alias Observer.Web.Helpers
+
   attr :id, :string, required: true
   attr :on_action, :any, required: true
   attr :node, :atom, required: true
@@ -32,10 +34,26 @@ defmodule Observer.Web.Apps.PortActions do
         </div>
       </div>
 
-      <p class="text-xs text-gray-500 dark:text-gray-400 mt-3 italic">
-        Port ID: <span class="font-mono text-gray-600 dark:text-gray-300">{@id}</span>
-      </p>
+      <div>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-3 italic">
+          Node: <span class="font-mono text-gray-700 dark:text-gray-200">{@node}</span>
+        </p>
+        <p class="text-xs text-gray-500 dark:text-gray-400 p-1 italic">
+          Port ID:
+          <span class="font-mono text-gray-600 dark:text-gray-300">{port_info(@node, @id)}</span>
+        </p>
+      </div>
     </div>
     """
+  end
+
+  defp port_info(node, port_string) do
+    if node == node() do
+      "#{port_string} (local)"
+    else
+      port = Helpers.string_to_port(port_string)
+      remote_port = :rpc.call(node, :erlang, :port_to_list, [port])
+      "#{port_string} (remote #{remote_port})"
+    end
   end
 end

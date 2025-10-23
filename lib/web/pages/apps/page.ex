@@ -277,7 +277,16 @@ defmodule Observer.Web.Apps.Page do
         %{assigns: %{current_selected_id: current_selected_id}} = socket
       ) do
     pid_string = current_selected_id.id_string
-    true = pid_string |> Helpers.string_to_pid() |> :erlang.garbage_collect()
+    pid = Helpers.string_to_pid(pid_string)
+
+    node = node(pid)
+
+    true =
+      if node == node() do
+        :erlang.garbage_collect(pid)
+      else
+        :rpc.call(node, :erlang, :garbage_collect, [pid])
+      end
 
     {:noreply,
      socket
