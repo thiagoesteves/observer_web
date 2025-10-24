@@ -6,8 +6,6 @@ defmodule Observer.Web.Apps.ProcessActions do
   use Observer.Web, :html
   use Phoenix.Component
 
-  alias Observer.Web.Helpers
-
   attr :id, :map, required: true
   attr :on_action, :any, required: true
   attr :form, :map, required: true
@@ -113,13 +111,7 @@ defmodule Observer.Web.Apps.ProcessActions do
   defp border_error(true), do: "border-red-200 focus:border-red-400 hover:border-red-300"
   defp border_error(_false), do: "border-slate-200 focus:border-slate-400 hover:border-slate-300"
 
-  defp process_info(node, pid_string) do
-    if node == node() do
-      "#{pid_string} (local)"
-    else
-      pid = Helpers.string_to_pid(pid_string)
-      remote_pid = :rpc.call(node, :erlang, :pid_to_list, [pid])
-      "#{pid_string} (remote #PID#{remote_pid})"
-    end
+  defp process_info(node, id) do
+    if node == node(), do: "#{id} (local)", else: "#{id} (remote)"
   end
 end

@@ -12,7 +12,8 @@ defmodule Observer.Web.Apps.Identifier do
           type: nil,
           debouncing: non_neg_integer(),
           node: atom() | nil,
-          metric: String.t() | nil
+          metric: String.t() | nil,
+          memory_monitor: boolean()
         }
 
   defstruct info: nil,
@@ -20,5 +21,6 @@ defmodule Observer.Web.Apps.Identifier do
             type: nil,
             debouncing: @tooltip_debouncing,
             node: nil,
-            metric: nil
+            metric: nil,
+            memory_monitor: false
 end
