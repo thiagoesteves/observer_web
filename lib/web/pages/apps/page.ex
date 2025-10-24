@@ -144,13 +144,13 @@ defmodule Observer.Web.Apps.Page do
             <div id="apps-tree-data" hidden>{Jason.encode!(@chart_tree_data)}</div>
           </div>
         </div>
+        <% data_key = data_key(@current_selected_id.node, @current_selected_id.metric) %>
         <%= if @current_selected_id.type == "pid" do %>
-          <% data_key = data_key(@current_selected_id.node, @current_selected_id.metric) %>
           <Process.content
             id={@current_selected_id.id_string}
             form={@process_msg_form}
             info={@current_selected_id.info}
-            process_memory_monitor={@current_selected_id.memory_monitor}
+            memory_monitor={@current_selected_id.memory_monitor}
             node={@current_selected_id.node}
             metric={@current_selected_id.metric}
             metrics={Map.get(@streams, data_key)}
@@ -159,7 +159,10 @@ defmodule Observer.Web.Apps.Page do
           <Port.content
             id={@current_selected_id.id_string}
             info={@current_selected_id.info}
+            memory_monitor={@current_selected_id.memory_monitor}
             node={@current_selected_id.node}
+            metric={@current_selected_id.metric}
+            metrics={Map.get(@streams, data_key)}
           />
         <% end %>
       </div>
@@ -203,7 +206,6 @@ defmodule Observer.Web.Apps.Page do
     |> assign(form: to_form(default_form_options()))
     |> assign(process_msg_form: to_form(%{"message" => ""}))
     |> assign(:show_observer_options, false)
-    # |> assign(:process_memory_monitor, false)
     |> assign(:selected_id_action_confirmation, nil)
     |> stream(:empty, [])
   end
@@ -217,8 +219,8 @@ defmodule Observer.Web.Apps.Page do
     |> assign(form: to_form(default_form_options()))
     |> assign(process_msg_form: to_form(%{"message" => ""}))
     |> assign(:show_observer_options, false)
-    # |> assign(:process_memory_monitor, false)
     |> assign(:selected_id_action_confirmation, nil)
+    |> stream(:empty, [])
   end
 
   # coveralls-ignore-start
@@ -314,27 +316,29 @@ defmodule Observer.Web.Apps.Page do
   end
 
   def handle_parent_event(
-        "request_process_action",
-        _params,
+        action,
+        %{"type" => type},
         %{
           assigns: %{
             current_selected_id: current_selected_id
-            # process_memory_monitor: process_memory_monitor
           }
         } = socket
-      ) do
+      )
+      when type in ["port", "process"] and
+             action in ["request_process_action", "request_port_action"] do
     new_process_memory_monitor = !current_selected_id.memory_monitor
-    pid = Helpers.string_to_pid(current_selected_id.id_string)
+
+    {_pid_or_port, id} = Helpers.parse_identifier(current_selected_id.id_string)
 
     # NOTE: Add monitor enable actions here
     socket =
       if new_process_memory_monitor do
-        {:ok, %{metric: metric}} = Monitor.start_process_monitor(pid)
+        {:ok, %{metric: metric}} = Monitor.start_id_monitor(id)
 
         # Subscribe to receive events
         Telemetry.subscribe_for_new_data(current_selected_id.node, metric)
 
-        # TODO: fetch current data
+        # Fetch current data
         data_key = data_key(current_selected_id.node, metric)
 
         data =
@@ -351,7 +355,7 @@ defmodule Observer.Web.Apps.Page do
             memory_monitor: new_process_memory_monitor
         })
       else
-        Monitor.stop_process_monitor(pid)
+        Monitor.stop_id_monitor(id)
         data_key = data_key(current_selected_id.node, current_selected_id.metric)
 
         socket
@@ -366,7 +370,6 @@ defmodule Observer.Web.Apps.Page do
 
     {:noreply,
      socket
-     #  |> assign(:process_memory_monitor, new_process_memory_monitor)
      |> put_flash(
        :info,
        "Memory monitor #{text} for process pid: #{current_selected_id.id_string}"
@@ -597,7 +600,7 @@ defmodule Observer.Web.Apps.Page do
           node: node
         }
 
-        case Monitor.process_info(pid) do
+        case Monitor.id_info(pid) do
           {:ok, %{metric: metric}} ->
             # Subscribe to receive events
             Telemetry.subscribe_for_new_data(service, metric)
@@ -614,7 +617,6 @@ defmodule Observer.Web.Apps.Page do
              socket
              |> stream(data_key, [], reset: true)
              |> stream(data_key, data)
-             #  |> assign(:process_memory_monitor, true)
              |> assign(:current_selected_id, %{
                current_selected_id
                | metric: metric,
@@ -624,7 +626,6 @@ defmodule Observer.Web.Apps.Page do
           _ ->
             {:noreply,
              socket
-             #  |> assign(:process_memory_monitor, false)
              |> assign(:current_selected_id, %{current_selected_id | memory_monitor: false})}
         end
 
@@ -636,17 +637,40 @@ defmodule Observer.Web.Apps.Page do
           node: node
         }
 
-        {:noreply,
-         socket
-         #  |> assign(:process_memory_monitor, false)
-         |> assign(:current_selected_id, current_selected_id)}
+        case Monitor.id_info(port) do
+          {:ok, %{metric: metric}} ->
+            # Subscribe to receive events
+            Telemetry.subscribe_for_new_data(service, metric)
+
+            # Read current metrics
+            data_key = data_key(service, metric)
+
+            data =
+              service
+              |> Telemetry.list_data_by_node_key(metric, from: 15)
+              |> Enum.map(&Map.put(&1, :id, &1.timestamp))
+
+            {:noreply,
+             socket
+             |> stream(data_key, [], reset: true)
+             |> stream(data_key, data)
+             |> assign(:current_selected_id, %{
+               current_selected_id
+               | metric: metric,
+                 memory_monitor: true
+             })}
+
+          _ ->
+            {:noreply,
+             socket
+             |> assign(:current_selected_id, %{current_selected_id | memory_monitor: false})}
+        end
 
       {:none, _any} ->
         current_selected_id = %Identifier{id_string: request_id, node: node}
 
         {:noreply,
          socket
-         #  |> assign(:process_memory_monitor, false)
          |> assign(:current_selected_id, current_selected_id)}
     end
   end

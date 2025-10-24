@@ -342,7 +342,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     assert html = render(index_live)
 
     # Check the Process information is not being shown
-    assert html =~ "Process #PID&lt;0.0.11111&gt; is either dead or protected"
+    assert html =~ "#PID&lt;0.0.11111&gt; is either dead or protected"
   end
 
   test "Select Service+Apps and Kill a process", %{conn: conn} do
@@ -751,7 +751,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     assert html = render(index_live)
 
     # Check the Port information is not being shown
-    assert html =~ "Port #Port&lt;0.100&gt; is either dead or protected"
+    assert html =~ "#Port&lt;0.100&gt; is either dead or protected"
   end
 
   test "Select Service+Apps and close a port", %{conn: conn} do

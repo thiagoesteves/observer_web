@@ -1,32 +1,33 @@
 defmodule ObserverWeb.Monitor do
   @moduledoc """
-  This module will provide process monitor abstraction
+  This module will provide process/port monitor context
   """
 
-  alias ObserverWeb.Monitor.Process
+  alias ObserverWeb.Monitor.ProcessPort
 
   ### ==========================================================================
   ### Public functions
   ### ==========================================================================
 
   @doc """
-  Starts monitoring a process's memory usage
+  Starts monitoring a process/port memory usage
   """
-  @spec start_process_monitor(pid :: pid()) :: {:ok, ObserverWeb.Monitor.Process.t()}
-  def start_process_monitor(pid), do: Process.start_process_monitor(pid)
+  @spec start_id_monitor(pid_or_port :: pid() | port()) ::
+          {:ok, ObserverWeb.Monitor.ProcessPort.t()}
+  def start_id_monitor(pid_or_port), do: ProcessPort.start_id_monitor(pid_or_port)
 
   @doc """
-  Stops monitoring a process's memory usage
+  Stops monitoring a process/port memory usage
   """
-  @spec stop_process_monitor(pid :: pid()) :: :ok
-  def stop_process_monitor(pid), do: Process.stop_process_monitor(pid)
+  @spec stop_id_monitor(pid_or_port :: pid() | port()) :: :ok
+  def stop_id_monitor(pid_or_port), do: ProcessPort.stop_id_monitor(pid_or_port)
 
   @doc """
-  Checks if memory monitoring is enabled for a process
+  Checks if memory monitoring is enabled for a process/port
   """
-  @spec process_info(pid :: pid()) ::
-          {:ok, ObserverWeb.Monitor.Process.t()} | {:error, :not_found | :rescued}
-  def process_info(pid), do: Process.process_info(pid)
+  @spec id_info(pid_or_port :: pid() | port()) ::
+          {:ok, ObserverWeb.Monitor.ProcessPort.t()} | {:error, :not_found | :rescued}
+  def id_info(pid_or_port), do: ProcessPort.id_info(pid_or_port)
 
   ### ==========================================================================
   ### Private functions
