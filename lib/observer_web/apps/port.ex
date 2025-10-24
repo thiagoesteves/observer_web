@@ -5,6 +5,15 @@ defmodule ObserverWeb.Apps.Port do
 
   alias ObserverWeb.Rpc
 
+  @type t :: %{
+          name: charlist() | String.t(),
+          id: non_neg_integer(),
+          connected: pid(),
+          os_pid: non_neg_integer() | :undefined
+        }
+
+  defstruct [:name, :id, :connected, :os_pid]
+
   @doc """
   Return port information
 
@@ -16,14 +25,13 @@ defmodule ObserverWeb.Apps.Port do
     ...> assert :undefined = Port.info(nil)
     ...> assert :undefined = Port.info("")
   """
-  @spec info(atom(), port()) ::
-          :undefined | %{connected: any(), id: any(), name: any(), os_pid: any()}
+  @spec info(atom(), port()) :: :undefined | __MODULE__.t()
   def info(node \\ Node.self(), port)
 
   def info(node, port) when is_port(port) do
     case Rpc.call(node, :erlang, :port_info, [port], :infinity) do
       data when is_list(data) ->
-        %{
+        %__MODULE__{
           name: Keyword.get(data, :name, 0),
           id: Keyword.get(data, :id, 0),
           connected: Keyword.get(data, :connected, 0),

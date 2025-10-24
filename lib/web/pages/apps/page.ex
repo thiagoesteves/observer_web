@@ -7,6 +7,7 @@ defmodule Observer.Web.Apps.Page do
 
   use Observer.Web, :live_component
 
+  alias Observer.Web.Apps.Identifier
   alias Observer.Web.Apps.Legend
   alias Observer.Web.Apps.Port
   alias Observer.Web.Apps.Process
@@ -17,8 +18,7 @@ defmodule Observer.Web.Apps.Page do
   alias Observer.Web.Page
   alias ObserverWeb.Apps
   alias ObserverWeb.Monitor
-
-  @tooltip_debouncing 50
+  alias ObserverWeb.Telemetry
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
@@ -145,12 +145,15 @@ defmodule Observer.Web.Apps.Page do
           </div>
         </div>
         <%= if @current_selected_id.type == "pid" do %>
+          <% data_key = data_key(@current_selected_id.node, @current_selected_id.metric) %>
           <Process.content
             id={@current_selected_id.id_string}
             form={@process_msg_form}
             info={@current_selected_id.info}
             process_memory_monitor={@process_memory_monitor}
             node={@current_selected_id.node}
+            metric={@current_selected_id.metric}
+            metrics={Map.get(@streams, data_key)}
           />
         <% else %>
           <Port.content
@@ -196,12 +199,13 @@ defmodule Observer.Web.Apps.Page do
     |> assign(:node_info, update_node_info())
     |> assign(:node_data, %{})
     |> assign(:observer_data, %{})
-    |> assign(:current_selected_id, reset_current_selected_id())
+    |> assign(:current_selected_id, %Identifier{})
     |> assign(form: to_form(default_form_options()))
     |> assign(process_msg_form: to_form(%{"message" => ""}))
     |> assign(:show_observer_options, false)
     |> assign(:process_memory_monitor, false)
     |> assign(:selected_id_action_confirmation, nil)
+    |> stream(:empty, [])
   end
 
   def handle_mount(socket) do
@@ -209,7 +213,7 @@ defmodule Observer.Web.Apps.Page do
     |> assign(:node_info, node_info_new())
     |> assign(:node_data, %{})
     |> assign(:observer_data, %{})
-    |> assign(:current_selected_id, reset_current_selected_id())
+    |> assign(:current_selected_id, %Identifier{})
     |> assign(form: to_form(default_form_options()))
     |> assign(process_msg_form: to_form(%{"message" => ""}))
     |> assign(:show_observer_options, false)
@@ -320,23 +324,43 @@ defmodule Observer.Web.Apps.Page do
         } = socket
       ) do
     new_process_memory_monitor = !process_memory_monitor
-    pid_string = current_selected_id.id_string
-    pid = Helpers.string_to_pid(pid_string)
+    pid = Helpers.string_to_pid(current_selected_id.id_string)
 
     # NOTE: Add monitor enable actions here
-    text =
+    socket =
       if new_process_memory_monitor do
-        Monitor.start_process_monitor(pid)
-        "enabled"
+        {:ok, %{metric: metric}} = Monitor.start_process_monitor(pid)
+
+        # Subscribe to receive events
+        Telemetry.subscribe_for_new_data(current_selected_id.node, metric)
+
+        # TODO: fetch current data
+        data_key = data_key(current_selected_id.node, metric)
+
+        data =
+          current_selected_id.node
+          |> Telemetry.list_data_by_node_key(metric, from: 15)
+          |> Enum.map(&Map.put(&1, :id, &1.timestamp))
+
+        socket
+        |> stream(data_key, [], reset: true)
+        |> stream(data_key, data)
+        |> assign(:current_selected_id, %{current_selected_id | metric: metric})
       else
         Monitor.stop_process_monitor(pid)
-        "disabled"
+        data_key = data_key(current_selected_id.node, current_selected_id.metric)
+        stream(socket, data_key, [], reset: true)
       end
+
+    text = if new_process_memory_monitor, do: "enabled", else: "disabled"
 
     {:noreply,
      socket
      |> assign(:process_memory_monitor, new_process_memory_monitor)
-     |> put_flash(:info, "Memory monitor #{text} for process pid: #{pid_string}")}
+     |> put_flash(
+       :info,
+       "Memory monitor #{text} for process pid: #{current_selected_id.id_string}"
+     )}
   end
 
   def handle_parent_event(
@@ -366,7 +390,7 @@ defmodule Observer.Web.Apps.Page do
      socket
      |> put_flash(:info, "Port id: #{id_string} successfully closed")
      |> assign(:selected_id_action_confirmation, nil)
-     |> assign(:current_selected_id, reset_current_selected_id())}
+     |> assign(:current_selected_id, %Identifier{})}
   end
 
   def handle_parent_event("process-kill-confirmation", %{"id" => id_string}, socket) do
@@ -376,7 +400,7 @@ defmodule Observer.Web.Apps.Page do
      socket
      |> put_flash(:info, "Process pid: #{id_string} successfully terminated")
      |> assign(:selected_id_action_confirmation, nil)
-     |> assign(:current_selected_id, reset_current_selected_id())}
+     |> assign(:current_selected_id, %Identifier{})}
   end
 
   def handle_parent_event("confirm-close-modal", _, socket) do
@@ -435,7 +459,7 @@ defmodule Observer.Web.Apps.Page do
     {:noreply,
      socket
      |> assign(:node_info, node_info)
-     |> assign(:current_selected_id, reset_current_selected_id())}
+     |> assign(:current_selected_id, %Identifier{})}
   end
 
   def handle_parent_event(
@@ -459,7 +483,7 @@ defmodule Observer.Web.Apps.Page do
     {:noreply,
      socket
      |> assign(:node_info, node_info)
-     |> assign(:current_selected_id, reset_current_selected_id())}
+     |> assign(:current_selected_id, %Identifier{})}
   end
 
   def handle_parent_event(
@@ -497,7 +521,7 @@ defmodule Observer.Web.Apps.Page do
     {:noreply,
      socket
      |> assign(:node_info, node_info)
-     |> assign(:current_selected_id, reset_current_selected_id())}
+     |> assign(:current_selected_id, %Identifier{})}
   end
 
   def handle_parent_event(
@@ -535,7 +559,7 @@ defmodule Observer.Web.Apps.Page do
     {:noreply,
      socket
      |> assign(:node_info, node_info)
-     |> assign(:current_selected_id, reset_current_selected_id())}
+     |> assign(:current_selected_id, %Identifier{})}
   end
 
   @impl Page
@@ -554,36 +578,63 @@ defmodule Observer.Web.Apps.Page do
     [service, _app] = String.split(series_name, "::")
     node = String.to_existing_atom(service)
 
-    current_selected_id =
-      case Helpers.parse_identifier(request_id) do
-        {:pid, pid} ->
-          %{
-            info: Apps.Process.info(pid, get_state_timeout),
-            id_string: request_id,
-            type: "pid",
-            debouncing: @tooltip_debouncing,
-            monitor: Monitor.process_enabled?(pid),
-            node: node
-          }
+    case Helpers.parse_identifier(request_id) do
+      {:pid, pid} ->
+        current_selected_id = %Identifier{
+          info: Apps.Process.info(pid, get_state_timeout),
+          id_string: request_id,
+          type: "pid",
+          node: node
+        }
 
-        {:port, port} ->
-          %{
-            info: Apps.Port.info(node, port),
-            id_string: request_id,
-            type: "port",
-            debouncing: @tooltip_debouncing,
-            monitor: false,
-            node: node
-          }
+        case Monitor.process_info(pid) do
+          {:ok, %{metric: metric}} ->
+            # Subscribe to receive events
+            Telemetry.subscribe_for_new_data(service, metric)
 
-        {:none, _any} ->
-          reset_current_selected_id(request_id, node)
-      end
+            # Read current metrics
+            data_key = data_key(service, metric)
 
-    {:noreply,
-     socket
-     |> assign(:process_memory_monitor, current_selected_id.monitor)
-     |> assign(:current_selected_id, current_selected_id)}
+            data =
+              service
+              |> Telemetry.list_data_by_node_key(metric, from: 15)
+              |> Enum.map(&Map.put(&1, :id, &1.timestamp))
+
+            {:noreply,
+             socket
+             |> stream(data_key, [], reset: true)
+             |> stream(data_key, data)
+             |> assign(:process_memory_monitor, true)
+             |> assign(:current_selected_id, %{current_selected_id | metric: metric})}
+
+          _ ->
+            {:noreply,
+             socket
+             |> assign(:process_memory_monitor, false)
+             |> assign(:current_selected_id, current_selected_id)}
+        end
+
+      {:port, port} ->
+        current_selected_id = %Identifier{
+          info: Apps.Port.info(node, port),
+          id_string: request_id,
+          type: "port",
+          node: node
+        }
+
+        {:noreply,
+         socket
+         |> assign(:process_memory_monitor, false)
+         |> assign(:current_selected_id, current_selected_id)}
+
+      {:none, _any} ->
+        current_selected_id = %Identifier{id_string: request_id, node: node}
+
+        {:noreply,
+         socket
+         |> assign(:process_memory_monitor, false)
+         |> assign(:current_selected_id, current_selected_id)}
+    end
   end
 
   # The debouncing added here will reduce the number of Process.info requests since
@@ -597,6 +648,13 @@ defmodule Observer.Web.Apps.Page do
        current_selected_id
        | debouncing: current_selected_id.debouncing - 1
      })}
+  end
+
+  @impl Page
+  def handle_info({:metrics_new_data, service, key, data}, socket) do
+    data_key = data_key(service, key)
+
+    {:noreply, stream_insert(socket, data_key, Map.put(data, :id, data.timestamp))}
   end
 
   def handle_info({:nodeup, _node}, %{assigns: %{node_info: node_info}} = socket) do
@@ -628,7 +686,7 @@ defmodule Observer.Web.Apps.Page do
     {:noreply,
      socket
      |> assign(:node_info, node_info)
-     |> assign(:current_selected_id, reset_current_selected_id())}
+     |> assign(:current_selected_id, %Identifier{})}
   end
 
   defp data_key(service, apps), do: "#{service}::#{apps}"
@@ -706,16 +764,6 @@ defmodule Observer.Web.Apps.Page do
       %{acc | services_keys: services_keys, apps_keys: apps_keys, node: node}
     end)
   end
-
-  defp reset_current_selected_id(id_string \\ nil, node \\ nil),
-    do: %{
-      info: nil,
-      id_string: id_string,
-      type: nil,
-      debouncing: @tooltip_debouncing,
-      monitor: false,
-      node: node
-    }
 
   defp flare_chart_data(series) do
     %{

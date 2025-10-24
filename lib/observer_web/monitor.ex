@@ -12,7 +12,7 @@ defmodule ObserverWeb.Monitor do
   @doc """
   Starts monitoring a process's memory usage
   """
-  @spec start_process_monitor(pid :: pid()) :: :ok
+  @spec start_process_monitor(pid :: pid()) :: {:ok, ObserverWeb.Monitor.Process.t()}
   def start_process_monitor(pid), do: Process.start_process_monitor(pid)
 
   @doc """
@@ -24,8 +24,9 @@ defmodule ObserverWeb.Monitor do
   @doc """
   Checks if memory monitoring is enabled for a process
   """
-  @spec process_enabled?(pid :: pid()) :: boolean()
-  def process_enabled?(pid), do: Process.enabled?(pid)
+  @spec process_info(pid :: pid()) ::
+          {:ok, ObserverWeb.Monitor.Process.t()} | {:error, :not_found | :rescued}
+  def process_info(pid), do: Process.process_info(pid)
 
   ### ==========================================================================
   ### Private functions

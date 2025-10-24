@@ -41,18 +41,17 @@ defmodule ObserverWeb.Monitor.Process do
   end
 
   @impl true
-  def handle_call({:enabled?, pid}, _from, monitored_processes) do
+  def handle_call({:process_info, pid}, _from, monitored_processes) do
     case monitored_processes[pid] do
       nil ->
-        {:reply, false, monitored_processes}
+        {:reply, {:error, :not_found}, monitored_processes}
 
-      _atomized_pid ->
-        {:reply, true, monitored_processes}
+      process ->
+        {:reply, {:ok, process}, monitored_processes}
     end
   end
 
-  @impl true
-  def handle_cast({:attach_process_pid, pid}, monitored_processes) do
+  def handle_call({:attach_process_pid, pid}, _from, monitored_processes) do
     case monitored_processes[pid] do
       nil ->
         process = pid_to_struct(pid)
@@ -64,18 +63,18 @@ defmodule ObserverWeb.Monitor.Process do
           {[process.metric_summary], nil, Node.self()}
         )
 
-        {:noreply, Map.put(monitored_processes, pid, process)}
+        {:reply, {:ok, process}, Map.put(monitored_processes, pid, process)}
 
-      _atomized_pid ->
+      process ->
         # Already in the list of monitored processes
-        {:noreply, monitored_processes}
+        {:reply, {:ok, process}, monitored_processes}
     end
   end
 
-  def handle_cast({:detach_process_pid, pid}, monitored_processes) do
+  def handle_call({:detach_process_pid, pid}, _from, monitored_processes) do
     case monitored_processes[pid] do
       nil ->
-        {:noreply, monitored_processes}
+        {:reply, :ok, monitored_processes}
 
       process ->
         # Add a gap in the chart to indicate that data sending was disabled
@@ -88,7 +87,7 @@ defmodule ObserverWeb.Monitor.Process do
         # Detach the telemetry handler
         :telemetry.detach({__MODULE__, process.event, self()})
 
-        {:noreply, Map.drop(monitored_processes, [pid])}
+        {:reply, :ok, Map.drop(monitored_processes, [pid])}
     end
   end
 
@@ -121,22 +120,34 @@ defmodule ObserverWeb.Monitor.Process do
   ### Public APIs
   ### ==========================================================================
 
-  @spec start_process_monitor(pid :: pid()) :: :ok
+  @spec start_process_monitor(pid :: pid()) :: {:ok, __MODULE__.t()}
   def start_process_monitor(pid) do
     target_node = node(pid)
-    GenServer.cast({__MODULE__, target_node}, {:attach_process_pid, pid})
+    GenServer.call({__MODULE__, target_node}, {:attach_process_pid, pid})
   end
 
   @spec stop_process_monitor(pid :: pid()) :: :ok
   def stop_process_monitor(pid) do
     target_node = node(pid)
-    GenServer.cast({__MODULE__, target_node}, {:detach_process_pid, pid})
+
+    try do
+      GenServer.call({__MODULE__, target_node}, {:detach_process_pid, pid})
+    catch
+      _, _ ->
+        :ok
+    end
   end
 
-  @spec enabled?(pid :: pid()) :: boolean()
-  def enabled?(pid) do
+  @spec process_info(pid :: pid()) :: {:ok, map} | {:error, :not_found | :rescued}
+  def process_info(pid) do
     target_node = node(pid)
-    GenServer.call({__MODULE__, target_node}, {:enabled?, pid})
+
+    try do
+      GenServer.call({__MODULE__, target_node}, {:process_info, pid})
+    catch
+      _, _ ->
+        {:error, :rescued}
+    end
   end
 
   ### ==========================================================================

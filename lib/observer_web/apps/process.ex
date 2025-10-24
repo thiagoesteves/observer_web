@@ -11,6 +11,54 @@ defmodule ObserverWeb.Apps.Process do
 
   @default_get_state_timeout 100
 
+  @type t :: %{
+          pid: pid(),
+          registered_name: atom() | nil,
+          priority: :low | :normal | :high | :max,
+          trap_exit: boolean(),
+          message_queue_len: non_neg_integer(),
+          error_handler: module() | :none,
+          relations: %{
+            group_leader: pid() | nil,
+            ancestors: [pid()],
+            links: [pid()] | nil,
+            monitored_by: [pid()] | nil,
+            monitors: [pid() | {module(), term()}] | nil
+          },
+          memory: %{
+            total: non_neg_integer(),
+            stack_and_heap: non_neg_integer(),
+            heap_size: non_neg_integer(),
+            stack_size: non_neg_integer(),
+            gc_min_heap_size: non_neg_integer(),
+            gc_full_sweep_after: non_neg_integer()
+          },
+          meta: %{
+            init: String.t(),
+            current: String.t(),
+            status: :running | :waiting | :exiting | :garbage_collecting | :suspended | :runnable,
+            class: :supervisor | :application | :unknown | atom()
+          },
+          state: String.t(),
+          dictionary: keyword() | nil,
+          phx_lv_socket: Phoenix.LiveView.Socket.t() | nil
+        }
+
+  defstruct [
+    :pid,
+    :registered_name,
+    :priority,
+    :trap_exit,
+    :message_queue_len,
+    :error_handler,
+    :relations,
+    :memory,
+    :meta,
+    :state,
+    :dictionary,
+    :phx_lv_socket
+  ]
+
   @process_full [
     :registered_name,
     :priority,
@@ -36,7 +84,7 @@ defmodule ObserverWeb.Apps.Process do
   @doc """
   Creates a complete overview of process stats based on the given `pid`.
   """
-  @spec info(pid :: pid(), timeout :: non_neg_integer()) :: :undefined | map
+  @spec info(pid :: pid(), timeout :: non_neg_integer()) :: :undefined | __MODULE__.t()
   def info(pid, timeout \\ @default_get_state_timeout) do
     process_info(pid, @process_full, &structure_full/3, timeout)
   end
@@ -119,7 +167,7 @@ defmodule ObserverWeb.Apps.Process do
         end
       end
 
-    %{
+    %__MODULE__{
       pid: pid,
       registered_name: Keyword.get(data, :registered_name, nil),
       priority: Keyword.get(data, :priority, :normal),

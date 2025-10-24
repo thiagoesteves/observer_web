@@ -7,12 +7,15 @@ defmodule Observer.Web.Apps.Process do
   alias Observer.Web.Apps.ProcessActions
   alias Observer.Web.Components.Attention
   alias Observer.Web.Components.CopyToClipboard
+  alias Observer.Web.Components.Metrics.VmProcessMemory
 
   attr :info, :map, required: true
   attr :id, :string, required: true
   attr :form, :map, required: true
   attr :process_memory_monitor, :boolean, required: true
   attr :node, :atom, required: true
+  attr :metric, :string, required: true
+  attr :metrics, :list, required: true
 
   def content(assigns) do
     info = assigns.info
@@ -126,6 +129,18 @@ defmodule Observer.Web.Apps.Process do
                 </:col>
               </Core.table_process>
             </div>
+
+            <%= if @process_memory_monitor do %>
+              <div class="mt-1">
+                <VmProcessMemory.content
+                  title={"#{@metric} [#{@node}]"}
+                  service={@node}
+                  metric={@metric}
+                  cols={4}
+                  metrics={@metrics}
+                />
+              </div>
+            <% end %>
 
             <div class="flex grid grid-cols-2 mt-1 gap-1 items-top">
               <.relations
