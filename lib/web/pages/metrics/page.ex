@@ -13,6 +13,8 @@ defmodule Observer.Web.Metrics.Page do
   alias Observer.Web.Components.Metrics.PhxLvSocket
   alias Observer.Web.Components.Metrics.VmLimits
   alias Observer.Web.Components.Metrics.VmMemory
+  alias Observer.Web.Components.Metrics.VmPortMemory
+  alias Observer.Web.Components.Metrics.VmProcessMemory
   alias Observer.Web.Components.Metrics.VmRunQueue
   alias Observer.Web.Components.MultiSelect
   alias Observer.Web.Page
@@ -150,6 +152,20 @@ defmodule Observer.Web.Metrics.Page do
                     metric={metric}
                     cols={@form.params["num_cols"]}
                     transition={@metric_config[data_key]["transition"]}
+                    metrics={Map.get(@streams, data_key)}
+                  />
+                  <VmProcessMemory.content
+                    title={"#{metric} [#{app.name}]"}
+                    service={service}
+                    metric={metric}
+                    cols={@form.params["num_cols"]}
+                    metrics={Map.get(@streams, data_key)}
+                  />
+                  <VmPortMemory.content
+                    title={"#{metric} [#{app.name}]"}
+                    service={service}
+                    metric={metric}
+                    cols={@form.params["num_cols"]}
                     metrics={Map.get(@streams, data_key)}
                   />
                 <% end %>

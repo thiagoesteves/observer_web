@@ -9,7 +9,8 @@ defmodule Observer.Web.Apps.ProcessActions do
   attr :id, :map, required: true
   attr :on_action, :any, required: true
   attr :form, :map, required: true
-  attr :process_memory_monitor, :boolean, required: true
+  attr :memory_monitor, :boolean, required: true
+  attr :node, :atom, required: true
 
   def content(assigns) do
     ~H"""
@@ -84,23 +85,34 @@ defmodule Observer.Web.Apps.ProcessActions do
         <input
           type="checkbox"
           phx-click={@on_action}
+          phx-value-type="toggle-memory"
           name="process-toggle-memory-monitoring-checkbox"
           value=""
           class="sr-only peer"
-          checked={@process_memory_monitor}
+          checked={@memory_monitor}
         />
         <div class="relative w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-focus:ring-4 peer-focus:ring-teal-300 dark:peer-focus:ring-teal-800 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-teal-600 dark:peer-checked:bg-teal-600">
         </div>
         <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Memory Monitor</span>
       </label>
 
-      <p class="text-xs text-gray-500 dark:text-gray-400 mt-3 italic">
-        Process ID: <span class="font-mono text-gray-600 dark:text-gray-300">{@id}</span>
-      </p>
+      <div>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-3 italic">
+          Node: <span class="font-mono text-gray-700 dark:text-gray-200">{@node}</span>
+        </p>
+        <p class="text-xs text-gray-500 dark:text-gray-400 p-1 italic">
+          Process ID:
+          <span class="font-mono text-gray-600 dark:text-gray-300">{process_info(@node, @id)}</span>
+        </p>
+      </div>
     </div>
     """
   end
 
   defp border_error(true), do: "border-red-200 focus:border-red-400 hover:border-red-300"
   defp border_error(_false), do: "border-slate-200 focus:border-slate-400 hover:border-slate-300"
+
+  defp process_info(node, id) do
+    if node == node(), do: "#{id} (local)", else: "#{id} (remote)"
+  end
 end

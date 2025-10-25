@@ -8,6 +8,8 @@ defmodule Observer.Web.Apps.PortActions do
 
   attr :id, :string, required: true
   attr :on_action, :any, required: true
+  attr :memory_monitor, :boolean, required: true
+  attr :node, :atom, required: true
 
   def content(assigns) do
     ~H"""
@@ -31,10 +33,35 @@ defmodule Observer.Web.Apps.PortActions do
         </div>
       </div>
 
-      <p class="text-xs text-gray-500 dark:text-gray-400 mt-3 italic">
-        Port ID: <span class="font-mono text-gray-600 dark:text-gray-300">{@id}</span>
-      </p>
+      <label class="flex me-5 p-1 cursor-pointer">
+        <input
+          type="checkbox"
+          phx-click={@on_action}
+          phx-value-type="toggle-memory"
+          name="port-toggle-memory-monitoring-checkbox"
+          value=""
+          class="sr-only peer"
+          checked={@memory_monitor}
+        />
+        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-focus:ring-4 peer-focus:ring-teal-300 dark:peer-focus:ring-teal-800 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-teal-600 dark:peer-checked:bg-teal-600">
+        </div>
+        <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Memory Monitor</span>
+      </label>
+
+      <div>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-3 italic">
+          Node: <span class="font-mono text-gray-700 dark:text-gray-200">{@node}</span>
+        </p>
+        <p class="text-xs text-gray-500 dark:text-gray-400 p-1 italic">
+          Port ID:
+          <span class="font-mono text-gray-600 dark:text-gray-300">{port_info(@node, @id)}</span>
+        </p>
+      </div>
     </div>
     """
+  end
+
+  defp port_info(node, id) do
+    if node == node(), do: "#{id} (local)", else: "#{id} (remote)"
   end
 end

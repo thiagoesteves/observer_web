@@ -53,6 +53,41 @@ defmodule ObserverWeb.TelemetryFixtures do
     }
   end
 
+  def build_telemetry_data_vm_process_total_memory(
+        timestamp \\ :rand.uniform(2_000_000_000_000),
+        value \\ 70_973.064
+      ) do
+    %ObserverWeb.Telemetry.Data{
+      timestamp: timestamp,
+      value: value,
+      unit: " kilobyte",
+      tags: %{},
+      measurements: %{
+        gc_full_sweep_after: 31_784_038,
+        gc_min_heap_size: 2_973_664,
+        stack_size: 14_523_720,
+        heap_size: 14_439_392,
+        stack_and_heap: 56_449_344,
+        total: 70_973_064
+      }
+    }
+  end
+
+  def build_telemetry_data_vm_port_total_memory(
+        timestamp \\ :rand.uniform(2_000_000_000_000),
+        value \\ 70_973.064
+      ) do
+    %ObserverWeb.Telemetry.Data{
+      timestamp: timestamp,
+      value: value,
+      unit: " kilobyte",
+      tags: %{},
+      measurements: %{
+        total: 70_973_064
+      }
+    }
+  end
+
   def build_telemetry_data_phx_lv_socket_total(
         timestamp \\ :rand.uniform(2_000_000_000_000),
         value \\ 555

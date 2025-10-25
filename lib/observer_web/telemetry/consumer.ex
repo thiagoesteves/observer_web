@@ -108,9 +108,6 @@ defmodule ObserverWeb.Telemetry.Consumer do
           |> add_phoenix_tags(metadata)
 
         cond do
-          is_nil(measurement) ->
-            acc
-
           not keep?(metric, metadata) ->
             acc
 

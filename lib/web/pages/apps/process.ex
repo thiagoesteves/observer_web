@@ -7,11 +7,15 @@ defmodule Observer.Web.Apps.Process do
   alias Observer.Web.Apps.ProcessActions
   alias Observer.Web.Components.Attention
   alias Observer.Web.Components.CopyToClipboard
+  alias Observer.Web.Components.Metrics.VmProcessMemory
 
   attr :info, :map, required: true
   attr :id, :string, required: true
   attr :form, :map, required: true
-  attr :process_memory_monitor, :boolean, required: true
+  attr :memory_monitor, :boolean, required: true
+  attr :node, :atom, required: true
+  attr :metric, :string, required: true
+  attr :metrics, :list, required: true
 
   def content(assigns) do
     info = assigns.info
@@ -86,7 +90,7 @@ defmodule Observer.Web.Apps.Process do
             id="apps-process-alert"
             title="Warning"
             class="border-red-400 text-red-500"
-            message={"Process #{@id} is either dead or protected and therefore can not be shown."}
+            message={"#{@id} is either dead or protected and therefore can not be shown."}
           />
         <% true -> %>
           <div id="process-information">
@@ -94,8 +98,9 @@ defmodule Observer.Web.Apps.Process do
               <ProcessActions.content
                 id={@id}
                 form={@form}
-                process_memory_monitor={@process_memory_monitor}
+                memory_monitor={@memory_monitor}
                 on_action="request_process_action"
+                node={@node}
               />
 
               <Core.table_process
@@ -124,6 +129,18 @@ defmodule Observer.Web.Apps.Process do
                 </:col>
               </Core.table_process>
             </div>
+
+            <%= if @memory_monitor do %>
+              <div class="mt-1">
+                <VmProcessMemory.content
+                  title={"#{@metric} [#{@node}]"}
+                  service={@node}
+                  metric={@metric}
+                  cols={4}
+                  metrics={@metrics}
+                />
+              </div>
+            <% end %>
 
             <div class="flex grid grid-cols-2 mt-1 gap-1 items-top">
               <.relations

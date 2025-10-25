@@ -114,7 +114,7 @@ defmodule ObserverWeb.TelemetryConsumerTest do
     end
   end
 
-  test "prints missing and bad measurements", %{reporter: reporter} do
+  test "Allow nil values", %{reporter: reporter} do
     test_pid_process = self()
 
     with_mock ObserverWeb.Telemetry,
@@ -125,26 +125,40 @@ defmodule ObserverWeb.TelemetryConsumerTest do
         send(test_pid_process, {:capture_event, called, event})
         :ok
       end do
-      :telemetry.execute([:vm, :memory], %{binary: :hundred}, %{foo: :bar})
+      :telemetry.execute([:vm, :memory], %{binary: nil, total: 2000}, %{foo: :bar})
 
       assert_receive {:capture_event, 0, event}, 1_000
 
-      assert %{metrics: [], measurements: %{binary: :hundred}, reporter: ^reporter} = event
+      assert %{
+               metrics: [
+                 %Consumer{
+                   name: "vm.memory.total",
+                   value: 2.0,
+                   unit: " kilobyte",
+                   info: "",
+                   tags: %{},
+                   type: "summary"
+                 }
+               ],
+               measurements: %{binary: nil, total: 2000},
+               reporter: ^reporter
+             } = event
 
       assert_receive {:capture_event, 1, event}, 1_000
 
       assert %{
                metrics: [
+                 _any,
                  %Consumer{
                    name: "vm.memory.binary",
-                   value: :hundred,
+                   value: nil,
                    unit: " byte",
                    info: " (WARNING! measurement should be a number)",
                    tags: %{},
                    type: "last_value"
                  }
                ],
-               measurements: %{binary: :hundred},
+               measurements: %{binary: nil, total: 2000},
                reporter: ^reporter
              } = event
     end
