@@ -30,16 +30,11 @@ defmodule Observer.Web.Telemetry do
         {:telemetry_poller,
          name: :observer_web_phoenix_liveview_sockets,
          measurements: [{PhxLvSocket, :process, []}],
-         period:
-           Application.get_env(:observer_web, ObserverWeb.Telemetry)[
-             :phx_lv_sckt_poller_interval_ms
-           ] || 5_000},
+         period: Application.get_env(:observer_web, :phx_lv_sckt_poller_interval_ms) || 5_000},
         {:telemetry_poller,
          name: :observer_web_beam_vm,
          measurements: [{BeamVm, :process, []}],
-         period:
-           Application.get_env(:observer_web, ObserverWeb.Telemetry)[:beam_vm_poller_interval_ms] ||
-             1_000}
+         period: Application.get_env(:observer_web, :beam_vm_poller_interval_ms) || 1_000}
       ]
   else
     defp add_telemetry_poller, do: []

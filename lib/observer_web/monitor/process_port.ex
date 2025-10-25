@@ -33,7 +33,8 @@ defmodule ObserverWeb.Monitor.ProcessPort do
   @impl true
   def init(_args) do
     poll_interval =
-      Application.get_env(:observer_web, :beam_vm_poller_interval_ms) || @default_poll_interval
+      Application.get_env(:observer_web, :beam_vm_process_port_poller_interval_ms) ||
+        @default_poll_interval
 
     :timer.send_interval(poll_interval, :refresh_metrics)
 

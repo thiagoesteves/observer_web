@@ -1,9 +1,39 @@
-# CHANGELOG (v0.1.X)
+# CHANGELOG (v0.2.X)
 
-## 0.1.13 ()
+## 0.2.0 (:soon:)
 
-### Backwards incompatible changes for 0.1.12
- * None
+### ⚠️ Backwards incompatible changes for 0.1.12
+
+#### Memory Monitoring GenServer
+A new GenServer has been added to handle Process and Port memory monitoring, which is utilized by the OTP distribution layer. **All applications must be updated to this version to maintain memory monitoring capabilities.**
+
+#### Configuration Restructuring
+The following configuration variables have been moved from module-specific configuration to the root `:observer_web` configuration:
+
+- `data_retention_period`
+- `mode`
+- `phx_lv_sckt_poller_interval_ms`
+- `beam_vm_poller_interval_ms`
+
+**Migration Guide:**
+
+You may not need to update if you are relying on default values.
+
+```elixir
+# Before (v0.1.12)
+config :observer_web, ObserverWeb.Telemetry,
+  mode: :observer,
+  data_retention_period: :timer.minutes(30),
+  phx_lv_sckt_poller_interval_ms: 5_000,
+  beam_vm_poller_interval_ms: 1_000
+
+# After (v0.2.0)
+config :observer_web,
+  mode: :observer,
+  data_retention_period: :timer.minutes(30),
+  phx_lv_sckt_poller_interval_ms: 5_000,
+  beam_vm_poller_interval_ms: 1_000
+```
 
 ### Bug fixes
  * None
@@ -12,69 +42,15 @@
  * [[`PR-30`](https://github.com/thiagoesteves/observer_web/pull/30)] Adding configurable timeout for fetching specific states.
  * [[`PR-31`](https://github.com/thiagoesteves/observer_web/pull/31)] Adding process dictionary information.
  * [[`PR-32`](https://github.com/thiagoesteves/observer_web/pull/32)] Adding port/process actions.
-
-## 0.1.12 🚀 (2025-10-12)
-
-### Backwards incompatible changes for 0.1.11
- * None
-
-### Bug fixes
- * None
-
-### Enhancements
- * [[`PR-27`](https://github.com/thiagoesteves/observer_web/pull/27)] Adding Igniter.
- * [[`PR-28`](https://github.com/thiagoesteves/observer_web/pull/28)] Updating Tailwind.
- * [[`PR-28`](https://github.com/thiagoesteves/observer_web/pull/28)] Adding theme support.
- * [[`PR-28`](https://github.com/thiagoesteves/observer_web/pull/28)] Assets organization.
-
-## 0.1.11 🚀 (2025-08-29)
-
-### Backwards incompatible changes for 0.1.10
- * None
-
-### Bug fixes
- * None
-
-### Enhancements
- * [[`ISSUE-19`](https://github.com/thiagoesteves/observer_web/issues/19)] Adding copy to clipboard button to copy tracing text.
- * [[`ISSUE-21`](https://github.com/thiagoesteves/observer_web/issues/21)] Add non case sensitive search for modules and functions for tracing.
-
-## 0.1.10 🚀 (2025-05-26)
-
-### Backwards incompatible changes for 0.1.9
- * None
-
-### Bug fixes
- * None
-
-### Enhancements
- * [[`PR-18`](https://github.com/thiagoesteves/observer_web/pull/18)] Normalizing functions and adding highlight to nodes that are current online for metrics
-
-## 0.1.9 🚀 (2025-05-07)
-
-### Backwards incompatible changes for 0.1.8
- * None
-
-### Bug fixes
- * None
-
-### Enhancements
- * [[`PR-16`](https://github.com/thiagoesteves/observer_web/pull/16)] Adding Beam VM statistics (ports, atoms and processes)
-
-## 0.1.8 🚀 (2025-04-03)
-
-### Backwards incompatible changes for 0.1.7
- * None
-
-### Bug fixes
- * None
-
-### Enhancements
- * [[`PR-13`](https://github.com/thiagoesteves/observer_web/pull/13)] Fixed dialyzer configuration
- * [[`PR-14`](https://github.com/thiagoesteves/observer_web/pull/14)] Improvements from code review
- and integration
+ * [[`PR-33`](https://github.com/thiagoesteves/observer_web/pull/33)] Adding port/process memory monitor.
+ * [[`PR-34`](https://github.com/thiagoesteves/observer_web/pull/34)] Changing config variable definitions from ObserverWeb.Telemetry to root of observer_web
 
 # 🚀 Previous Releases
+ * [0.1.12 (2025-10-12)](https://github.com/thiagoesteves/observer_web/blob/v0.1.12/CHANGELOG.md)
+ * [0.1.11 (2025-08-29)](https://github.com/thiagoesteves/observer_web/blob/v0.1.11/CHANGELOG.md)
+ * [0.1.10 (2025-05-26)](https://github.com/thiagoesteves/observer_web/blob/v0.1.10/CHANGELOG.md)
+ * [0.1.9 (2025-05-07)](https://github.com/thiagoesteves/observer_web/blob/v0.1.9/CHANGELOG.md)
+ * [0.1.8 (2025-04-03)](https://github.com/thiagoesteves/observer_web/blob/v0.1.8/CHANGELOG.md)
  * [0.1.7 (2025-03-21)](https://github.com/thiagoesteves/observer_web/blob/v0.1.7/CHANGELOG.md)
  * [0.1.6 (2025-03-21)](https://github.com/thiagoesteves/observer_web/blob/v0.1.6/CHANGELOG.md)
  * [0.1.5 (2025-02-26)](https://github.com/thiagoesteves/observer_web/blob/v0.1.5/CHANGELOG.md)
