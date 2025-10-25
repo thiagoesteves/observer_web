@@ -7,12 +7,28 @@ enhanced observability. Leveraging OTP distribution, it offers tracing through t
 [Erlang debugger][edb], along with detailed insights into process/port statuses
 and Beam VM statistics.
 
-Powered by [Phoenix LiveView][liv], it is distributed, lightweight, and fully real-time. This
+Powered by [Phoenix LiveView][liv], it is distributed, lightweight, fully real-time and __safe to use in production__. This
 library is part of the [DeployEx][dye] project.
 
-A preview of the Dashboard (Click to see the video):
+## Check out some of the available features
 
-[![Observer Dashboard](guides/static/dashboard.png)](https://www.youtube.com/watch?v=wnQoQJUIdGQ)
+### Distributed tracing safe to use in production
+![Tracing Dashboard](guides/static/tracing.png)
+
+### Application topology view with processes, ports, references, links and relations.
+![Applications Dashboard](guides/static/applications.png)
+
+### Process inspector with actions (send messages, kill, GC, memory monitoring)
+![Process Inspector](guides/static/process.png)
+
+### LiveView-specific debugging and state inspection
+![Inspector for Liveview](guides/static/liveview.png)
+
+### Port inspector with close and memory monitoring capabilities
+![Port Inspector](guides/static/port.png)
+
+### Real-time VM metrics across all distributed nodes
+![Metrics Dashboard](guides/static/metrics.png)
 
 ## Installation in your App
 
