@@ -26,7 +26,7 @@ defmodule ObserverWeb.Apps.Port do
     ...> assert :undefined = Port.info(nil)
     ...> assert :undefined = Port.info("")
   """
-  @spec info(atom(), port()) :: :undefined | __MODULE__.t()
+  @spec info(node :: atom(), port :: port()) :: :undefined | ObserverWeb.Apps.Port.t()
   def info(node \\ Node.self(), port)
 
   def info(node, port) when is_port(port) do

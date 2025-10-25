@@ -85,7 +85,7 @@ defmodule Observer.Web.Apps.ProcessActions do
         <input
           type="checkbox"
           phx-click={@on_action}
-          phx-value-type="process"
+          phx-value-type="toggle-memory"
           name="process-toggle-memory-monitoring-checkbox"
           value=""
           class="sr-only peer"

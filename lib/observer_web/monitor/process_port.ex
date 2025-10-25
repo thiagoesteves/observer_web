@@ -8,6 +8,7 @@ defmodule ObserverWeb.Monitor.ProcessPort do
   use GenServer
 
   alias ObserverWeb.Telemetry.Consumer
+  alias ObserverWeb.Apps
 
   @default_poll_interval 1_000
 
@@ -40,8 +41,8 @@ defmodule ObserverWeb.Monitor.ProcessPort do
   end
 
   @impl true
-  def handle_call({:id_info, port_or_pid}, _from, monitored_ids) do
-    case monitored_ids[port_or_pid] do
+  def handle_call({:id_info, pid_or_port}, _from, monitored_ids) do
+    case monitored_ids[pid_or_port] do
       nil ->
         {:reply, {:error, :not_found}, monitored_ids}
 
@@ -50,10 +51,10 @@ defmodule ObserverWeb.Monitor.ProcessPort do
     end
   end
 
-  def handle_call({:attach_id, port_or_pid}, _from, monitored_ids) do
-    case monitored_ids[port_or_pid] do
+  def handle_call({:attach_id, pid_or_port}, _from, monitored_ids) do
+    case monitored_ids[pid_or_port] do
       nil ->
-        id_info = id_to_struct(port_or_pid)
+        id_info = id_to_struct(pid_or_port)
 
         :telemetry.attach(
           {__MODULE__, id_info.event, self()},
@@ -62,7 +63,7 @@ defmodule ObserverWeb.Monitor.ProcessPort do
           {[id_info.metric_summary], nil, Node.self()}
         )
 
-        {:reply, {:ok, id_info}, Map.put(monitored_ids, port_or_pid, id_info)}
+        {:reply, {:ok, id_info}, Map.put(monitored_ids, pid_or_port, id_info)}
 
       info ->
         # Already in the list of monitored ids
@@ -70,19 +71,19 @@ defmodule ObserverWeb.Monitor.ProcessPort do
     end
   end
 
-  def handle_call({:detach_id, id}, _from, monitored_ids) do
-    case monitored_ids[id] do
+  def handle_call({:detach_id, pid_or_port}, _from, monitored_ids) do
+    case monitored_ids[pid_or_port] do
       nil ->
         {:reply, :ok, monitored_ids}
 
       info ->
         # Add a gap in the chart to indicate that data sending was disabled
-        :telemetry.execute(info.event, empty_memory_data(id), %{})
+        :telemetry.execute(info.event, empty_memory_data(pid_or_port), %{})
 
         # Detach the telemetry handler
         :telemetry.detach({__MODULE__, info.event, self()})
 
-        {:reply, :ok, Map.drop(monitored_ids, [info])}
+        {:reply, :ok, Map.drop(monitored_ids, [pid_or_port])}
     end
   end
 
@@ -91,8 +92,8 @@ defmodule ObserverWeb.Monitor.ProcessPort do
     updated_monitored_ids =
       Enum.reduce(monitored_ids, %{}, fn
         {pid, process_info}, acc when is_pid(pid) ->
-          case ObserverWeb.Apps.Process.info(pid) do
-            %{memory: memory} ->
+          case Apps.Process.info(pid) do
+            %Apps.Process{memory: memory} ->
               :telemetry.execute(
                 process_info.event,
                 Map.merge(empty_memory_data(pid), memory),
@@ -101,7 +102,7 @@ defmodule ObserverWeb.Monitor.ProcessPort do
 
               Map.put(acc, pid, process_info)
 
-            _ ->
+            :undefined ->
               # NOTE: The process is either dead or not available (remove)
               :telemetry.detach({__MODULE__, process_info.event, self()})
 
@@ -109,13 +110,13 @@ defmodule ObserverWeb.Monitor.ProcessPort do
           end
 
         {port, port_info}, acc when is_port(port) ->
-          case ObserverWeb.Apps.Port.info(port) do
-            %{memory: memory} ->
+          case Apps.Port.info(port) do
+            %Apps.Port{memory: memory} ->
               :telemetry.execute(port_info.event, %{total: memory}, %{})
 
               Map.put(acc, port, port_info)
 
-            _ ->
+            :undefined ->
               # NOTE: The port is either dead or not available (remove)
               :telemetry.detach({__MODULE__, port_info.event, self()})
 

@@ -37,7 +37,7 @@ defmodule Observer.Web.Apps.PortActions do
         <input
           type="checkbox"
           phx-click={@on_action}
-          phx-value-type="port"
+          phx-value-type="toggle-memory"
           name="port-toggle-memory-monitoring-checkbox"
           value=""
           class="sr-only peer"

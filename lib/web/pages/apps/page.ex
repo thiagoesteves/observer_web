@@ -317,15 +317,14 @@ defmodule Observer.Web.Apps.Page do
 
   def handle_parent_event(
         action,
-        %{"type" => type},
+        %{"type" => "toggle-memory"},
         %{
           assigns: %{
             current_selected_id: current_selected_id
           }
         } = socket
       )
-      when type in ["port", "process"] and
-             action in ["request_process_action", "request_port_action"] do
+      when action in ["request_process_action", "request_port_action"] do
     new_process_memory_monitor = !current_selected_id.memory_monitor
 
     {_pid_or_port, id} = Helpers.parse_identifier(current_selected_id.id_string)

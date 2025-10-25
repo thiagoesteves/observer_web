@@ -84,7 +84,8 @@ defmodule ObserverWeb.Apps.Process do
   @doc """
   Creates a complete overview of process stats based on the given `pid`.
   """
-  @spec info(pid :: pid(), timeout :: non_neg_integer()) :: :undefined | __MODULE__.t()
+  @spec info(pid :: pid(), timeout :: non_neg_integer()) ::
+          :undefined | ObserverWeb.Apps.Process.t()
   def info(pid, timeout \\ @default_get_state_timeout) do
     process_info(pid, @process_full, &structure_full/3, timeout)
   end
