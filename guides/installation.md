@@ -15,7 +15,7 @@ You can use the `observer_web.install` task without the `igniter.install` escrip
 First, add `observer_web` and `igniter` to your deps in `mix.exs`:
 
 ```elixir
-{:observer_web, "~> 0.1.0"},
+{:observer_web, "~> 0.2.0"},
 {:igniter, "~> 0.5", only: [:dev]},
 ```
 
@@ -49,7 +49,7 @@ Before installing Observer Web, ensure you have:
 Add `observer_web` as a dependency for your application. Open `mix.exs` and add the following line:
 
 ```elixir
-{:observer_web, "~> 0.1.0"}
+{:observer_web, "~> 0.2.0"}
 ```
 
 Now fetch your dependencies:
@@ -186,7 +186,7 @@ a retention time.
 To configure the retention period, use the following optional setting:
 
 ```elixir
-config :observer_web, ObserverWeb.Telemetry,
+config :observer_web,
   data_retention_period: :timer.minutes(30)
 ```
 
@@ -224,7 +224,7 @@ are retained even if any of the monitored applications restart.
 To configure applications to broadcast their metrics, use the following setting:
 
 ```elixir
-config :observer_web, ObserverWeb.Telemetry,
+config :observer_web,
   mode: :broadcast
 ```
 
@@ -238,7 +238,7 @@ config :observer_web, ObserverWeb.Telemetry,
 To designate an application as the **central observer (hub)**, use the following setting:
 
 ```elixir
-config :observer_web, ObserverWeb.Telemetry,
+config :observer_web,
   mode: :observer,
   data_retention_period: :timer.minutes(30)
 ```
@@ -248,14 +248,16 @@ aggregating metrics from other applications.
 
 #### 3. Metrics Polling Interval
 
-Observer Web allows configuration of two polling intervals:
+Observer Web allows configuration of some polling intervals:
  * Phoenix Liveview sockets - Default: `5_000` ms
- * Beam VM statistics - Default: `1_000` ms
+ * Beam VM statistics (total memory, queues, etc) - Default: `1_000` ms
+ * Beam VM Process/Port memory statistics (total, stack, heap, etc) - Default: `1_000` ms
 
 ```elixir
-config :observer_web, ObserverWeb.Telemetry,
+config :observer_web,
   phx_lv_sckt_poller_interval_ms: 5_000,
   beam_vm_poller_interval_ms: 1_000
+  beam_vm_process_port_poller_interval_ms: 1_000
 ```
 
 > #### For applications running by [DeployEx][dye] {: .attention}

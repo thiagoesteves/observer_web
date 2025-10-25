@@ -30,9 +30,8 @@ defmodule ObserverWeb.Application do
 
     defp telemetry_server_config do
       [
-        mode: Application.get_env(:observer_web, ObserverWeb.Telemetry)[:mode] || :local,
-        data_retention_period:
-          Application.get_env(:observer_web, ObserverWeb.Telemetry)[:data_retention_period]
+        mode: Application.get_env(:observer_web, :mode) || :local,
+        data_retention_period: Application.get_env(:observer_web, :data_retention_period)
       ]
     end
   else

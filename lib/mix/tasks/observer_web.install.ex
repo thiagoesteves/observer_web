@@ -42,7 +42,7 @@ if Code.ensure_loaded?(Igniter) do
     def info(_argv, _composing_task) do
       %Igniter.Mix.Task.Info{
         group: :observer_web,
-        installs: [{:observer_web, "~> 0.1.0"}],
+        installs: [{:observer_web, "~> 0.2.0"}],
         example: __MODULE__.Docs.example()
       }
     end
