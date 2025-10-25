@@ -112,7 +112,7 @@ defmodule Observer.Web.Metrics.Page do
           show_options={@show_metric_options}
         />
         <div class="p-2">
-          <div class="grid grid-cols-4 w-3xl gap-2 items-center ">
+          <div class="grid grid-cols-4 gap-2 items-center">
             <%= for service <- @node_info.selected_services_keys do %>
               <%= for metric <- @node_info.selected_metrics_keys do %>
                 <% app = Enum.find(@node_info.node, &(&1.service == service)) %>
