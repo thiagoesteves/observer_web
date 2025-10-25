@@ -13,22 +13,22 @@ library is part of the [DeployEx][dye] project.
 ## Check out some of the available features
 
 ### Distributed tracing safe to use in production
-![Tracing Dashboard](guides/static/tracing.png)
+![Tracing Dashboard](./guides/static/tracing_dash.png)
 
 ### Application topology view with processes, ports, references, links and relations.
-![Applications Dashboard](guides/static/applications.png)
+![Applications Dashboard](./guides/static/applications_tree.png)
 
 ### Process inspector with actions (send messages, kill, GC, memory monitoring)
-![Process Inspector](guides/static/process.png)
+![Process Inspector](./guides/static/process_dash.png)
 
 ### LiveView-specific debugging and state inspection
-![Inspector for Liveview](guides/static/liveview.png)
+![Inspector for Liveview](./guides/static/liveview.png)
 
 ### Port inspector with close and memory monitoring capabilities
-![Port Inspector](guides/static/port.png)
+![Port Inspector](./guides/static/port.png)
 
 ### Real-time VM metrics across all distributed nodes
-![Metrics Dashboard](guides/static/metrics.png)
+![Metrics Dashboard](./guides/static/metrics_dash.png)
 
 ## Installation in your App
 
