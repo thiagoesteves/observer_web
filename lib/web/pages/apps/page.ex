@@ -371,7 +371,7 @@ defmodule Observer.Web.Apps.Page do
      socket
      |> put_flash(
        :info,
-       "Memory monitor #{text} for process pid: #{current_selected_id.id_string}"
+       "Memory monitor #{text} for id: #{current_selected_id.id_string}"
      )}
   end
 

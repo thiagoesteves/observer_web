@@ -7,8 +7,8 @@ defmodule ObserverWeb.Monitor.ProcessPort do
 
   use GenServer
 
-  alias ObserverWeb.Telemetry.Consumer
   alias ObserverWeb.Apps
+  alias ObserverWeb.Telemetry.Consumer
 
   @default_poll_interval 1_000
 

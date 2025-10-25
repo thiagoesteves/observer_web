@@ -517,6 +517,10 @@ defmodule Observer.Web.Apps.PageLiveTest do
       :rpc.pinfo(pid, information)
     end)
 
+    ObserverWeb.TelemetryMock
+    |> expect(:subscribe_for_new_data, fn _node, _metric -> :ok end)
+    |> expect(:list_data_by_node_key, fn _node, _metric, _options -> [] end)
+
     TelemetryStubber.defaults()
 
     {:ok, index_live, _html} = live(conn, "/observer/applications")
@@ -547,11 +551,11 @@ defmodule Observer.Web.Apps.PageLiveTest do
 
     assert index_live
            |> element("input[type=\"checkbox\"]")
-           |> render_click() =~ "Memory monitor enabled for process pid:"
+           |> render_click() =~ "Memory monitor enabled for id: #PID"
 
     assert index_live
            |> element("input[type=\"checkbox\"]")
-           |> render_click() =~ "Memory monitor disabled for process pid:"
+           |> render_click() =~ "Memory monitor disabled for id: #PID"
   end
 
   test "Select Service+Apps and Send a message to a process", %{conn: conn} do
@@ -707,6 +711,61 @@ defmodule Observer.Web.Apps.PageLiveTest do
     refute html =~ "Heap Size"
     assert html =~ "Os Pid"
     assert html =~ "Connected"
+  end
+
+  test "Select Service+Apps and Toggle port Monitor", %{conn: conn} do
+    node = Node.self() |> to_string
+    service = Helpers.normalize_id(node)
+    test_pid_process = self()
+
+    ObserverWeb.RpcMock
+    |> stub(:call, fn node, module, function, args, timeout ->
+      :rpc.call(node, module, function, args, timeout)
+    end)
+    |> stub(:pinfo, fn pid, information ->
+      send(test_pid_process, {:apps_page_pid, self()})
+      :rpc.pinfo(pid, information)
+    end)
+
+    ObserverWeb.TelemetryMock
+    |> expect(:subscribe_for_new_data, fn _node, _metric -> :ok end)
+    |> expect(:list_data_by_node_key, fn _node, _metric, _options -> [] end)
+
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
+
+    index_live
+    |> element("#apps-multi-select-toggle-options")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-apps-kernel-add-item")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-services-#{service}-add-item")
+    |> render_click()
+
+    port = Enum.random(:erlang.ports())
+
+    # Send the request 2 times to validate the path where the request
+    # was already executed.
+    id = "#{inspect(port)}"
+    series_name = "#{Node.self()}::kernel"
+
+    assert_receive {:apps_page_pid, apps_page_pid}, 1_000
+
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+
+    assert index_live
+           |> element("input[type=\"checkbox\"]")
+           |> render_click() =~ "Memory monitor enabled for id: #Port"
+
+    assert index_live
+           |> element("input[type=\"checkbox\"]")
+           |> render_click() =~ "Memory monitor disabled for id: #Port"
   end
 
   test "Select Service+Apps and select a port that is dead or doesn't exist", %{conn: conn} do
