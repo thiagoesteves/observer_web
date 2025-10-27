@@ -96,15 +96,11 @@ defmodule Observer.Web.SettingsComponentLiveTest do
 
     TelemetryStubber.defaults()
 
-    node1 = :node1@nohost
-    node2 = :node1@nohost
-
     with_mock ObserverWeb.Version,
       status: fn -> %ObserverWeb.Version.Server{} end do
       {:ok, _index_live, html} = live(conn, "/observer/tracing")
 
-      refute html =~ "#{node1}"
-      refute html =~ "#{node2}"
+      refute html =~ "Version mismatch across nodes:"
     end
   end
 
@@ -114,15 +110,16 @@ defmodule Observer.Web.SettingsComponentLiveTest do
     TelemetryStubber.defaults()
 
     node1 = :node1@nohost
-    node2 = :node1@nohost
+    node2 = :node2@nohost
 
     with_mock ObserverWeb.Version,
       status: fn ->
-        nodes = %{} |> Map.put(node1, "0.1.2") |> Map.put(node1, "0.1.4")
+        nodes = %{} |> Map.put(node1, "0.1.2") |> Map.put(node2, "0.1.4")
         %ObserverWeb.Version.Server{status: :warning, local: "0.1.0", nodes: nodes}
       end do
       {:ok, _index_live, html} = live(conn, "/observer/tracing")
 
+      assert html =~ "Version mismatch across nodes:"
       assert html =~ "#{node1}"
       assert html =~ "#{node2}"
     end
