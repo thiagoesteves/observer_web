@@ -5,7 +5,7 @@ enhanced observability. Leveraging OTP distribution, it offers tracing through t
 [Erlang debugger][edb], along with detailed insights into process/port statuses 
 and Beam VM statistics.
 
-Powered by [Phoenix LiveView][liv], it is distributed, lightweight, and fully real-time. This 
+Powered by [Phoenix LiveView][liv], it is distributed, lightweight, fully real-time and __safe to use in production__. This
 library is part of the [DeployEx][dye] project.
 
 [dye]: https://github.com/thiagoesteves/deployex
