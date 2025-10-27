@@ -287,12 +287,7 @@ defmodule Observer.Web.Apps.Page do
 
     node = node(pid)
 
-    true =
-      if node == node() do
-        :erlang.garbage_collect(pid)
-      else
-        :rpc.call(node, :erlang, :garbage_collect, [pid])
-      end
+    true = :rpc.call(node, :erlang, :garbage_collect, [pid])
 
     {:noreply,
      socket

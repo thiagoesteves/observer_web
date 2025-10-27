@@ -45,26 +45,26 @@ defmodule ObserverWeb.Telemetry do
   @doc """
   Subscribe for new data notifications for the respective node/key
   """
-  @spec subscribe_for_new_data(String.t(), String.t()) :: :ok | {:error, term}
+  @spec subscribe_for_new_data(node() | String.t(), String.t()) :: :ok | {:error, term}
   def subscribe_for_new_data(node, key), do: default().subscribe_for_new_data(node, key)
 
   @doc """
   Unsubscribe for new data notifications for the respective node/key
   """
-  @spec unsubscribe_for_new_data(String.t(), String.t()) :: :ok
+  @spec unsubscribe_for_new_data(node() | String.t(), String.t()) :: :ok
   def unsubscribe_for_new_data(node, key), do: default().unsubscribe_for_new_data(node, key)
 
   @doc """
   Fetch data by node and key
   """
-  @spec list_data_by_node_key(atom() | String.t(), String.t(), Keyword.t()) :: list()
+  @spec list_data_by_node_key(node() | String.t(), String.t(), Keyword.t()) :: list()
   def list_data_by_node_key(node, key, options),
     do: default().list_data_by_node_key(node, key, options)
 
   @doc """
   List all keys registered for the respective node
   """
-  @spec get_keys_by_node(atom()) :: list()
+  @spec get_keys_by_node(node()) :: list()
   def get_keys_by_node(node), do: default().get_keys_by_node(node)
 
   @doc """

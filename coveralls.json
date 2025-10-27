@@ -1,8 +1,10 @@
 {
   "skip_files": [
     "lib/web.ex",
-    "lib/web/page.ex",
+    "lib/web/assets.ex",
     "lib/web/components/core.ex",
+    "lib/web/page.ex",
+    "lib/web/pages/apps/identifier.ex",
     "lib/observer_web/rpc/adapter.ex",
     "lib/observer_web/rpc/local.ex",
     "lib/observer_web/telemetry/adapter.ex",
