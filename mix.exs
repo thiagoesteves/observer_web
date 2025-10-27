@@ -9,7 +9,8 @@ defmodule ObserverWeb.MixProject do
       app: :observer_web,
       version: @version,
       name: "Observer Web",
-      description: "Observer Web Dashboard for OTP management and performance metrics",
+      description:
+        "Observer Web Dashboard for tracing, applications observability, performance metrics, and much more",
       docs: docs(),
       extra_section: "GUIDES",
       extras: extras(),
