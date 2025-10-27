@@ -12,7 +12,13 @@
     <.nav socket={@socket} page={@page.name} params={@params} />
 
     <div class="ml-auto flex items-center space-x-3">
-      <.live_component module={Observer.Web.ThemeComponent} id="theme" theme={@theme} />
+      <.live_component
+        module={Observer.Web.SettingsComponent}
+        id="settings"
+        user={@user}
+        theme={@theme}
+        version={@version}
+      />
     </div>
   </header>
   {@inner_content}

@@ -11,6 +11,7 @@ defmodule Observer.Web.IndexLive do
   alias Observer.Web.Apps.Page, as: AppsPage
   alias Observer.Web.Metrics.Page, as: MetricsPage
   alias Observer.Web.Tracing.Page, as: TracingPage
+  alias ObserverWeb.Version
 
   @impl Phoenix.LiveView
   def mount(params, session, socket) do
@@ -20,6 +21,7 @@ defmodule Observer.Web.IndexLive do
 
     page = resolve_page(params)
     theme = restore_state(socket, "theme", "system")
+    version = Version.status()
 
     Process.put(:routing, {socket, prefix})
 
@@ -28,7 +30,7 @@ defmodule Observer.Web.IndexLive do
       |> assign(params: params, page: page)
       |> assign(live_path: live_path, live_transport: live_transport)
       |> assign(access: access, csp_nonces: csp_nonces, resolver: resolver, user: user)
-      |> assign(theme: theme)
+      |> assign(theme: theme, version: version)
       |> page.comp.handle_mount()
 
     {:ok, socket}

@@ -1,11 +1,12 @@
-defmodule Observer.Web.ThemeComponentLiveTest do
+defmodule Observer.Web.SettingsComponentLiveTest do
   use Observer.Web.ConnCase, async: false
 
   import Mox
+  import Mock
 
   alias Observer.Web.Mocks.RpcStubber
   alias Observer.Web.Mocks.TelemetryStubber
-  alias Observer.Web.ThemeComponent
+  alias Observer.Web.SettingsComponent
 
   setup :verify_on_exit!
 
@@ -42,21 +43,21 @@ defmodule Observer.Web.ThemeComponentLiveTest do
     # Call cycle theme, current light
     socket = %{socket | assigns: %{socket.assigns | theme: "light"}}
 
-    {:noreply, _updated_socket} = ThemeComponent.handle_event("cycle-theme", %{}, socket)
+    {:noreply, _updated_socket} = SettingsComponent.handle_event("cycle-theme", %{}, socket)
 
     assert_receive {:update_theme, "dark"}, 1_000
 
     # Call cycle theme, current dark
     socket = %{socket | assigns: %{socket.assigns | theme: "dark"}}
 
-    {:noreply, _updated_socket} = ThemeComponent.handle_event("cycle-theme", %{}, socket)
+    {:noreply, _updated_socket} = SettingsComponent.handle_event("cycle-theme", %{}, socket)
 
     assert_receive {:update_theme, "system"}, 1_000
 
     # Call cycle theme, current system
     socket = %{socket | assigns: %{socket.assigns | theme: "system"}}
 
-    {:noreply, _updated_socket} = ThemeComponent.handle_event("cycle-theme", %{}, socket)
+    {:noreply, _updated_socket} = SettingsComponent.handle_event("cycle-theme", %{}, socket)
 
     assert_receive {:update_theme, "light"}, 1_000
   end
@@ -75,18 +76,55 @@ defmodule Observer.Web.ThemeComponentLiveTest do
     socket = :sys.get_state(index_live.pid).socket
 
     {:noreply, _socket} =
-      ThemeComponent.handle_event("update-theme", %{"theme" => "light"}, socket)
+      SettingsComponent.handle_event("update-theme", %{"theme" => "light"}, socket)
 
     assert_receive {:update_theme, "light"}, 1_000
 
     {:noreply, _socket} =
-      ThemeComponent.handle_event("update-theme", %{"theme" => "dark"}, socket)
+      SettingsComponent.handle_event("update-theme", %{"theme" => "dark"}, socket)
 
     assert_receive {:update_theme, "dark"}, 1_000
 
     {:noreply, _socket} =
-      ThemeComponent.handle_event("update-theme", %{"theme" => "system"}, socket)
+      SettingsComponent.handle_event("update-theme", %{"theme" => "system"}, socket)
 
     assert_receive {:update_theme, "system"}, 1_000
+  end
+
+  test "Check no warning message for matching versions", %{conn: conn} do
+    RpcStubber.defaults()
+
+    TelemetryStubber.defaults()
+
+    node1 = :node1@nohost
+    node2 = :node1@nohost
+
+    with_mock ObserverWeb.Version,
+      status: fn -> %ObserverWeb.Version.Server{} end do
+      {:ok, _index_live, html} = live(conn, "/observer/tracing")
+
+      refute html =~ "#{node1}"
+      refute html =~ "#{node2}"
+    end
+  end
+
+  test "Check Warning message for non matching versions", %{conn: conn} do
+    RpcStubber.defaults()
+
+    TelemetryStubber.defaults()
+
+    node1 = :node1@nohost
+    node2 = :node1@nohost
+
+    with_mock ObserverWeb.Version,
+      status: fn ->
+        nodes = %{} |> Map.put(node1, "0.1.2") |> Map.put(node1, "0.1.4")
+        %ObserverWeb.Version.Server{status: :warning, local: "0.1.0", nodes: nodes}
+      end do
+      {:ok, _index_live, html} = live(conn, "/observer/tracing")
+
+      assert html =~ "#{node1}"
+      assert html =~ "#{node2}"
+    end
   end
 end
