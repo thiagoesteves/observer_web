@@ -325,30 +325,33 @@ defmodule Observer.Web.Apps.Page do
 
     {_pid_or_port, id} = Helpers.parse_identifier(current_selected_id.id_string)
 
-    # NOTE: Add monitor enable actions here
     socket =
       if new_process_memory_monitor do
-        {:ok, %{metric: metric}} = Monitor.start_id_monitor(id)
+        case Monitor.start_id_monitor(id) do
+          {:ok, %{metric: metric}} ->
+            # Subscribe to receive events
+            Telemetry.subscribe_for_new_data(current_selected_id.node, metric)
 
-        # Subscribe to receive events
-        Telemetry.subscribe_for_new_data(current_selected_id.node, metric)
+            # Fetch current data
+            data_key = data_key(current_selected_id.node, metric)
 
-        # Fetch current data
-        data_key = data_key(current_selected_id.node, metric)
+            data =
+              current_selected_id.node
+              |> Telemetry.list_data_by_node_key(metric, from: 15)
+              |> Enum.map(&Map.put(&1, :id, &1.timestamp))
 
-        data =
-          current_selected_id.node
-          |> Telemetry.list_data_by_node_key(metric, from: 15)
-          |> Enum.map(&Map.put(&1, :id, &1.timestamp))
+            socket
+            |> stream(data_key, [], reset: true)
+            |> stream(data_key, data)
+            |> assign(:current_selected_id, %{
+              current_selected_id
+              | metric: metric,
+                memory_monitor: new_process_memory_monitor
+            })
 
-        socket
-        |> stream(data_key, [], reset: true)
-        |> stream(data_key, data)
-        |> assign(:current_selected_id, %{
-          current_selected_id
-          | metric: metric,
-            memory_monitor: new_process_memory_monitor
-        })
+          {:error, _reason} ->
+            socket
+        end
       else
         Monitor.stop_id_monitor(id)
         data_key = data_key(current_selected_id.node, current_selected_id.metric)

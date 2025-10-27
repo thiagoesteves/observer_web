@@ -1,5 +1,16 @@
 # CHANGELOG (v0.2.X)
 
+## 0.2.1 🚀 (2025-10-27)
+
+### ⚠️ Backwards incompatible changes for 0.2.0
+ * None
+
+### Bug fixes
+ * None
+
+### Enhancements
+ * Removed igniter warnings and added rescue mechanism for process/port monitor
+
 ## 0.2.0 (2025-10-27)
 
 ### ⚠️ Backwards incompatible changes for 0.1.12

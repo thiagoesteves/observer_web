@@ -13,7 +13,7 @@ defmodule ObserverWeb.Monitor do
   Starts monitoring a process/port memory usage
   """
   @spec start_id_monitor(pid_or_port :: pid() | port()) ::
-          {:ok, ObserverWeb.Monitor.ProcessPort.t()}
+          {:ok, ProcessPort.t()} | {:error, :rescued}
   def start_id_monitor(pid_or_port), do: ProcessPort.start_id_monitor(pid_or_port)
 
   @doc """
@@ -26,7 +26,7 @@ defmodule ObserverWeb.Monitor do
   Checks if memory monitoring is enabled for a process/port
   """
   @spec id_info(pid_or_port :: pid() | port()) ::
-          {:ok, ObserverWeb.Monitor.ProcessPort.t()} | {:error, :not_found | :rescued}
+          {:ok, ProcessPort.t()} | {:error, :not_found | :rescued}
   def id_info(pid_or_port), do: ProcessPort.id_info(pid_or_port)
 
   ### ==========================================================================

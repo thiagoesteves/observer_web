@@ -132,10 +132,17 @@ defmodule ObserverWeb.Monitor.ProcessPort do
   ### Public APIs
   ### ==========================================================================
 
-  @spec start_id_monitor(pid_or_port :: pid() | port()) :: {:ok, __MODULE__.t()}
+  @spec start_id_monitor(pid_or_port :: pid() | port()) ::
+          {:ok, __MODULE__.t()} | {:error, :rescued}
   def start_id_monitor(pid_or_port) do
     target_node = node(pid_or_port)
-    GenServer.call({__MODULE__, target_node}, {:attach_id, pid_or_port})
+
+    try do
+      GenServer.call({__MODULE__, target_node}, {:attach_id, pid_or_port})
+    catch
+      _, _ ->
+        {:error, :rescued}
+    end
   end
 
   @spec stop_id_monitor(pid_or_port :: pid() | port()) :: :ok

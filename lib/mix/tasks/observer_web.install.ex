@@ -27,12 +27,12 @@ defmodule Mix.Tasks.ObserverWeb.Install.Docs do
   end
 end
 
-alias Igniter.Code.Common, as: IgniterCommon
-alias Igniter.Code.Function, as: IgniterFunction
-alias Igniter.Libs.Phoenix, as: IgniterPhoenix
-
 if Code.ensure_loaded?(Igniter) do
   defmodule Mix.Tasks.ObserverWeb.Install do
+    alias Igniter.Code.Common, as: IgniterCommon
+    alias Igniter.Code.Function, as: IgniterFunction
+    alias Igniter.Libs.Phoenix, as: IgniterPhoenix
+
     @shortdoc "#{__MODULE__.Docs.short_doc()}"
 
     @moduledoc __MODULE__.Docs.long_doc()
