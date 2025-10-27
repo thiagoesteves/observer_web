@@ -465,4 +465,43 @@ defmodule Observer.Web.Components.Core do
     </label>
     """
   end
+
+  @doc """
+  Renders a tooltip around a given inner element.
+
+  ## Assigns
+    * `:label` - The text to show inside the tooltip.
+    * `:position` - Optional, one of `:top`, `:bottom`, `:left`, `:right`. Defaults to `:top`.
+  """
+  attr :label, :string, required: true
+  attr :position, :atom, default: :bottom
+  slot :inner_block, required: true
+
+  def tooltip(assigns) do
+    ~H"""
+    <div class="relative inline-flex group max-w-full">
+      {render_slot(@inner_block)}
+
+      <div class={
+    tooltip_position_class(@position) <>
+    " hidden group-hover:flex opacity-0 group-hover:opacity-100 transition-opacity duration-150 bg-white dark:bg-gray-600 text-gray-800 dark:text-gray-200 text-xs rounded py-1 px-2 z-50 max-w-[90vw] text-left whitespace-pre-line break-words"
+    }>
+        {@label}
+      </div>
+    </div>
+    """
+  end
+
+  # Helper to handle tooltip positioning
+  defp tooltip_position_class(:top),
+    do: "absolute bottom-full left-1/2 -translate-x-1/2 mb-2"
+
+  defp tooltip_position_class(:bottom),
+    do: "absolute top-full left-1/2 -translate-x-1/2 mt-2"
+
+  defp tooltip_position_class(:left),
+    do: "absolute right-full top-1/2 -translate-y-1/2 mr-2"
+
+  defp tooltip_position_class(:right),
+    do: "absolute left-full top-1/2 -translate-y-1/2 ml-2"
 end

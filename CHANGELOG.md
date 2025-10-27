@@ -44,6 +44,7 @@ config :observer_web,
  * [[`PR-32`](https://github.com/thiagoesteves/observer_web/pull/32)] Adding port/process actions.
  * [[`PR-33`](https://github.com/thiagoesteves/observer_web/pull/33)] Adding port/process memory monitor.
  * [[`PR-34`](https://github.com/thiagoesteves/observer_web/pull/34)] Changing config variable definitions from ObserverWeb.Telemetry to root of observer_web
+ * [[`PR-35`](https://github.com/thiagoesteves/observer_web/pull/35)] Adding new version feature that will notify users when observer_web versions don't match across nodes.
 
 # 🚀 Previous Releases
  * [0.1.12 (2025-10-12)](https://github.com/thiagoesteves/observer_web/blob/v0.1.12/CHANGELOG.md)

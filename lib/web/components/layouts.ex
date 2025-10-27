@@ -43,6 +43,10 @@ defmodule Observer.Web.Layouts do
     """
   end
 
+  attr :params, :map, required: true
+  attr :page, :atom, required: true
+  attr :socket, :map, required: true
+
   def nav(assigns) do
     ~H"""
     <nav class="flex space-x-1">
