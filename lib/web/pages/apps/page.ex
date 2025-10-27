@@ -65,9 +65,10 @@ defmodule Observer.Web.Apps.Page do
       |> flare_chart_data()
 
     attention_msg = ~H"""
-    The <b>Observer Web </b> visualizes process relationships, supervisor trees, and more.
+    The <b>Observer Web</b> visualizes process relationships, supervisor trees, and more.
     Hover over an element to view detailed information about the process or port.
-    You can also configure the initial tree depth, or set the depth to <b>-1</b> to expand all trees.
+    You can configure the initial tree depth or set it to <b>-1</b> to expand all trees.
+    You can also configure the timeout for retrieving state information when process or port details are requested.
     """
 
     assigns =
