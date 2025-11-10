@@ -11,4 +11,5 @@ defmodule ObserverWeb.Telemetry.Adapter do
   @callback get_keys_by_node(node()) :: list()
   @callback list_active_nodes() :: list()
   @callback cached_mode() :: nil | :local | :broadcast | :observer
+  @callback update_data_retention_period(non_neg_integer()) :: :ok
 end

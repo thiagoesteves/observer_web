@@ -269,6 +269,36 @@ defmodule ObserverWeb.Telemetry.ObserverStorageTest do
     assert [] = Storage.list_data_by_node_key(node |> to_string(), key_name, order: :asc)
   end
 
+  test "Pruning expiring entries when retention period is updated", %{node: node} do
+    key_name = "test.phoenix"
+
+    now = System.os_time(:millisecond)
+
+    Storage.subscribe_for_new_data(node, key_name)
+
+    with_mock System, os_time: fn _ -> now - 30_000 end do
+      Enum.each(1..5, &Storage.push_data(build_metric(node, key_name, &1)))
+
+      assert_receive {:metrics_new_data, ^node, ^key_name, %{timestamp: _, unit: _, value: 5}},
+                     1_000
+    end
+
+    assert [
+             %ObserverWeb.Telemetry.Data{timestamp: _, unit: _, value: 1, tags: _},
+             %ObserverWeb.Telemetry.Data{timestamp: _, unit: _, value: 2, tags: _},
+             %ObserverWeb.Telemetry.Data{timestamp: _, unit: _, value: 3, tags: _},
+             %ObserverWeb.Telemetry.Data{timestamp: _, unit: _, value: 4, tags: _},
+             %ObserverWeb.Telemetry.Data{timestamp: _, unit: _, value: 5, tags: _}
+           ] = Storage.list_data_by_node_key(node |> to_string(), key_name, order: :asc)
+
+    # Update retention period
+    Storage.update_data_retention_period(1_000)
+
+    :timer.sleep(100)
+
+    assert [] = Storage.list_data_by_node_key(node |> to_string(), key_name, order: :asc)
+  end
+
   defp build_metric(node, name, value) do
     %{
       metrics: [

@@ -103,6 +103,16 @@ defmodule ObserverWeb.Telemetry.Storage do
     do_handle_metrics(event, state)
   end
 
+  def handle_cast({:update_data_retention_period, retention_period}, state) do
+    # If decreasing retention period, immediately prune old data
+    if retention_period && state.data_retention_period &&
+         retention_period < state.data_retention_period do
+      prune_old_data_immediately(state, retention_period)
+    end
+
+    {:noreply, %{state | data_retention_period: retention_period}}
+  end
+
   @impl true
   def handle_info({:observer_web_telemetry, event}, state) do
     do_handle_metrics(event, state)
@@ -164,16 +174,10 @@ defmodule ObserverWeb.Telemetry.Storage do
     deletion_period_to = now_minutes - retention_period - 1
     deletion_period_from = deletion_period_to - 2
 
-    prune_keys = fn key, table ->
-      Enum.each(deletion_period_from..deletion_period_to, fn timestamp ->
-        :ets.delete(table, metric_key(key, timestamp))
-      end)
-    end
-
     Enum.each(tables, fn {node, table} ->
       node
       |> get_keys_by_node()
-      |> Enum.each(&prune_keys.(&1, table))
+      |> Enum.each(&prune_keys(&1, table, deletion_period_from, deletion_period_to))
     end)
 
     {:noreply, state}
@@ -351,6 +355,19 @@ defmodule ObserverWeb.Telemetry.Storage do
     ets_lookup_if_exist(@storage_table, @mode_key, nil)
   end
 
+  @impl true
+  def update_data_retention_period(retention_period) do
+    msg = {:update_data_retention_period, retention_period}
+
+    case cached_mode() do
+      mode when mode in [:local, :observer] ->
+        GenServer.cast(__MODULE__, msg)
+
+      _mode_with_no_storage ->
+        :ok
+    end
+  end
+
   ### ==========================================================================
   ### Private functions
   ### ==========================================================================
@@ -392,6 +409,31 @@ defmodule ObserverWeb.Telemetry.Storage do
         :ets.insert(table, {key, [new_item]})
         [new_item]
     end
+  end
+
+  defp prune_old_data_immediately(
+         %{node_metric_tables: tables, data_retention_period: old_retention},
+         new_retention
+       ) do
+    now_minutes = unix_to_minutes()
+    new_retention_minutes = trunc(new_retention / @one_minute_in_milliseconds)
+    old_retention_minutes = trunc(old_retention / @one_minute_in_milliseconds)
+
+    # Delete all data outside the new retention window
+    deletion_from = now_minutes - old_retention_minutes - 2
+    deletion_to = now_minutes - new_retention_minutes
+
+    Enum.each(tables, fn {node, table} ->
+      node
+      |> get_keys_by_node()
+      |> Enum.each(&prune_keys(&1, table, deletion_from, deletion_to))
+    end)
+  end
+
+  defp prune_keys(key, table, deletion_period_from, deletion_period_to) do
+    Enum.each(deletion_period_from..deletion_period_to, fn timestamp ->
+      :ets.delete(table, metric_key(key, timestamp))
+    end)
   end
 
   # NOTE: PubSub topics

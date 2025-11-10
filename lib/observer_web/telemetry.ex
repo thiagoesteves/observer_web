@@ -79,6 +79,13 @@ defmodule ObserverWeb.Telemetry do
   @spec cached_mode() :: :local | :broadcast | :observer
   def cached_mode, do: default().cached_mode()
 
+  @doc """
+  Update data retention period
+  """
+  @spec update_data_retention_period(non_neg_integer()) :: :ok
+  def update_data_retention_period(retention_period),
+    do: default().update_data_retention_period(retention_period)
+
   ### ==========================================================================
   ### Private functions
   ### ==========================================================================
