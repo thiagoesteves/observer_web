@@ -160,6 +160,36 @@ defmodule Observer.Web.Metrics.PageLiveTest do
     liveview
     |> element("#metrics-update-form")
     |> render_change(%{num_cols: 4, start_time: time}) =~ time
+
+    time = "6h"
+
+    liveview
+    |> element("#metrics-update-form")
+    |> render_change(%{num_cols: 4, start_time: time}) =~ time
+
+    time = "12h"
+
+    liveview
+    |> element("#metrics-update-form")
+    |> render_change(%{num_cols: 4, start_time: time}) =~ time
+
+    time = "1d"
+
+    liveview
+    |> element("#metrics-update-form")
+    |> render_change(%{num_cols: 4, start_time: time}) =~ time
+
+    time = "3d"
+
+    liveview
+    |> element("#metrics-update-form")
+    |> render_change(%{num_cols: 4, start_time: time}) =~ time
+
+    time = "1w"
+
+    liveview
+    |> element("#metrics-update-form")
+    |> render_change(%{num_cols: 4, start_time: time}) =~ time
   end
 
   test "Testing NodeDown, removing the current node from the selected services", %{conn: conn} do
