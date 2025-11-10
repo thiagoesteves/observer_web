@@ -1,6 +1,6 @@
 # CHANGELOG (v0.2.X)
 
-## 0.2.2 🚀 ()
+## 0.2.2 🚀 (2025-11-10)
 
 ### ⚠️ Backwards incompatible changes for 0.2.1
  * None
@@ -9,7 +9,7 @@
  * None
 
 ### Enhancements
- * None
+ * [[`PR-39`](https://github.com/thiagoesteves/observer_web/pull/39)] Adding configurable option for maximum metric retention period.
 
 ## 0.2.1 🚀 (2025-10-27)
 
