@@ -18,6 +18,7 @@ defmodule ObserverWeb.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
+      listeners: [Phoenix.CodeReloader],
       package: package(),
       docs: docs(),
       deps: deps(),
@@ -109,7 +110,7 @@ defmodule ObserverWeb.MixProject do
   defp deps do
     [
       {:jason, "~> 1.2"},
-      {:phoenix, "~> 1.7"},
+      {:phoenix, "~> 1.8"},
       {:phoenix_html, "~> 3.3 or ~> 4.0"},
       {:phoenix_live_view, "~> 1.0"},
       {:phoenix_pubsub, "~> 2.1"},
@@ -135,6 +136,7 @@ defmodule ObserverWeb.MixProject do
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
       {:mock, "~> 0.3.0", only: :test},
       {:igniter, "~> 0.5", only: [:dev, :test]},
+      {:lazy_html, ">= 0.1.0", only: :test},
 
       # Docs and Publishing
       {:ex_doc, "~> 0.34", only: [:dev, :test], runtime: false},

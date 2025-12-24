@@ -28,7 +28,7 @@ defmodule Observer.Web.Components.Metrics.VmMemory do
           </div>
         </div>
 
-        <% metrics = Enum.map(@metrics.inserts, fn {_id, _index, data, _} -> data end) %>
+        <% metrics = Common.data_from_streams(@metrics.inserts) %>
         <% normalized_metrics = normalize(metrics) %>
         <% echart_config = config(normalized_metrics) %>
 

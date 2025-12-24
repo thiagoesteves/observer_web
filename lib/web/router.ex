@@ -144,6 +144,13 @@ defmodule Observer.Web.Router do
 
   * `:as` — override the route name; otherwise defaults to `:observer_dashboard`
 
+  * `:csp_nonce_assign_key` — CSP (Content Security Policy) keys used to authenticate image,
+    style, and script assets by pulling a generated nonce out of the connection's `assigns` map. May
+    be `nil`, a single atom, or a map of atoms. Defaults to `nil`.
+
+  * `:logo_path` — a custom path for the logo link in the header, allowing the logo to link to
+    another page in your application instead of the Oban dashboard root. Defaults to the jobs page.
+
   * `:on_mount` — declares additional module callbacks to be invoked when the dashboard mounts
 
   * `:observer_name` — name of the Observer instance the dashboard will use for configuration and
@@ -156,10 +163,6 @@ defmodule Observer.Web.Router do
 
   * `:transport` — a phoenix socket transport, either `"websocket"` or `"longpoll"`, defaults to
     `"websocket"`.
-
-  * `:csp_nonce_assign_key` — CSP (Content Security Policy) keys used to authenticate image,
-    style, and script assets by pulling a generated nonce out of the connection's `assigns` map. May
-    be `nil`, a single atom, or a map of atoms. Defaults to `nil`.
 
   ## Examples
 
@@ -227,7 +230,8 @@ defmodule Observer.Web.Router do
       opts[:resolver],
       opts[:socket_path],
       opts[:transport],
-      opts[:csp_nonce_assign_key]
+      opts[:csp_nonce_assign_key],
+      opts[:logo_path]
     ]
 
     session_opts = [
@@ -242,7 +246,7 @@ defmodule Observer.Web.Router do
   end
 
   @doc false
-  def __session__(conn, prefix, observer, resolver, live_path, live_transport, csp_key) do
+  def __session__(conn, prefix, observer, resolver, live_path, live_transport, csp_key, logo_path) do
     user = Resolver.call_with_fallback(resolver, :resolve_user, [conn])
 
     csp_keys = expand_csp_nonce_keys(csp_key)
@@ -255,6 +259,7 @@ defmodule Observer.Web.Router do
       "access" => Resolver.call_with_fallback(resolver, :resolve_access, [user]),
       "live_path" => live_path,
       "live_transport" => live_transport,
+      "logo_path" => logo_path,
       "csp_nonces" => %{
         img: conn.assigns[csp_keys[:img]],
         style: conn.assigns[csp_keys[:style]],
@@ -272,6 +277,15 @@ defmodule Observer.Web.Router do
       raise ArgumentError, """
       invalid :csp_nonce_assign_key, expected nil, an atom or a map with atom keys,
       got #{inspect(key)}
+      """
+    end
+  end
+
+  defp validate_opt!({:logo_path, path}) do
+    unless is_nil(path) or (is_binary(path) and byte_size(path) > 0) do
+      raise ArgumentError, """
+      invalid :logo_path, expected nil or a non-empty binary path,
+      got: #{inspect(path)}
       """
     end
   end

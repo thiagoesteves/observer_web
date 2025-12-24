@@ -6,7 +6,7 @@
   <.flash :if={Phoenix.Flash.get(@flash, :error)} kind={:error} flash={@flash} />
   <header class="flex items-center mb-2">
     <div class="md:w-84 mr-3">
-      <.logo params={@params} />
+      <.logo path={@logo_path} params={@params} />
     </div>
 
     <.nav socket={@socket} page={@page.name} params={@params} />
