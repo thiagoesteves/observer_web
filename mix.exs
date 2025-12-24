@@ -110,7 +110,7 @@ defmodule ObserverWeb.MixProject do
   defp deps do
     [
       {:jason, "~> 1.2"},
-      {:phoenix, "~> 1.8"},
+      {:phoenix, "~> 1.7"},
       {:phoenix_html, "~> 3.3 or ~> 4.0"},
       {:phoenix_live_view, "~> 1.0"},
       {:phoenix_pubsub, "~> 2.1"},
