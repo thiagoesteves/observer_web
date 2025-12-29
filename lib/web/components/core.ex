@@ -68,7 +68,10 @@ defmodule Observer.Web.Components.Core do
               <td
                 :for={{col, i} <- Enum.with_index(@col)}
                 phx-click={@row_click && @row_click.(row)}
-                class={["relative p-0", @row_click && "hover:cursor-pointer"]}
+                class={[
+                  "relative p-0 text-base-content/90 max-w-md ",
+                  @row_click && "hover:cursor-pointer"
+                ]}
               >
                 <div class="block px-1 py-1 pr-6 text-xs font-mono ">
                   <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 dark:group-hover:bg-zinc-700 sm:rounded-l-xl" />

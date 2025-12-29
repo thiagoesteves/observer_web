@@ -166,14 +166,21 @@ defmodule Observer.Web.Tracing.Page do
               <span>{tracing_message.type}</span>
             </:col>
             <:col :let={{id, tracing_message}} label="CONTENT">
-              <div class="flex items-center justify-between gap-2">
-                {tracing_message.content}
+              <details>
+                <summary class="cursor-pointer truncate">
+                  {tracing_message.content}
+                </summary>
+                <div class="mt-5 break-words">
+                  <div class="flex items-center justify-between gap-2">
+                    {tracing_message.content}
 
-                <CopyToClipboard.content
-                  id={"tracing-functions-messages-#{id}"}
-                  message={tracing_message.content}
-                />
-              </div>
+                    <CopyToClipboard.content
+                      id={"tracing-functions-messages-#{id}"}
+                      message={tracing_message.content}
+                    />
+                  </div>
+                </div>
+              </details>
             </:col>
           </Core.table_tracing>
         </div>
