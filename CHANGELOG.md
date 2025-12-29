@@ -1,5 +1,16 @@
 # CHANGELOG (v0.2.X)
 
+## 0.2.3 (:soon:)
+
+### ⚠️ Backwards incompatible changes for 0.2.2
+ * None
+
+### Bug fixes
+ * None
+
+### Enhancements
+ * [[`PR-41`](https://github.com/thiagoesteves/observer_web/pull/41)] 
+
 ## 0.2.2 🚀 (2025-11-10)
 
 ### ⚠️ Backwards incompatible changes for 0.2.1

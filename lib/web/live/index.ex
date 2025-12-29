@@ -18,6 +18,7 @@ defmodule Observer.Web.IndexLive do
     %{"prefix" => prefix, "resolver" => resolver} = session
     %{"live_path" => live_path, "live_transport" => live_transport} = session
     %{"user" => user, "access" => access, "csp_nonces" => csp_nonces} = session
+    %{"logo_path" => logo_path} = session
 
     page = resolve_page(params)
     theme = restore_state(socket, "theme", "system")
@@ -28,7 +29,7 @@ defmodule Observer.Web.IndexLive do
     socket =
       socket
       |> assign(params: params, page: page)
-      |> assign(live_path: live_path, live_transport: live_transport)
+      |> assign(live_path: live_path, live_transport: live_transport, logo_path: logo_path)
       |> assign(access: access, csp_nonces: csp_nonces, resolver: resolver, user: user)
       |> assign(theme: theme, version: version)
       |> page.comp.handle_mount()

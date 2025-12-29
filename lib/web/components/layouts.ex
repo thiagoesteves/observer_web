@@ -15,8 +15,9 @@ defmodule Observer.Web.Layouts do
   defp asset_path(conn, asset) when asset in [:css, :js] do
     hash = Assets.current_hash(asset)
 
-    # prefix = conn.private.phoenix_router.__live_dashboard_prefix__()
-    prefix = "/observer"
+    {_dash, _routing, meta} = conn.private.phoenix_live_view
+
+    prefix = get_in(meta, [:extra, :session, Access.elem(2), Access.at(0)])
 
     Phoenix.VerifiedRoutes.unverified_path(
       conn,
@@ -25,9 +26,12 @@ defmodule Observer.Web.Layouts do
     )
   end
 
+  attr :params, :map, required: true
+  attr :path, :string, default: nil
+
   def logo(assigns) do
     ~H"""
-    <a href={observer_path(:tracing, @params)} class="flex" title="Observer Web">
+    <a href={@path || observer_path(:tracing, @params)} class="flex" title="Observer Web">
       <div>
         <Icons.content name={:logo} />
       </div>

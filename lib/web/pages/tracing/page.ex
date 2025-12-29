@@ -48,14 +48,16 @@ defmodule Observer.Web.Tracing.Page do
     attention_msg = ~H"""
     Incorrect use of the <b>:dbg</b>
     tracer in production can lead to performance degradation, latency and crashes.
-    <b>Observer Web tracing</b> enforces limits on the maximum number of messages and applies a timeout (in seconds)
+    <b>Observer Web tracing</b>
+    enforces limits on the maximum number of messages and applies a timeout (in seconds)
     to ensure the debugger doesn't remain active unintentionally. Check out the
     <a
       href="https://www.erlang.org/docs/24/man/dbg"
       class="font-medium text-blue-600 underline dark:text-blue-500 hover:no-underline"
     >
       Erlang Debugger
-    </a> for more detailed information.
+    </a>
+    for more detailed information.
     """
 
     assigns =
@@ -164,14 +166,21 @@ defmodule Observer.Web.Tracing.Page do
               <span>{tracing_message.type}</span>
             </:col>
             <:col :let={{id, tracing_message}} label="CONTENT">
-              <div class="flex items-center justify-between gap-2">
-                {tracing_message.content}
+              <details>
+                <summary class="cursor-pointer truncate">
+                  {tracing_message.content}
+                </summary>
+                <div class="mt-5 break-words">
+                  <div class="flex items-center justify-between gap-2">
+                    {tracing_message.content}
 
-                <CopyToClipboard.content
-                  id={"tracing-functions-messages-#{id}"}
-                  message={tracing_message.content}
-                />
-              </div>
+                    <CopyToClipboard.content
+                      id={"tracing-functions-messages-#{id}"}
+                      message={tracing_message.content}
+                    />
+                  </div>
+                </div>
+              </details>
             </:col>
           </Core.table_tracing>
         </div>
