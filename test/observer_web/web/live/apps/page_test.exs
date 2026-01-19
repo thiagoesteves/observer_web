@@ -184,7 +184,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     # Send the request 2 times to validate the path where the request
     # was already executed.
     id = "#{inspect(pid)}"
-    series_name = "#{Node.self()}::kernel"
+    series_name = "#{Node.self()}::app:kernel"
 
     assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
@@ -235,7 +235,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     pid = Enum.random(:erlang.processes())
 
     id = "#{inspect(pid)}"
-    series_name = "#{Node.self()}::kernel"
+    series_name = "#{Node.self()}::app:kernel"
 
     assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
@@ -330,7 +330,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     |> element("#apps-multi-select-services-#{service}-add-item")
     |> render_click()
 
-    series_name = "#{Node.self()}::kernel"
+    series_name = "#{Node.self()}::app:kernel"
 
     id = "#PID<0.0.11111>"
 
@@ -385,7 +385,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     # Send the request 2 times to validate the path where the request
     # was already executed.
     id = "#{inspect(pid)}"
-    series_name = "#{Node.self()}::kernel"
+    series_name = "#{Node.self()}::app:kernel"
 
     assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
@@ -438,7 +438,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     # Send the request 2 times to validate the path where the request
     # was already executed.
     id = "#{inspect(pid)}"
-    series_name = "#{Node.self()}::kernel"
+    series_name = "#{Node.self()}::app:kernel"
 
     assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
@@ -491,7 +491,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     # Send the request 2 times to validate the path where the request
     # was already executed.
     id = "#{inspect(pid)}"
-    series_name = "#{Node.self()}::kernel"
+    series_name = "#{Node.self()}::app:kernel"
 
     assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
@@ -543,7 +543,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     # Send the request 2 times to validate the path where the request
     # was already executed.
     id = "#{inspect(pid)}"
-    series_name = "#{Node.self()}::kernel"
+    series_name = "#{Node.self()}::app:kernel"
 
     assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
@@ -594,7 +594,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     # Send the request 2 times to validate the path where the request
     # was already executed.
     id = "#{inspect(pid)}"
-    series_name = "#{Node.self()}::kernel"
+    series_name = "#{Node.self()}::app:kernel"
 
     assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
@@ -642,7 +642,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     # Send the request 2 times to validate the path where the request
     # was already executed.
     id = "#{inspect(port)}"
-    series_name = "#{Node.self()}::kernel"
+    series_name = "#{Node.self()}::app:kernel"
 
     assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
@@ -688,7 +688,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     |> element("#apps-multi-select-services-#{service}-add-item")
     |> render_click()
 
-    series_name = "#{Node.self()}::kernel"
+    series_name = "#{Node.self()}::app:kernel"
 
     id = "#Port<0.100>"
 
@@ -738,7 +738,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     # Send the request 2 times to validate the path where the request
     # was already executed.
     id = "#{inspect(port)}"
-    series_name = "#{Node.self()}::kernel"
+    series_name = "#{Node.self()}::app:kernel"
 
     assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
@@ -791,7 +791,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     # Send the request 2 times to validate the path where the request
     # was already executed.
     id = "#{inspect(port)}"
-    series_name = "#{Node.self()}::kernel"
+    series_name = "#{Node.self()}::app:kernel"
 
     assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
@@ -844,7 +844,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     # Send the request 2 times to validate the path where the request
     # was already executed.
     id = "#{inspect(reference)}"
-    series_name = "#{Node.self()}::kernel"
+    series_name = "#{Node.self()}::app:kernel"
 
     assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
