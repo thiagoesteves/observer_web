@@ -6,10 +6,10 @@
  * None
 
 ### Bug fixes
- * None
+ * [[`ISSUE-42`](https://github.com/thiagoesteves/observer_web/issues/42)] Pattern match error when series_name contains IPv6 address
 
 ### Enhancements
- * [[`PR-41`](https://github.com/thiagoesteves/observer_web/pull/41)] 
+ * [[`PR-41`](https://github.com/thiagoesteves/observer_web/pull/41)] Multiples updates and enhancements
 
 ## 0.2.2 🚀 (2025-11-10)
 
