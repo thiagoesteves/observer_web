@@ -436,7 +436,7 @@ defmodule Observer.Web.Apps.Page do
       ) do
     new_observer_data =
       Enum.reduce(observer_data, %{}, fn {key, data}, acc ->
-        [service, app] = String.split(key, "::")
+        [service, app] = decompose_data_key(key)
 
         new_info =
           Apps.info(String.to_existing_atom(service), String.to_existing_atom(app))
@@ -586,7 +586,7 @@ defmodule Observer.Web.Apps.Page do
       )
       when id_string != request_id or debouncing < 0 do
     get_state_timeout = form.params["get_state_timeout"] |> String.to_integer()
-    [service, _app] = String.split(series_name, "::")
+    [service, _app] = decompose_data_key(series_name)
     node = String.to_existing_atom(service)
 
     case Helpers.parse_identifier(request_id) do
@@ -725,7 +725,9 @@ defmodule Observer.Web.Apps.Page do
      |> assign(:current_selected_id, %Identifier{})}
   end
 
-  defp data_key(service, apps), do: "#{service}::#{apps}"
+  @service_apps_delimiter "::app:"
+  defp data_key(service, apps), do: "#{service}#{@service_apps_delimiter}#{apps}"
+  defp decompose_data_key(data_key), do: String.split(data_key, @service_apps_delimiter)
 
   defp update_observer_data(
          %{assigns: %{observer_data: observer_data}} = socket,

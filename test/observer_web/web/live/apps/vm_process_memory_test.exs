@@ -61,7 +61,7 @@ defmodule Observer.Web.Apps.VmProcessMemoryTest do
     # Send the request 2 times to validate the path where the request
     # was already executed.
     id = "#{inspect(id)}"
-    series_name = "#{Node.self()}::kernel"
+    series_name = "#{Node.self()}::app:kernel"
 
     assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
@@ -138,7 +138,7 @@ defmodule Observer.Web.Apps.VmProcessMemoryTest do
     # Send the request 2 times to validate the path where the request
     # was already executed.
     id = "#{inspect(id)}"
-    series_name = "#{Node.self()}::kernel"
+    series_name = "#{Node.self()}::app:kernel"
 
     assert_receive {:apps_page_pid, apps_page_pid}, 1_000
 
