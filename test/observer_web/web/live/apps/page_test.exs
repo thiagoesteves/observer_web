@@ -658,6 +658,59 @@ defmodule Observer.Web.Apps.PageLiveTest do
     assert html =~ "Connected"
   end
 
+  test "Select Service+Apps and select a port which the hostname has an ipv6 format", %{
+    conn: conn
+  } do
+    node = Node.self() |> to_string
+    service = Helpers.normalize_id(node)
+    test_pid_process = self()
+
+    ObserverWeb.RpcMock
+    |> stub(:call, fn node, module, function, args, timeout ->
+      :rpc.call(node, module, function, args, timeout)
+    end)
+    |> stub(:pinfo, fn pid, information ->
+      send(test_pid_process, {:apps_page_pid, self()})
+      :rpc.pinfo(pid, information)
+    end)
+
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
+
+    index_live
+    |> element("#apps-multi-select-toggle-options")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-apps-kernel-add-item")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-services-#{service}-add-item")
+    |> render_click()
+
+    port = Enum.random(:erlang.ports())
+
+    # Send the request 2 times to validate the path where the request
+    # was already executed.
+    id = "#{inspect(port)}"
+    ipv6_node = String.to_atom("node@ipv6::fe80::dead::beef:asdf")
+    series_name = "#{ipv6_node}::app:kernel"
+
+    assert_receive {:apps_page_pid, apps_page_pid}, 1_000
+
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+
+    assert html = render(index_live)
+
+    # Check the Process information is being shown
+    refute html =~ "Group Leader"
+    refute html =~ "Heap Size"
+    assert html =~ "is either dead or protected and therefore can not be shown."
+  end
+
   test "Select Service+Apps and select a port that is dead or doesn't exist", %{conn: conn} do
     node = Node.self() |> to_string
     service = Helpers.normalize_id(node)
