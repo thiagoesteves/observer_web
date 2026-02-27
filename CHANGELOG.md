@@ -1,6 +1,6 @@
 # CHANGELOG (v0.2.X)
 
-## 0.2.3 (:soon:)
+## 0.2.3 🚀 (2026-02-27)
 
 ### ⚠️ Backwards incompatible changes for 0.2.2
  * None
