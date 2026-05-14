@@ -48,7 +48,7 @@ defmodule ObserverWeb.Telemetry.Producer.PhxLvSocket do
     Enum.each(phx_endpoints, fn
       %__MODULE__{module: module, event: event} ->
         module
-        |> :supervisor.which_children()
+        |> safe_which_children()
         |> Enum.each(fn
           {Phoenix.LiveView.Socket, lv_socket_pid, :supervisor, _data} ->
             supervisors = :supervisor.which_children(lv_socket_pid)
@@ -139,7 +139,7 @@ defmodule ObserverWeb.Telemetry.Producer.PhxLvSocket do
       endpoint_name =
         with pid <- :application_controller.get_master(app),
              {child_pid, _application_name} <- :application_master.get_child(pid),
-             children when is_list(children) <- :supervisor.which_children(child_pid) do
+             children when is_list(children) <- safe_which_children(child_pid) do
           Enum.reduce(children, [], &filter_supervisor_endpoints.(&1, &2))
         else
           _ ->
@@ -149,4 +149,33 @@ defmodule ObserverWeb.Telemetry.Producer.PhxLvSocket do
       if endpoint_name != [], do: acc ++ endpoint_name, else: acc
     end)
   end
+
+  # Some application roots are plain GenServers, not supervisors (e.g.
+  # `:ex_hash_ring`'s `ExHashRing.Info`). `:supervisor.which_children/1` is just
+  # `gen_server:call(pid, :which_children)` under the hood, so it crashes any
+  # GenServer that lacks that handle_call clause. We can't rescue the callee
+  # from the caller — the crash happens inside the target process before any
+  # exit reaches us — so we have to filter callees up-front via the OTP
+  # `$initial_call` convention. The trailing catch is belt-and-suspenders for
+  # processes that died between the check and the call.
+  defp safe_which_children(supervisor) do
+    with pid when is_pid(pid) <- whereis(supervisor),
+         true <- supervisor?(pid) do
+      :supervisor.which_children(pid)
+    else
+      _ -> []
+    end
+  catch
+    :exit, _ -> []
+  end
+
+  defp whereis(pid) when is_pid(pid), do: pid
+  defp whereis(name) when is_atom(name), do: Process.whereis(name)
+  defp whereis(_), do: nil
+
+  defp supervisor?(pid) when is_pid(pid) do
+    match?({:supervisor, _, _}, :proc_lib.initial_call(pid))
+  end
+
+  defp supervisor?(_), do: false
 end
