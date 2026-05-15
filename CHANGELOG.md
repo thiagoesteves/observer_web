@@ -1,5 +1,16 @@
 # CHANGELOG (v0.2.X)
 
+## 0.2.4 🚀 ()
+
+### ⚠️ Backwards incompatible changes for 0.2.3
+ * None
+
+### Bug fixes
+ * [[`PR-45`](https://github.com/thiagoesteves/observer_web/pull/45)] Updating mix lock due to vulnerabilities
+
+### Enhancements
+ * None
+
 ## 0.2.3 🚀 (2026-02-27)
 
 ### ⚠️ Backwards incompatible changes for 0.2.2
