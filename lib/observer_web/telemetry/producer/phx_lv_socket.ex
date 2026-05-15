@@ -173,9 +173,7 @@ defmodule ObserverWeb.Telemetry.Producer.PhxLvSocket do
   defp whereis(name) when is_atom(name), do: Process.whereis(name)
   defp whereis(_), do: nil
 
-  defp supervisor?(pid) when is_pid(pid) do
+  defp supervisor?(pid) do
     match?({:supervisor, _, _}, :proc_lib.initial_call(pid))
   end
-
-  defp supervisor?(_), do: false
 end
