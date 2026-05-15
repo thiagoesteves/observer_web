@@ -6,6 +6,7 @@
  * None
 
 ### Bug fixes
+ * [[`PR-44`](https://github.com/thiagoesteves/observer_web/pull/44)] observer_web fails when using Cachex/ExHashRing
  * [[`PR-45`](https://github.com/thiagoesteves/observer_web/pull/45)] Updating mix lock due to vulnerabilities
 
 ### Enhancements
