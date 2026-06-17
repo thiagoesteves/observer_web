@@ -68,7 +68,7 @@ defmodule Observer.Web.Helpers do
 
   def observer_path(route, params) when is_list(route) do
     route
-    |> Enum.join("/")
+    |> Enum.map_join("/", &encode_segment/1)
     |> observer_path(params)
   end
 
@@ -93,6 +93,10 @@ defmodule Observer.Web.Helpers do
       nil ->
         raise RuntimeError, "nothing stored in the :routing key"
     end
+  end
+
+  defp encode_segment(segment) do
+    segment |> to_string() |> URI.encode(&URI.char_unreserved?/1)
   end
 
   @doc """
