@@ -14,7 +14,7 @@ defmodule ObserverWeb.MixProject do
       docs: docs(),
       extra_section: "GUIDES",
       extras: extras(),
-      elixir: "~> 1.20",
+      elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
