@@ -37,8 +37,6 @@ defmodule Observer.Web do
 
   defp html_helpers do
     quote do
-      use Phoenix.Component
-
       import Phoenix.HTML
       import Phoenix.LiveView.Helpers
       import Observer.Web.Helpers

@@ -2,7 +2,7 @@ defmodule ObserverWeb.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/thiagoesteves/observer_web"
-  @version "0.2.4"
+  @version "0.3.0"
 
   def project do
     [
@@ -14,7 +14,7 @@ defmodule ObserverWeb.MixProject do
       docs: docs(),
       extra_section: "GUIDES",
       extras: extras(),
-      elixir: "~> 1.15",
+      elixir: "~> 1.20",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -28,13 +28,6 @@ defmodule ObserverWeb.MixProject do
         check_plt: true,
         plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
         ignore_warnings: ".dialyzer_ignore.exs"
-      ],
-      preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test,
-        "coveralls.cobertura": :test
       ]
     ]
   end
@@ -52,6 +45,18 @@ defmodule ObserverWeb.MixProject do
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  def cli do
+    [
+      preferred_envs: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.cobertura": :test
+      ]
+    ]
+  end
 
   defp package do
     [
@@ -118,7 +123,7 @@ defmodule ObserverWeb.MixProject do
       # Dev Server
       {:bandit, "~> 1.5", only: :dev},
       {:esbuild, "~> 0.8", only: :dev, runtime: false},
-      {:faker, "~> 0.17", only: :dev},
+      {:faker, "~> 1.0", hex: :fakerer, only: :test},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:tailwind, "~> 0.4", only: :dev, runtime: false},
 
@@ -134,8 +139,9 @@ defmodule ObserverWeb.MixProject do
       {:excoveralls, "~> 0.18", only: :test},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
+      {:meck, "~> 1.2", only: :test, override: true},
       {:mock, "~> 0.3.0", only: :test},
-      {:igniter, "~> 0.5", only: [:dev, :test]},
+      {:igniter, "~> 0.6", only: [:dev, :test]},
       {:lazy_html, ">= 0.1.0", only: :test},
 
       # Docs and Publishing
