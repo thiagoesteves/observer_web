@@ -2,8 +2,6 @@ defmodule Observer.Web.Components.Metrics.Phoenix do
   @moduledoc false
   use Observer.Web, :html
 
-  use Phoenix.Component
-
   alias Observer.Web.Components.Core
 
   attr :title, :string, required: true

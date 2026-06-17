@@ -2,7 +2,6 @@ defmodule Observer.Web.Apps.Port do
   @moduledoc false
 
   use Observer.Web, :html
-  use Phoenix.Component
 
   alias Observer.Web.Apps.PortActions
   alias Observer.Web.Components.Attention

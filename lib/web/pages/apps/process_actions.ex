@@ -4,7 +4,6 @@ defmodule Observer.Web.Apps.ProcessActions do
   """
 
   use Observer.Web, :html
-  use Phoenix.Component
 
   attr :id, :map, required: true
   attr :on_action, :any, required: true

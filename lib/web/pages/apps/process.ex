@@ -2,7 +2,6 @@ defmodule Observer.Web.Apps.Process do
   @moduledoc false
 
   use Observer.Web, :html
-  use Phoenix.Component
 
   alias Observer.Web.Apps.ProcessActions
   alias Observer.Web.Components.Attention
@@ -219,10 +218,10 @@ defmodule Observer.Web.Apps.Process do
         "font-mono font-semibold border-b-1 rounded-t border-neutral-100 px-6 py-1",
         title_bg_color(@title_bg_color)
       ]}>
-        <%= if @copy_id do %>
+        <%= if is_binary(@copy_id) do %>
           <div class="flex items-center justify-between  w-full">
             {@title}
-            <CopyToClipboard.content :if={@copy_id} id={@copy_id} message={@value} />
+            <CopyToClipboard.content id={@copy_id} message={@value} />
           </div>
         <% else %>
           {@title}
