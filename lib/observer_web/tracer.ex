@@ -83,6 +83,13 @@ defmodule ObserverWeb.Tracer do
 
   @doc """
   This function retrieves all match specs available
+
+  NOTE: `ObserverWeb.Tracer.Server` concatenates the patterns of every selected key into separate
+  match-spec clauses (not a single clause with combined actions), and Erlang match specs only run
+  the first clause whose head matches - since every clause here matches on `_`, selecting more than
+  one key at once means only the first selected key's actions actually run. `call_seq` exists as a
+  single self-contained clause combining `return_trace()` and argument capture for that reason,
+  rather than relying on `return_trace` + `capture_args` both being selected.
   """
   @spec get_default_functions_matchspecs :: map()
   def get_default_functions_matchspecs do
@@ -106,6 +113,16 @@ defmodule ObserverWeb.Tracer do
         pattern: [{:_, [], [{:message, {:process_dump}}]}],
         name: "Message Dump",
         fun: "fun(_) -> message(process_dump()) end"
+      },
+      capture_args: %{
+        pattern: [{:_, [], [{:message, :"$_"}]}],
+        name: "Capture Arguments",
+        fun: "fun(_) -> message($_) end"
+      },
+      call_seq: %{
+        pattern: [{:_, [], [{:return_trace}, {:message, :"$_"}]}],
+        name: "Call Sequence (return + arguments)",
+        fun: "fun(_) -> return_trace(), message($_) end"
       }
     }
   end

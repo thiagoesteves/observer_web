@@ -2,6 +2,7 @@ defmodule ObserverWeb.Tracer.ToolTest do
   use ExUnit.Case, async: true
 
   alias ObserverWeb.Tracer.Tool
+  alias ObserverWeb.Tracer.Tool.CallSeq
   alias ObserverWeb.Tracer.Tool.Count
   alias ObserverWeb.Tracer.Tool.Duration
   alias ObserverWeb.Tracer.Tool.Event
@@ -23,11 +24,19 @@ defmodule ObserverWeb.Tracer.ToolTest do
     test "duration requires :arity for the same reason as count" do
       assert Tool.dbg_flags(:duration) == [:c, :timestamp, :arity]
     end
+
+    test "call_seq requires :arity for the same reason as count" do
+      assert Tool.dbg_flags(:call_seq) == [:c, :timestamp, :arity]
+    end
   end
 
   describe "forced_match_spec_keys/1" do
     test "duration forces return_trace to see :return_from events" do
       assert Tool.forced_match_spec_keys(:duration) == ["return_trace"]
+    end
+
+    test "call_seq forces the combined call_seq match spec (return_trace + argument capture)" do
+      assert Tool.forced_match_spec_keys(:call_seq) == ["call_seq"]
     end
 
     test "count and display force nothing" do
@@ -65,6 +74,26 @@ defmodule ObserverWeb.Tracer.ToolTest do
       state = Tool.handle_event(:duration, return_trace, state)
 
       assert Tool.handle_stop(:duration, state) == [{{Node.self(), String, :split, 2, nil}, 10}]
+    end
+  end
+
+  describe "init/2, handle_event/3, handle_stop/2 for :call_seq" do
+    test "dispatches to ObserverWeb.Tracer.Tool.CallSeq" do
+      pid = self()
+      initial_state = Tool.init(:call_seq, %{})
+
+      assert %CallSeq{} = initial_state
+
+      call_trace = {:trace_ts, pid, :call, {String, :split, 2}, ["a", "b"], {0, 0, 0}}
+      return_trace = {:trace_ts, pid, :return_from, {String, :split, 2}, ["a"], {0, 0, 10}}
+
+      state = Tool.handle_event(:call_seq, call_trace, initial_state)
+      state = Tool.handle_event(:call_seq, return_trace, state)
+
+      assert [
+               %{type: :enter, mod: String, fun: :split, arity: 2, detail: ["a", "b"]},
+               %{type: :exit, mod: String, fun: :split, arity: 2, detail: ["a"]}
+             ] = Tool.handle_stop(:call_seq, state)
     end
   end
 

@@ -5,6 +5,7 @@ defmodule Observer.Web.Profiling.PageLiveTest do
   alias Observer.Web.Mocks.RpcStubber
   alias Observer.Web.Mocks.TelemetryStubber
   alias ObserverWeb.Tracer
+  alias ObserverWeb.TracerFixtures.Callee
 
   setup [
     :set_mox_global,
@@ -236,6 +237,70 @@ defmodule Observer.Web.Profiling.PageLiveTest do
     html = render(index_live)
     assert html =~ "µs:"
     refute html =~ "%{"
+  end
+
+  test "Run Call Sequence for a nested call across two modules", %{conn: conn} do
+    node = Node.self() |> to_string
+    service = Helpers.normalize_id(node)
+
+    # Calling this function guarantees the callee module is loaded
+    Callee.add(0, 0)
+
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/profiling")
+
+    index_live
+    |> element("#profiling-multi-select-toggle-options")
+    |> render_click()
+
+    index_live
+    |> element("#profiling-multi-select-services-#{service}-add-item")
+    |> render_click()
+
+    index_live
+    |> element("#profiling-multi-select-modules-Elixir-ObserverWeb-TracerFixtures-add-item")
+    |> render_click()
+
+    index_live
+    |> element(
+      "#profiling-multi-select-modules-Elixir-ObserverWeb-TracerFixtures-Callee-add-item"
+    )
+    |> render_click()
+
+    index_live
+    |> element("#profiling-multi-select-functions-testing_nested_fun-2-add-item")
+    |> render_click()
+
+    index_live
+    |> element("#profiling-multi-select-functions-add-2-add-item")
+    |> render_click()
+
+    index_live
+    |> element("#profiling-update-form")
+    |> render_change(%{tool: "call_seq", max_messages: 4, session_timeout_seconds: 30})
+
+    html =
+      index_live
+      |> element("#profiling-multi-select-run", "RUN")
+      |> render_click()
+
+    refute html =~ "RUN"
+    assert html =~ "STOP"
+
+    ObserverWeb.TracerFixtures.testing_nested_fun(2, 3)
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "Call Sequence Results"
+    assert html =~ "TracerFixtures.testing_nested_fun/2"
+    assert html =~ "TracerFixtures.Callee.add/2"
+    assert html =~ "→"
+    assert html =~ "←"
+    assert html =~ "RUN"
+    refute html =~ "STOP"
   end
 
   test "Stop button reports the count collected so far", %{conn: conn} do

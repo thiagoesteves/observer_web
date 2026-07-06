@@ -47,6 +47,14 @@ defmodule Observer.Web.Profiling.Page do
           ensure the debugger doesn't remain active unintentionally.
           """
 
+        "call_seq" ->
+          ~H"""
+          Call Sequence shows an indented call tree per process, with arguments on entry and
+          return values on exit. Like Live Tracing, it enforces limits on the maximum number of
+          events and applies a timeout (in seconds) to ensure the debugger doesn't remain active
+          unintentionally.
+          """
+
         _count ->
           ~H"""
           Count tallies how many times each traced function was called. Like Live Tracing, it
@@ -85,7 +93,7 @@ defmodule Observer.Web.Profiling.Page do
               field={@form[:tool]}
               type="select"
               label="Tool"
-              options={[{"Count", "count"}, {"Duration", "duration"}]}
+              options={[{"Count", "count"}, {"Duration", "duration"}, {"Call Sequence", "call_seq"}]}
             />
 
             <Core.input
@@ -181,9 +189,9 @@ defmodule Observer.Web.Profiling.Page do
         </div>
         <div :if={@report != nil} class="bg-white dark:bg-gray-800 w-full shadow-lg rounded">
           <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
-            {if @tool == "duration", do: "Duration Results", else: "Count Results"}
+            {result_title(@tool)}
           </h2>
-          <Core.table_tracing id="profiling-results" rows={@report}>
+          <Core.table_tracing :if={@tool != "call_seq"} id="profiling-results" rows={@report}>
             <:col :let={{{node, _mod, _fun, _arity, _message}, _value}} label="SERVICE">
               {node}
             </:col>
@@ -195,6 +203,19 @@ defmodule Observer.Web.Profiling.Page do
               label={if @tool == "duration", do: "DURATION (µs)", else: "COUNT"}
             >
               {format_value(value)}
+            </:col>
+          </Core.table_tracing>
+          <Core.table_tracing :if={@tool == "call_seq"} id="profiling-call-seq-results" rows={@report}>
+            <:col :let={entry} label="SERVICE">{entry.node}</:col>
+            <:col :let={entry} label="PROCESS">{inspect(entry.pid)}</:col>
+            <:col :let={entry} label="CALL">
+              <span style={"padding-left: #{entry.depth * 1.25}rem"}>
+                <%= if entry.type == :enter do %>
+                  → {inspect(entry.mod)}.{entry.fun}/{entry.arity}({format_args(entry.detail)})
+                <% else %>
+                  ← {inspect(entry.mod)}.{entry.fun}/{entry.arity} = {inspect(entry.detail)}
+                <% end %>
+              </span>
             </:col>
           </Core.table_tracing>
         </div>
@@ -445,6 +466,10 @@ defmodule Observer.Web.Profiling.Page do
 
   defp default_form_search_options, do: %{"modules" => "", "functions" => ""}
 
+  defp result_title("duration"), do: "Duration Results"
+  defp result_title("call_seq"), do: "Call Sequence Results"
+  defp result_title(_count), do: "Count Results"
+
   # The :dist aggregation reports a %{bucket => count} power-of-two histogram (see
   # ObserverWeb.Tracer.Tool.Duration) - render it as readable ranges instead of an inspected map.
   defp format_value(value) when is_map(value) do
@@ -457,4 +482,7 @@ defmodule Observer.Web.Profiling.Page do
   end
 
   defp format_value(value), do: inspect(value)
+
+  defp format_args(args) when is_list(args), do: Enum.map_join(args, ", ", &inspect/1)
+  defp format_args(other), do: inspect(other)
 end

@@ -8,6 +8,7 @@ defmodule ObserverWeb.Tracer.Tool do
   init/handle_event/handle_stop aggregation logic is ported.
   """
 
+  alias ObserverWeb.Tracer.Tool.CallSeq
   alias ObserverWeb.Tracer.Tool.Count
   alias ObserverWeb.Tracer.Tool.Duration
   alias ObserverWeb.Tracer.Tool.Event
@@ -17,7 +18,7 @@ defmodule ObserverWeb.Tracer.Tool do
   alias ObserverWeb.Tracer.Tool.EventReturnFrom
   alias ObserverWeb.Tracer.Tool.EventReturnTo
 
-  @type t :: :display | :count | :duration
+  @type t :: :display | :count | :duration | :call_seq
 
   @doc """
   `:dbg` trace flags required to run the given tool (always includes `:c` and `:timestamp`).
@@ -31,14 +32,19 @@ defmodule ObserverWeb.Tracer.Tool do
   def dbg_flags(:display), do: [:c, :timestamp]
   def dbg_flags(:count), do: [:c, :timestamp, :arity]
   def dbg_flags(:duration), do: [:c, :timestamp, :arity]
+  def dbg_flags(:call_seq), do: [:c, :timestamp, :arity]
 
   @doc """
   Match spec keys forced onto every traced function for this tool, regardless of what's selected
   in the UI (the Profiling page has no match-spec picker of its own - see
   `Observer.Web.Profiling.Page`). `:duration` needs `return_trace()` to see `:return_from` events.
+  `:call_seq` needs both `return_trace()` and argument capture, combined into the single `call_seq`
+  match spec - see `ObserverWeb.Tracer.get_default_functions_matchspecs/0` for why selecting both
+  `return_trace` and `capture_args` separately wouldn't work.
   """
   @spec forced_match_spec_keys(t()) :: [String.t()]
   def forced_match_spec_keys(:duration), do: ["return_trace"]
+  def forced_match_spec_keys(:call_seq), do: ["call_seq"]
   def forced_match_spec_keys(_tool), do: []
 
   @doc """
@@ -47,6 +53,7 @@ defmodule ObserverWeb.Tracer.Tool do
   @spec init(t(), map()) :: term()
   def init(:count, _opts), do: Count.new()
   def init(:duration, opts), do: Duration.new(opts)
+  def init(:call_seq, _opts), do: CallSeq.new()
 
   @doc """
   Translates a raw `:dbg` trace message into an event struct and folds it into the tool's state.
@@ -57,12 +64,16 @@ defmodule ObserverWeb.Tracer.Tool do
   def handle_event(:duration, trace_ms, state),
     do: Duration.handle_event(state, from_trace(trace_ms))
 
+  def handle_event(:call_seq, trace_ms, state),
+    do: CallSeq.handle_event(state, from_trace(trace_ms))
+
   @doc """
   Finalizes the tool's state into the report sent back to the requesting LiveView.
   """
   @spec handle_stop(t(), term()) :: term()
   def handle_stop(:count, state), do: Count.handle_stop(state)
   def handle_stop(:duration, state), do: Duration.handle_stop(state)
+  def handle_stop(:call_seq, state), do: CallSeq.handle_stop(state)
 
   @doc false
   @spec from_trace(tuple()) :: struct()

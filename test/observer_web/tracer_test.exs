@@ -37,7 +37,9 @@ defmodule ObserverWeb.TracerTest do
              return_trace: %{pattern: [{:_, [], [{:return_trace}]}]},
              exception_trace: %{pattern: [{:_, [], [{:exception_trace}]}]},
              caller: %{pattern: [{:_, [], [{:message, {:caller}}]}]},
-             process_dump: %{pattern: [{:_, [], [{:message, {:process_dump}}]}]}
+             process_dump: %{pattern: [{:_, [], [{:message, {:process_dump}}]}]},
+             capture_args: %{pattern: [{:_, [], [{:message, :"$_"}]}]},
+             call_seq: %{pattern: [{:_, [], [{:return_trace}, {:message, :"$_"}]}]}
            } = Tracer.get_default_functions_matchspecs()
   end
 
