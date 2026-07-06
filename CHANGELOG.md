@@ -11,6 +11,7 @@
 ### Enhancements
  * [[`PR-46`](https://github.com/thiagoesteves/observer_web/pull/46)] Escape names with reserved URL characters in paths
  * [[`PR-47`](https://github.com/thiagoesteves/observer_web/pull/47)] Fix Elixir 1.20 type warnings with Phoenix LiveView 1.2 upgrade
+ * [[`PR-48`](https://github.com/thiagoesteves/observer_web/pull/48)] Remove dead :observer_name router option
 
 ## 0.2.4 🚀 (2026-05-15)
 
