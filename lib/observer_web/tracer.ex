@@ -15,7 +15,9 @@ defmodule ObserverWeb.Tracer do
           max_messages: non_neg_integer(),
           session_timeout_ms: non_neg_integer(),
           functions_by_node: map(),
-          request_pid: pid() | nil
+          request_pid: pid() | nil,
+          tool: ObserverWeb.Tracer.Tool.t(),
+          tool_state: term()
         }
 
   defstruct status: :idle,
@@ -23,7 +25,9 @@ defmodule ObserverWeb.Tracer do
             max_messages: @default_max_msg,
             session_timeout_ms: @default_session_timeout_ms,
             functions_by_node: %{},
-            request_pid: nil
+            request_pid: nil,
+            tool: :display,
+            tool_state: nil
 
   ### ==========================================================================
   ### Public APIs
@@ -106,6 +110,11 @@ defmodule ObserverWeb.Tracer do
 
   @doc """
   This function starts the trace for the passed module/functions
+
+  Accepts an optional `:tool` attr (`:display`, the default, or `:count`) selecting how trace
+  events are reported back: `:display` streams each event as a `{:new_trace_message, ...}` message
+  like today, other tools instead accumulate events and report a single
+  `{:tool_report, session_id, report}` message when the session ends.
   """
   @spec start_trace(functions :: list(), attrs :: map()) ::
           {:ok, t()} | {:error, :already_started}

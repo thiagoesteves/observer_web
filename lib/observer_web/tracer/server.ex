@@ -14,6 +14,7 @@ defmodule ObserverWeb.Tracer.Server do
 
   alias ObserverWeb.Common
   alias ObserverWeb.Tracer
+  alias ObserverWeb.Tracer.Tool
 
   ### ==========================================================================
   ### GenServer Callbacks
@@ -28,11 +29,17 @@ defmodule ObserverWeb.Tracer.Server do
   end
 
   @impl true
-  def handle_call({:stop_tracing, rcv_session_id}, _from, %Tracer{
-        session_id: session_id
-      })
+  def handle_call(
+        {:stop_tracing, rcv_session_id},
+        _from,
+        %Tracer{
+          session_id: session_id
+        } = state
+      )
       when rcv_session_id == session_id do
     :dbg.stop()
+
+    maybe_report_tool_result(state)
 
     {:reply, :ok, %Tracer{}}
   end
@@ -74,6 +81,9 @@ defmodule ObserverWeb.Tracer.Server do
     # should be included or filtered out.
     monitored_nodes = Map.keys(functions_by_node)
 
+    tool = new_state.tool
+    tool_state = if tool == :display, do: nil, else: Tool.init(tool)
+
     session_info = %{
       session_id: session_id,
       tracer_pid: tracer_pid,
@@ -85,7 +95,7 @@ defmodule ObserverWeb.Tracer.Server do
     default_functions_matchspecs = Tracer.get_default_functions_matchspecs()
 
     # Start Tracer with Handler Function
-    :dbg.tracer(:process, {&handle_trace/2, {session_info, 1}})
+    :dbg.tracer(:process, {&handle_trace/2, {session_info, 1, tool, tool_state}})
 
     Enum.each(functions_by_node, fn {node, functions} ->
       # Add node to tracing process (exclude local node since it is added by default)
@@ -119,21 +129,26 @@ defmodule ObserverWeb.Tracer.Server do
     #         created hereafter are to be traced.
     # :c -> Traces global function calls for the process according to the trace patterns
     #       set in the system (see tp/2).
-    :dbg.p(:all, [:c, :timestamp])
+    :dbg.p(:all, Tool.dbg_flags(tool))
 
     Process.send_after(self(), {:trace_session_timeout, session_id}, session_timeout_ms)
 
-    new_state = %{new_state | status: :running}
+    new_state = %{new_state | status: :running, tool_state: tool_state}
     {:reply, {:ok, new_state}, new_state}
   end
 
   @impl true
-  def handle_info({:trace_session_timeout, rcv_session_id} = msg, %Tracer{
-        session_id: session_id,
-        request_pid: request_pid
-      })
+  def handle_info(
+        {:trace_session_timeout, rcv_session_id} = msg,
+        %Tracer{
+          session_id: session_id,
+          request_pid: request_pid
+        } = state
+      )
       when rcv_session_id == session_id do
     :dbg.stop()
+
+    maybe_report_tool_result(state)
 
     send(request_pid, msg)
 
@@ -141,6 +156,23 @@ defmodule ObserverWeb.Tracer.Server do
   end
 
   def handle_info({:trace_session_timeout, _rcv_session_id}, state) do
+    {:noreply, state}
+  end
+
+  # NOTE: Mirrors the tool's aggregation state (accumulated inside the separate process :dbg
+  # spawns for the tracer handler fun) so it's available here if the session ends via an explicit
+  # stop_trace/1 call or a timeout, neither of which run inside handle_trace/2.
+  def handle_info(
+        {:tool_state_update, rcv_session_id, tool_state},
+        %Tracer{
+          session_id: session_id
+        } = state
+      )
+      when rcv_session_id == session_id do
+    {:noreply, %{state | tool_state: tool_state}}
+  end
+
+  def handle_info({:tool_state_update, _rcv_session_id, _tool_state}, state) do
     {:noreply, state}
   end
 
@@ -209,12 +241,27 @@ defmodule ObserverWeb.Tracer.Server do
   ### Private Functions
   ### ==========================================================================
 
-  def handle_trace(_trace_message, {%{max_messages: max_messages} = session_info, index})
+  defp maybe_report_tool_result(%Tracer{tool: :display}), do: :ok
+
+  defp maybe_report_tool_result(%Tracer{
+         tool: tool,
+         tool_state: tool_state,
+         session_id: session_id,
+         request_pid: request_pid
+       }) do
+    report = Tool.handle_stop(tool, tool_state)
+    send(request_pid, {:tool_report, session_id, report})
+  end
+
+  def handle_trace(
+        _trace_message,
+        {%{max_messages: max_messages} = session_info, index, tool, tool_state}
+      )
       when index > max_messages do
     # coveralls-ignore-start
     :dbg.stop()
     # coveralls-ignore-stop
-    {session_info, index}
+    {session_info, index, tool, tool_state}
   end
 
   def handle_trace(
@@ -225,60 +272,93 @@ defmodule ObserverWeb.Tracer.Server do
            request_pid: request_pid,
            monitored_nodes: monitored_nodes,
            max_messages: max_messages
-         } = session_info, index}
+         } = session_info, index, tool, tool_state}
       ) do
+    # NOTE: only :display is decoded into a formatted string here - other tools trace with
+    # different dbg flags (see Tool.dbg_flags/1, e.g. :arity instead of full argument values), so
+    # this decode can't be reused for them. They only need the origin pid for the monitored_nodes
+    # check, which is always the trace tuple's 2nd element regardless of flags.
     {origin_pid, type, message} =
-      case trace_ms do
-        {_, pid, :call = type, {module, fun, args}, caller, timestamp} ->
-          {{y, mm, d}, {h, m, s}} = :calendar.now_to_datetime(timestamp)
-          arg_list = Enum.map(args, &inspect/1)
-
-          {pid, type,
-           "[#{y}-#{mm}-#{d} #{h}:#{m}:#{s}] (#{inspect(pid)}) #{inspect(module)}.#{fun}(#{Enum.join(arg_list, ", ")}) caller: #{inspect(caller)}"}
-
-        {_, pid, :call = type, {module, fun, args}, timestamp} ->
-          {{y, mm, d}, {h, m, s}} = :calendar.now_to_datetime(timestamp)
-          arg_list = Enum.map(args, &inspect/1)
-
-          {pid, type,
-           "[#{y}-#{mm}-#{d} #{h}:#{m}:#{s}] (#{inspect(pid)}) #{inspect(module)}.#{fun}(#{Enum.join(arg_list, ", ")})"}
-
-        {_, pid, :return_from = type, {module, fun, arity}, return_value, timestamp} ->
-          {{y, mm, d}, {h, m, s}} = :calendar.now_to_datetime(timestamp)
-
-          {pid, type,
-           "[#{y}-#{mm}-#{d} #{h}:#{m}:#{s}] (#{inspect(pid)}) #{inspect(module)}.#{fun}/#{arity}}) return_value: #{inspect(return_value)}"}
-
-        {_, pid, :exception_from = type, {module, fun, arity}, exception_value, timestamp} ->
-          {{y, mm, d}, {h, m, s}} = :calendar.now_to_datetime(timestamp)
-
-          {pid, type,
-           "[#{y}-#{mm}-#{d} #{h}:#{m}:#{s}] (#{inspect(pid)}) #{inspect(module)}.#{fun}/#{arity}}) exception_value: #{inspect(exception_value)}"}
-
-        # coveralls-ignore-start
-        trace_msg ->
-          Logger.warning(
-            "Not able to decode trace_mg: #{inspect(trace_msg)} session_index: #{inspect(index)}"
-          )
-
-          {nil, nil, nil}
-          # coveralls-ignore-stop
+      if tool == :display do
+        decode_display_message(trace_ms, index)
+      else
+        {elem(trace_ms, 1), nil, nil}
       end
 
     node = origin_pid && :erlang.node(origin_pid)
 
     if node in monitored_nodes do
-      send(request_pid, {:new_trace_message, session_id, node, index, type, message})
+      tool_state = dispatch_to_tool(tool, tool_state, trace_ms, tracer_pid, session_id)
+
+      if tool == :display do
+        send(request_pid, {:new_trace_message, session_id, node, index, type, message})
+      end
 
       if index == max_messages do
-        send(tracer_pid, {:stop_tracing, session_id})
-        send(request_pid, {:stop_tracing, session_id})
-        :dbg.stop()
+        stop_max_messages_reached(tool, tool_state, session_id, tracer_pid, request_pid)
       else
-        {session_info, index + 1}
+        {session_info, index + 1, tool, tool_state}
       end
     else
-      {session_info, index}
+      {session_info, index, tool, tool_state}
     end
+  end
+
+  defp stop_max_messages_reached(tool, tool_state, session_id, tracer_pid, request_pid) do
+    unless tool == :display do
+      report = Tool.handle_stop(tool, tool_state)
+      send(request_pid, {:tool_report, session_id, report})
+    end
+
+    send(tracer_pid, {:stop_tracing, session_id})
+    send(request_pid, {:stop_tracing, session_id})
+    :dbg.stop()
+  end
+
+  defp decode_display_message(trace_ms, index) do
+    case trace_ms do
+      {_, pid, :call = type, {module, fun, args}, caller, timestamp} ->
+        {{y, mm, d}, {h, m, s}} = :calendar.now_to_datetime(timestamp)
+        arg_list = Enum.map(args, &inspect/1)
+
+        {pid, type,
+         "[#{y}-#{mm}-#{d} #{h}:#{m}:#{s}] (#{inspect(pid)}) #{inspect(module)}.#{fun}(#{Enum.join(arg_list, ", ")}) caller: #{inspect(caller)}"}
+
+      {_, pid, :call = type, {module, fun, args}, timestamp} ->
+        {{y, mm, d}, {h, m, s}} = :calendar.now_to_datetime(timestamp)
+        arg_list = Enum.map(args, &inspect/1)
+
+        {pid, type,
+         "[#{y}-#{mm}-#{d} #{h}:#{m}:#{s}] (#{inspect(pid)}) #{inspect(module)}.#{fun}(#{Enum.join(arg_list, ", ")})"}
+
+      {_, pid, :return_from = type, {module, fun, arity}, return_value, timestamp} ->
+        {{y, mm, d}, {h, m, s}} = :calendar.now_to_datetime(timestamp)
+
+        {pid, type,
+         "[#{y}-#{mm}-#{d} #{h}:#{m}:#{s}] (#{inspect(pid)}) #{inspect(module)}.#{fun}/#{arity}}) return_value: #{inspect(return_value)}"}
+
+      {_, pid, :exception_from = type, {module, fun, arity}, exception_value, timestamp} ->
+        {{y, mm, d}, {h, m, s}} = :calendar.now_to_datetime(timestamp)
+
+        {pid, type,
+         "[#{y}-#{mm}-#{d} #{h}:#{m}:#{s}] (#{inspect(pid)}) #{inspect(module)}.#{fun}/#{arity}}) exception_value: #{inspect(exception_value)}"}
+
+      # coveralls-ignore-start
+      trace_msg ->
+        Logger.warning(
+          "Not able to decode trace_mg: #{inspect(trace_msg)} session_index: #{inspect(index)}"
+        )
+
+        {nil, nil, nil}
+        # coveralls-ignore-stop
+    end
+  end
+
+  defp dispatch_to_tool(:display, tool_state, _trace_ms, _tracer_pid, _session_id), do: tool_state
+
+  defp dispatch_to_tool(tool, tool_state, trace_ms, tracer_pid, session_id) do
+    new_tool_state = Tool.handle_event(tool, trace_ms, tool_state)
+    send(tracer_pid, {:tool_state_update, session_id, new_tool_state})
+    new_tool_state
   end
 end
