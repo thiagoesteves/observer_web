@@ -46,12 +46,6 @@ defmodule Observer.Web.Test.Router do
 
     observer_dashboard("/observer")
     observer_dashboard("/observer-limited", as: :observer_limited, resolver: LimitedResolver)
-
-    observer_dashboard("/observer-private",
-      as: :observer_private,
-      observer_name: ObserverPrivate,
-      resolver: PrivateResolver
-    )
   end
 end
 

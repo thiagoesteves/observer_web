@@ -74,12 +74,6 @@ defmodule Observer.Web.RouterTest do
       assert [My.Hook, Observer.Web.Authentication] = Keyword.get(sess_opts, :on_mount)
     end
 
-    test "validating observer name values" do
-      assert_raise ArgumentError, ~r/invalid :observer_name/, fn ->
-        Router.__options__("/observer", observer_name: "MyApp.Observer")
-      end
-    end
-
     test "validating socket_path values" do
       assert_raise ArgumentError, ~r/invalid :socket_path/, fn ->
         Router.__options__("/observer", socket_path: :live)

@@ -12,7 +12,7 @@ defmodule Observer.Web.Authentication do
   alias Observer.Web.Resolver
 
   def on_mount(:default, _params, session, socket) do
-    %{"observer" => _observer, "resolver" => resolver, "user" => user} = session
+    %{"resolver" => resolver, "user" => user} = session
 
     # Add any configuration here
     conf = nil
