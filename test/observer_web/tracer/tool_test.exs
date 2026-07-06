@@ -3,6 +3,7 @@ defmodule ObserverWeb.Tracer.ToolTest do
 
   alias ObserverWeb.Tracer.Tool
   alias ObserverWeb.Tracer.Tool.Count
+  alias ObserverWeb.Tracer.Tool.Duration
   alias ObserverWeb.Tracer.Tool.Event
   alias ObserverWeb.Tracer.Tool.EventCall
   alias ObserverWeb.Tracer.Tool.EventIn
@@ -18,20 +19,52 @@ defmodule ObserverWeb.Tracer.ToolTest do
     test "count requires :arity to aggregate by {mod, fun, arity} instead of argument values" do
       assert Tool.dbg_flags(:count) == [:c, :timestamp, :arity]
     end
+
+    test "duration requires :arity for the same reason as count" do
+      assert Tool.dbg_flags(:duration) == [:c, :timestamp, :arity]
+    end
   end
 
-  describe "init/1, handle_event/3, handle_stop/2 for :count" do
+  describe "forced_match_spec_keys/1" do
+    test "duration forces return_trace to see :return_from events" do
+      assert Tool.forced_match_spec_keys(:duration) == ["return_trace"]
+    end
+
+    test "count and display force nothing" do
+      assert Tool.forced_match_spec_keys(:count) == []
+      assert Tool.forced_match_spec_keys(:display) == []
+    end
+  end
+
+  describe "init/2, handle_event/3, handle_stop/2 for :count" do
     test "dispatches to ObserverWeb.Tracer.Tool.Count" do
       pid = self()
       ts = :erlang.timestamp()
-      initial_state = Tool.init(:count)
+      initial_state = Tool.init(:count, %{})
 
       assert %Count{} = initial_state
 
       state =
         Tool.handle_event(:count, {:trace_ts, pid, :call, {String, :split, 2}, ts}, initial_state)
 
-      assert Tool.handle_stop(:count, state) == [{{String, :split, 2, nil}, 1}]
+      assert Tool.handle_stop(:count, state) == [{{Node.self(), String, :split, 2, nil}, 1}]
+    end
+  end
+
+  describe "init/2, handle_event/3, handle_stop/2 for :duration" do
+    test "dispatches to ObserverWeb.Tracer.Tool.Duration, honoring tool_opts" do
+      pid = self()
+      initial_state = Tool.init(:duration, %{aggregation: :sum})
+
+      assert %Duration{aggregation: :sum} = initial_state
+
+      call_trace = {:trace_ts, pid, :call, {String, :split, 2}, {0, 0, 0}}
+      return_trace = {:trace_ts, pid, :return_from, {String, :split, 2}, [], {0, 0, 10}}
+
+      state = Tool.handle_event(:duration, call_trace, initial_state)
+      state = Tool.handle_event(:duration, return_trace, state)
+
+      assert Tool.handle_stop(:duration, state) == [{{Node.self(), String, :split, 2, nil}, 10}]
     end
   end
 

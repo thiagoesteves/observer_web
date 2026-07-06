@@ -17,6 +17,7 @@ defmodule ObserverWeb.Tracer do
           functions_by_node: map(),
           request_pid: pid() | nil,
           tool: ObserverWeb.Tracer.Tool.t(),
+          tool_opts: map(),
           tool_state: term()
         }
 
@@ -27,6 +28,7 @@ defmodule ObserverWeb.Tracer do
             functions_by_node: %{},
             request_pid: nil,
             tool: :display,
+            tool_opts: %{},
             tool_state: nil
 
   ### ==========================================================================
@@ -111,10 +113,11 @@ defmodule ObserverWeb.Tracer do
   @doc """
   This function starts the trace for the passed module/functions
 
-  Accepts an optional `:tool` attr (`:display`, the default, or `:count`) selecting how trace
-  events are reported back: `:display` streams each event as a `{:new_trace_message, ...}` message
-  like today, other tools instead accumulate events and report a single
-  `{:tool_report, session_id, report}` message when the session ends.
+  Accepts an optional `:tool` attr (`:display`, the default, `:count`, or `:duration`) selecting
+  how trace events are reported back: `:display` streams each event as a `{:new_trace_message,
+  ...}` message like today, other tools instead accumulate events and report a single
+  `{:tool_report, session_id, report}` message when the session ends. `:tool_opts` passes
+  per-tool options, e.g. `%{aggregation: :avg}` for `:duration`.
   """
   @spec start_trace(functions :: list(), attrs :: map()) ::
           {:ok, t()} | {:error, :already_started}

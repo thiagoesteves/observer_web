@@ -17,7 +17,7 @@ defmodule ObserverWeb.Tracer.Tool.CountTest do
       |> Count.handle_event(event)
       |> Count.handle_event(event)
 
-    assert Count.handle_stop(state) == [{{String, :split, 2, nil}, 2}]
+    assert Count.handle_stop(state) == [{{Node.self(), String, :split, 2, nil}, 2}]
   end
 
   test "handle_event/2 keeps distinct message content as separate keys" do
@@ -45,8 +45,8 @@ defmodule ObserverWeb.Tracer.Tool.CountTest do
 
     result = Count.handle_stop(state)
 
-    assert {{String, :split, 2, inspect(self())}, 2} in result
-    assert {{String, :split, 2, inspect(other_pid)}, 1} in result
+    assert {{Node.self(), String, :split, 2, inspect(self())}, 2} in result
+    assert {{Node.self(), String, :split, 2, inspect(other_pid)}, 1} in result
   end
 
   test "handle_event/2 ignores non-call events" do
@@ -74,7 +74,10 @@ defmodule ObserverWeb.Tracer.Tool.CountTest do
       |> Count.handle_event(frequent)
       |> Count.handle_event(rare)
 
-    assert [{{CountTestModA, :f, 0, nil}, 3}, {{CountTestModB, :g, 0, nil}, 1}] ==
+    assert [
+             {{Node.self(), CountTestModA, :f, 0, nil}, 3},
+             {{Node.self(), CountTestModB, :g, 0, nil}, 1}
+           ] ==
              Count.handle_stop(state)
   end
 end

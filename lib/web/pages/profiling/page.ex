@@ -1,10 +1,10 @@
 defmodule Observer.Web.Profiling.Page do
   @moduledoc """
-  This is the live component responsible for handling the Profiling tools (Count, Duration, Call
-  Sequence, Flame Graph - only Count is wired up so far). Shares the node/module/function
-  selection logic with `Observer.Web.Tracing.Page` via `Observer.Web.Tracing.Selection`, but runs
-  its sessions with a `tool` selected instead of the raw match-spec picker, and shows a single
-  aggregated report instead of a live event stream.
+  This is the live component responsible for handling the Profiling tools (Count, Duration - Call
+  Sequence and Flame Graph still to come). Shares the node/module/function selection logic with
+  `Observer.Web.Tracing.Page` via `Observer.Web.Tracing.Selection`, but runs its sessions with a
+  `tool` selected instead of the raw match-spec picker, and shows a single aggregated report
+  instead of a live event stream.
   """
 
   @behaviour Observer.Web.Page
@@ -36,11 +36,24 @@ defmodule Observer.Web.Profiling.Page do
 
     show_tracing_options = trace_idle? and trace_owner? and assigns.show_tracing_options
 
-    attention_msg = ~H"""
-    Count tallies how many times each traced function was called. Like Live Tracing, it enforces
-    limits on the maximum number of events and applies a timeout (in seconds) to ensure the
-    debugger doesn't remain active unintentionally.
-    """
+    tool = assigns.form.params["tool"] || "count"
+
+    attention_msg =
+      case tool do
+        "duration" ->
+          ~H"""
+          Duration measures how long each traced function call takes. Like Live Tracing, it
+          enforces limits on the maximum number of events and applies a timeout (in seconds) to
+          ensure the debugger doesn't remain active unintentionally.
+          """
+
+        _count ->
+          ~H"""
+          Count tallies how many times each traced function was called. Like Live Tracing, it
+          enforces limits on the maximum number of events and applies a timeout (in seconds) to
+          ensure the debugger doesn't remain active unintentionally.
+          """
+      end
 
     assigns =
       assigns
@@ -51,6 +64,7 @@ defmodule Observer.Web.Profiling.Page do
       |> assign(trace_owner?: trace_owner?)
       |> assign(show_tracing_options: show_tracing_options)
       |> assign(attention_msg: attention_msg)
+      |> assign(tool: tool)
 
     ~H"""
     <div class="min-h-screen bg-white dark:bg-gray-800">
@@ -67,6 +81,28 @@ defmodule Observer.Web.Profiling.Page do
             class="flex ml-2 mr-2 text-xs text-center text-zinc-800 dark:text-white  whitespace-nowrap gap-5"
             phx-change="form-update"
           >
+            <Core.input
+              field={@form[:tool]}
+              type="select"
+              label="Tool"
+              options={[{"Count", "count"}, {"Duration", "duration"}]}
+            />
+
+            <Core.input
+              :if={@tool == "duration"}
+              field={@form[:aggregation]}
+              type="select"
+              label="Aggregation"
+              options={[
+                {"None (every call)", "none"},
+                {"Sum", "sum"},
+                {"Average", "avg"},
+                {"Min", "min"},
+                {"Max", "max"},
+                {"Distribution", "dist"}
+              ]}
+            />
+
             <Core.input
               field={@form[:max_messages]}
               type="number"
@@ -143,22 +179,25 @@ defmodule Observer.Web.Profiling.Page do
         >
           Select functions to trace and press RUN to collect counts.
         </div>
-        <Core.table_process
-          :if={@report != nil}
-          id="profiling-count-results"
-          title="Count Results"
-          rows={@report}
-        >
-          <:col :let={{{mod, fun, arity, _message}, _count}} label="FUNCTION">
-            {inspect(mod)}.{fun}/{arity}
-          </:col>
-          <:col :let={{{_mod, _fun, _arity, message}, _count}} label="MESSAGE">
-            {inspect(message)}
-          </:col>
-          <:col :let={{_key, count}} label="COUNT">
-            {count}
-          </:col>
-        </Core.table_process>
+        <div :if={@report != nil} class="bg-white dark:bg-gray-800 w-full shadow-lg rounded">
+          <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+            {if @tool == "duration", do: "Duration Results", else: "Count Results"}
+          </h2>
+          <Core.table_tracing id="profiling-results" rows={@report}>
+            <:col :let={{{node, _mod, _fun, _arity, _message}, _value}} label="SERVICE">
+              {node}
+            </:col>
+            <:col :let={{{_node, mod, fun, arity, _message}, _value}} label="FUNCTION">
+              {inspect(mod)}.{fun}/{arity}
+            </:col>
+            <:col
+              :let={{_key, value}}
+              label={if @tool == "duration", do: "DURATION (µs)", else: "COUNT"}
+            >
+              {format_value(value)}
+            </:col>
+          </Core.table_tracing>
+        </div>
       </div>
     </div>
     """
@@ -203,19 +242,8 @@ defmodule Observer.Web.Profiling.Page do
     {:noreply, assign(socket, :show_tracing_options, show_tracing_options)}
   end
 
-  def handle_parent_event(
-        "form-update",
-        %{"max_messages" => max_messages, "session_timeout_seconds" => session_timeout_seconds},
-        socket
-      ) do
-    {:noreply,
-     assign(socket,
-       form:
-         to_form(%{
-           "max_messages" => max_messages,
-           "session_timeout_seconds" => session_timeout_seconds
-         })
-     )}
+  def handle_parent_event("form-update", params, socket) do
+    {:noreply, assign(socket, form: to_form(params))}
   end
 
   def handle_parent_event(
@@ -251,12 +279,14 @@ defmodule Observer.Web.Profiling.Page do
 
     if tracer_state.status == :idle do
       functions_to_monitor = Selection.build_functions_to_monitor(node_info)
+      tool = String.to_existing_atom(form.params["tool"] || "count")
 
       case Tracer.start_trace(functions_to_monitor, %{
              max_messages: String.to_integer(form.params["max_messages"]),
              session_timeout_ms:
                String.to_integer(form.params["session_timeout_seconds"]) * 1_000,
-             tool: :count
+             tool: tool,
+             tool_opts: %{aggregation: aggregation_opt(form.params["aggregation"])}
            }) do
         {:ok, %{session_id: session_id}} ->
           {:noreply,
@@ -403,10 +433,28 @@ defmodule Observer.Web.Profiling.Page do
 
   defp default_form_options do
     %{
-      "max_messages" => "1000",
+      "tool" => "count",
+      "aggregation" => "none",
+      "max_messages" => "100",
       "session_timeout_seconds" => "30"
     }
   end
 
+  defp aggregation_opt(aggregation) when aggregation in [nil, "", "none"], do: nil
+  defp aggregation_opt(aggregation), do: String.to_existing_atom(aggregation)
+
   defp default_form_search_options, do: %{"modules" => "", "functions" => ""}
+
+  # The :dist aggregation reports a %{bucket => count} power-of-two histogram (see
+  # ObserverWeb.Tracer.Tool.Duration) - render it as readable ranges instead of an inspected map.
+  defp format_value(value) when is_map(value) do
+    value
+    |> Enum.sort_by(&elem(&1, 0))
+    |> Enum.map_join(", ", fn {bucket, count} ->
+      upper = if bucket == 0, do: 1, else: bucket * 2
+      "#{bucket}-#{upper}µs: #{count}"
+    end)
+  end
+
+  defp format_value(value), do: inspect(value)
 end

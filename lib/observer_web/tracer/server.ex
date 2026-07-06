@@ -82,7 +82,8 @@ defmodule ObserverWeb.Tracer.Server do
     monitored_nodes = Map.keys(functions_by_node)
 
     tool = new_state.tool
-    tool_state = if tool == :display, do: nil, else: Tool.init(tool)
+    tool_state = if tool == :display, do: nil, else: Tool.init(tool, new_state.tool_opts)
+    forced_match_spec_keys = Tool.forced_match_spec_keys(tool)
 
     session_info = %{
       session_id: session_id,
@@ -109,8 +110,10 @@ defmodule ObserverWeb.Tracer.Server do
       # Add functions to be traced
       # credo:disable-for-lines:12
       Enum.each(functions, fn function ->
+        match_spec_keys = Enum.uniq(function.match_spec ++ forced_match_spec_keys)
+
         match_specs =
-          Enum.reduce(function.match_spec, [], fn spec, acc ->
+          Enum.reduce(match_spec_keys, [], fn spec, acc ->
             atom_spec = String.to_existing_atom(spec)
 
             case Map.get(default_functions_matchspecs, atom_spec) do

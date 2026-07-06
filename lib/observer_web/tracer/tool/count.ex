@@ -7,7 +7,9 @@ defmodule ObserverWeb.Tracer.Tool.Count do
   match DSL (each bound variable becomes a `[name, value]` pair). Observer Web doesn't bring that
   DSL over - the existing return_trace/exception_trace/caller/process_dump match specs each
   produce a single raw term instead (e.g. `caller()`'s calling pid), so there's no `[name, value]`
-  list to unpack. Counts are grouped by the traced `{mod, fun, arity}` plus that raw message value.
+  list to unpack. Counts are grouped by the reporting node, the traced `{mod, fun, arity}`, and
+  that raw message value - a call to the same function on two different nodes is tallied
+  separately, matching how Live Tracing identifies which node ("service") each event came from.
   """
 
   alias __MODULE__
@@ -22,12 +24,13 @@ defmodule ObserverWeb.Tracer.Tool.Count do
 
   @spec handle_event(t(), struct()) :: t()
   def handle_event(%Count{counts: counts} = state, %EventCall{
+        pid: pid,
         mod: mod,
         fun: fun,
         arity: arity,
         message: message
       }) do
-    key = {mod, fun, arity, message_repr(message)}
+    key = {node(pid), mod, fun, arity, message_repr(message)}
     %{state | counts: Map.update(counts, key, 1, &(&1 + 1))}
   end
 
