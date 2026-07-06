@@ -6,8 +6,8 @@ on:
 
 env:
   MIX_ENV: test
-  elixir_version: '1.17.0'
-  otp_version: '26.2.5.6'
+  elixir_version: '1.20.1'
+  otp_version: '29.0.2'
 
 jobs:
   setup:
@@ -37,7 +37,7 @@ jobs:
         run: mkdir -p priv/static && touch priv/static/app.css && touch priv/static/app.js
         
       - name: Install Elixir dependencies
-        run: mix do deps.get, compile --warnings-as-errors
+        run: mix do deps.get + compile --warnings-as-errors
 
   test:
     name: Test
@@ -99,7 +99,7 @@ jobs:
         run: mkdir -p priv/static && touch priv/static/app.css && touch priv/static/app.js
         
       - name: Install Elixir dependencies
-        run: mix do deps.get, compile --warnings-as-errors
+        run: mix do deps.get + compile --warnings-as-errors
 
       - name: Run mix deps.unlock
         run: mix deps.unlock --check-unused
