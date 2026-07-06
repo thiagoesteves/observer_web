@@ -11,6 +11,7 @@ defmodule ObserverWeb.Tracer.ToolTest do
   alias ObserverWeb.Tracer.Tool.EventOut
   alias ObserverWeb.Tracer.Tool.EventReturnFrom
   alias ObserverWeb.Tracer.Tool.EventReturnTo
+  alias ObserverWeb.Tracer.Tool.FlameGraph
 
   describe "dbg_flags/1" do
     test "display traces full argument values (no :arity flag)" do
@@ -28,6 +29,10 @@ defmodule ObserverWeb.Tracer.ToolTest do
     test "call_seq requires :arity for the same reason as count" do
       assert Tool.dbg_flags(:call_seq) == [:c, :timestamp, :arity]
     end
+
+    test "flame_graph additionally requires :return_to (but not :running - see FlameGraph)" do
+      assert Tool.dbg_flags(:flame_graph) == [:c, :timestamp, :arity, :return_to]
+    end
   end
 
   describe "forced_match_spec_keys/1" do
@@ -39,9 +44,10 @@ defmodule ObserverWeb.Tracer.ToolTest do
       assert Tool.forced_match_spec_keys(:call_seq) == ["call_seq"]
     end
 
-    test "count and display force nothing" do
+    test "count, display and flame_graph force nothing" do
       assert Tool.forced_match_spec_keys(:count) == []
       assert Tool.forced_match_spec_keys(:display) == []
+      assert Tool.forced_match_spec_keys(:flame_graph) == []
     end
   end
 
@@ -94,6 +100,24 @@ defmodule ObserverWeb.Tracer.ToolTest do
                %{type: :enter, mod: String, fun: :split, arity: 2, detail: ["a", "b"]},
                %{type: :exit, mod: String, fun: :split, arity: 2, detail: ["a"]}
              ] = Tool.handle_stop(:call_seq, state)
+    end
+  end
+
+  describe "init/2, handle_event/3, handle_stop/2 for :flame_graph" do
+    test "dispatches to ObserverWeb.Tracer.Tool.FlameGraph" do
+      pid = self()
+      initial_state = Tool.init(:flame_graph, %{})
+
+      assert %FlameGraph{} = initial_state
+
+      call_trace = {:trace_ts, pid, :call, {String, :split, 2}, {0, 0, 1}}
+      return_to_trace = {:trace_ts, pid, :return_to, :undefined, {0, 0, 11}}
+
+      state = Tool.handle_event(:flame_graph, call_trace, initial_state)
+      state = Tool.handle_event(:flame_graph, return_to_trace, state)
+
+      assert [%{value: 10, children: [%{name: "String.split/2", value: 10, children: []}]}] =
+               Tool.handle_stop(:flame_graph, state)
     end
   end
 
@@ -154,6 +178,17 @@ defmodule ObserverWeb.Tracer.ToolTest do
 
       assert %EventOut{mod: String, fun: :split, arity: 2, pid: ^pid} =
                Tool.from_trace({:trace_ts, pid, :out, {String, :split, 2}, ts})
+    end
+
+    test "translates :in and :out events with an unknown (0) MFA" do
+      pid = self()
+      ts = :erlang.timestamp()
+
+      assert %EventIn{mod: :undefined, fun: :undefined, arity: 0, pid: ^pid} =
+               Tool.from_trace({:trace_ts, pid, :in, 0, ts})
+
+      assert %EventOut{mod: :undefined, fun: :undefined, arity: 0, pid: ^pid} =
+               Tool.from_trace({:trace_ts, pid, :out, 0, ts})
     end
 
     test "falls back to a generic Event for anything else" do

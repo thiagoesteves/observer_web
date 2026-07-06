@@ -84,6 +84,7 @@ defmodule ObserverWeb.Tracer.Server do
     tool = new_state.tool
     tool_state = if tool == :display, do: nil, else: Tool.init(tool, new_state.tool_opts)
     forced_match_spec_keys = Tool.forced_match_spec_keys(tool)
+    trace_pattern_fun = if Tool.local_tracing?(tool), do: &:dbg.tpl/4, else: &:dbg.tp/4
 
     session_info = %{
       session_id: session_id,
@@ -124,7 +125,7 @@ defmodule ObserverWeb.Tracer.Server do
             end
           end)
 
-        :dbg.tp(function.module, function.function, function.arity, match_specs)
+        trace_pattern_fun.(function.module, function.function, function.arity, match_specs)
       end)
     end)
 

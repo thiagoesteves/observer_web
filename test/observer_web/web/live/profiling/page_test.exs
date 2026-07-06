@@ -303,6 +303,53 @@ defmodule Observer.Web.Profiling.PageLiveTest do
     refute html =~ "STOP"
   end
 
+  test "Run Flame Graph for every call in a module", %{conn: conn} do
+    node = Node.self() |> to_string
+    service = Helpers.normalize_id(node)
+
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/profiling")
+
+    index_live
+    |> element("#profiling-multi-select-toggle-options")
+    |> render_click()
+
+    index_live
+    |> element("#profiling-multi-select-services-#{service}-add-item")
+    |> render_click()
+
+    index_live
+    |> element(
+      "#profiling-multi-select-modules-Elixir-ObserverWeb-TracerFixtures-Callee-add-item"
+    )
+    |> render_click()
+
+    index_live
+    |> element("#profiling-update-form")
+    |> render_change(%{tool: "flame_graph", max_messages: 2, session_timeout_seconds: 30})
+
+    html =
+      index_live
+      |> element("#profiling-multi-select-run", "RUN")
+      |> render_click()
+
+    refute html =~ "RUN"
+    assert html =~ "STOP"
+
+    Callee.add(2, 3)
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "Flame Graph Results"
+    assert html =~ "profiling-flame-graph-chart"
+    assert html =~ "TracerFixtures.Callee.add/2"
+    assert html =~ "RUN"
+    refute html =~ "STOP"
+  end
+
   test "Stop button reports the count collected so far", %{conn: conn} do
     node = Node.self() |> to_string
     service = Helpers.normalize_id(node)

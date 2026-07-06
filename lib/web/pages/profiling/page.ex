@@ -1,7 +1,7 @@
 defmodule Observer.Web.Profiling.Page do
   @moduledoc """
-  This is the live component responsible for handling the Profiling tools (Count, Duration - Call
-  Sequence and Flame Graph still to come). Shares the node/module/function selection logic with
+  This is the live component responsible for handling the Profiling tools (Count, Duration, Call
+  Sequence and Flame Graph). Shares the node/module/function selection logic with
   `Observer.Web.Tracing.Page` via `Observer.Web.Tracing.Selection`, but runs its sessions with a
   `tool` selected instead of the raw match-spec picker, and shows a single aggregated report
   instead of a live event stream.
@@ -55,6 +55,14 @@ defmodule Observer.Web.Profiling.Page do
           unintentionally.
           """
 
+        "flame_graph" ->
+          ~H"""
+          Flame Graph traces every call in the selected module(s) and shows how much time each
+          process spent in each call stack, as a sunburst chart (one ring per stack depth). Like
+          Live Tracing, it enforces limits on the maximum number of events and applies a timeout
+          (in seconds) to ensure the debugger doesn't remain active unintentionally.
+          """
+
         _count ->
           ~H"""
           Count tallies how many times each traced function was called. Like Live Tracing, it
@@ -93,7 +101,12 @@ defmodule Observer.Web.Profiling.Page do
               field={@form[:tool]}
               type="select"
               label="Tool"
-              options={[{"Count", "count"}, {"Duration", "duration"}, {"Call Sequence", "call_seq"}]}
+              options={[
+                {"Count", "count"},
+                {"Duration", "duration"},
+                {"Call Sequence", "call_seq"},
+                {"Flame Graph", "flame_graph"}
+              ]}
             />
 
             <Core.input
@@ -191,7 +204,11 @@ defmodule Observer.Web.Profiling.Page do
           <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
             {result_title(@tool)}
           </h2>
-          <Core.table_tracing :if={@tool != "call_seq"} id="profiling-results" rows={@report}>
+          <Core.table_tracing
+            :if={@tool not in ["call_seq", "flame_graph"]}
+            id="profiling-results"
+            rows={@report}
+          >
             <:col :let={{{node, _mod, _fun, _arity, _message}, _value}} label="SERVICE">
               {node}
             </:col>
@@ -218,11 +235,34 @@ defmodule Observer.Web.Profiling.Page do
               </span>
             </:col>
           </Core.table_tracing>
+          <div
+            :if={@tool == "flame_graph"}
+            id="profiling-flame-graph"
+            class="ml-5 mr-5 mt-2"
+            phx-hook="ObserverEChart"
+            data-merge={false}
+          >
+            <div
+              id="profiling-flame-graph-chart"
+              style="width: 100%; height: 600px;"
+              phx-update="ignore"
+            />
+            <div id="profiling-flame-graph-data" hidden>
+              {Jason.encode!(sunburst_chart_data(@report))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
     """
   end
+
+  # ObserverEChart (shared with Observer.Web.Apps.Page's tree chart) always pushes this event on
+  # tooltip render so its host can drill into the hovered node - the Flame Graph sunburst has no
+  # such drill-down, but without a matching handle_event/3 clause here the hook would crash this
+  # LiveComponent (no default/fallback clause exists) the first time a user hovers over it.
+  @impl Phoenix.LiveComponent
+  def handle_event("request-process", _params, socket), do: {:noreply, socket}
 
   @impl Page
   def handle_mount(socket) when is_connected?(socket) do
@@ -300,7 +340,7 @@ defmodule Observer.Web.Profiling.Page do
 
     if tracer_state.status == :idle do
       functions_to_monitor = Selection.build_functions_to_monitor(node_info)
-      tool = String.to_existing_atom(form.params["tool"] || "count")
+      tool = tool_atom(form.params["tool"])
 
       case Tracer.start_trace(functions_to_monitor, %{
              max_messages: String.to_integer(form.params["max_messages"]),
@@ -461,14 +501,52 @@ defmodule Observer.Web.Profiling.Page do
     }
   end
 
+  # `String.to_existing_atom/1` requires the target atom to already be interned in the VM, which
+  # only happens once the module that mentions it as a literal (`ObserverWeb.Tracer.Tool`,
+  # `ObserverWeb.Tracer.Tool.Duration`) has actually been loaded - normally by an earlier trace
+  # session. On a freshly booted node, using one of these tools/aggregations for the very first
+  # time would otherwise crash with `ArgumentError: not an already existing atom`. Mapping from the
+  # fixed, known set of values our own `<Core.input type="select">` options offer (not arbitrary
+  # user input) sidesteps that entirely, since the atom literals below are guaranteed to already
+  # exist as soon as this module itself is loaded.
+  @spec tool_atom(String.t() | nil) :: ObserverWeb.Tracer.Tool.t()
+  defp tool_atom("duration"), do: :duration
+  defp tool_atom("call_seq"), do: :call_seq
+  defp tool_atom("flame_graph"), do: :flame_graph
+  defp tool_atom(_count), do: :count
+
   defp aggregation_opt(aggregation) when aggregation in [nil, "", "none"], do: nil
-  defp aggregation_opt(aggregation), do: String.to_existing_atom(aggregation)
+  defp aggregation_opt("sum"), do: :sum
+  defp aggregation_opt("avg"), do: :avg
+  defp aggregation_opt("min"), do: :min
+  defp aggregation_opt("max"), do: :max
+  defp aggregation_opt("dist"), do: :dist
 
   defp default_form_search_options, do: %{"modules" => "", "functions" => ""}
 
   defp result_title("duration"), do: "Duration Results"
   defp result_title("call_seq"), do: "Call Sequence Results"
+  defp result_title("flame_graph"), do: "Flame Graph Results"
   defp result_title(_count), do: "Count Results"
+
+  defp sunburst_chart_data(report) do
+    %{
+      tooltip: %{
+        trigger: "item",
+        triggerOn: "mousemove",
+        formatter: "{b}: {c}µs"
+      },
+      series: [
+        %{
+          type: "sunburst",
+          radius: [0, "95%"],
+          data: report,
+          label: %{rotate: "radial"},
+          emphasis: %{focus: "ancestor"}
+        }
+      ]
+    }
+  end
 
   # The :dist aggregation reports a %{bucket => count} power-of-two histogram (see
   # ObserverWeb.Tracer.Tool.Duration) - render it as readable ranges instead of an inspected map.
