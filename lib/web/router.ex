@@ -32,22 +32,16 @@ defmodule Observer.Web.Router do
 
   ### Running Multiple Dashboards
 
-  A single dashboard may connect to any number of running Observer instances. However, it's also
-  possible to change the default instance via the `:observer_name` option. For example, given two
-  configured Observer instances, `Observer` and `MyAdmin.Observer`, you can then mount both dashboards in your
-  router:
+  A single router can mount more than one dashboard, each with its own path and `:as` name:
 
   ```elixir
   scope "/" do
     pipe_through :browser
 
-    observer_dashboard "/observer", observer_name: Observer, as: :observer_dashboard
-    observer_dashboard "/admin/observer", observer_name: MyAdmin.Observer, as: :observer_admin_dashboard
+    observer_dashboard "/observer", as: :observer_dashboard
+    observer_dashboard "/admin/observer", as: :observer_admin_dashboard
   end
   ```
-
-  Note that the default name is `Observer` or the first found instance, setting `observer_name: Observer` in
-  the example above was purely for demonstration purposes.
 
   ### On Mount Hooks
 
@@ -153,9 +147,6 @@ defmodule Observer.Web.Router do
 
   * `:on_mount` — declares additional module callbacks to be invoked when the dashboard mounts
 
-  * `:observer_name` — name of the Observer instance the dashboard will use for configuration and
-    notifications, defaults to `Observer` or the first instance that can be found.
-
   * `:resolver` — an `Observer.Web.Resolver` implementation used to customize the dashboard's
     functionality.
 
@@ -226,7 +217,6 @@ defmodule Observer.Web.Router do
 
     session_args = [
       prefix,
-      opts[:observer_name],
       opts[:resolver],
       opts[:socket_path],
       opts[:transport],
@@ -246,14 +236,13 @@ defmodule Observer.Web.Router do
   end
 
   @doc false
-  def __session__(conn, prefix, observer, resolver, live_path, live_transport, csp_key, logo_path) do
+  def __session__(conn, prefix, resolver, live_path, live_transport, csp_key, logo_path) do
     user = Resolver.call_with_fallback(resolver, :resolve_user, [conn])
 
     csp_keys = expand_csp_nonce_keys(csp_key)
 
     %{
       "prefix" => prefix,
-      "observer" => observer,
       "user" => user,
       "resolver" => resolver,
       "access" => Resolver.call_with_fallback(resolver, :resolve_access, [user]),
@@ -286,15 +275,6 @@ defmodule Observer.Web.Router do
       raise ArgumentError, """
       invalid :logo_path, expected nil or a non-empty binary path,
       got: #{inspect(path)}
-      """
-    end
-  end
-
-  defp validate_opt!({:observer_name, name}) do
-    unless is_atom(name) do
-      raise ArgumentError, """
-      invalid :observer_name, expected a module or atom,
-      got #{inspect(name)}
       """
     end
   end
