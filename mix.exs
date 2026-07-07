@@ -104,9 +104,7 @@ defmodule ObserverWeb.MixProject do
     static_destination_path = "./doc/static"
     File.mkdir_p!(static_destination_path)
 
-    File.cp_r("./guides/static", static_destination_path, fn _source, _destination ->
-      true
-    end)
+    File.cp_r!("./guides/static", static_destination_path)
   end
 
   # Specifies your project dependencies.
