@@ -3,9 +3,9 @@
 # Observer Web
 
 Observer Web is an easy-to-use tool that integrates into your application, providing
-enhanced observability. Leveraging OTP distribution, it offers tracing through the
-[Erlang debugger][edb], along with detailed insights into process/port statuses
-and Beam VM statistics.
+enhanced observability. Leveraging OTP distribution, it offers tracing and profiling
+through the [Erlang debugger][edb], along with detailed insights into process/port
+statuses and Beam VM statistics.
 
 Powered by [Phoenix LiveView][liv], it is distributed, lightweight, fully real-time and __safe to use in production__. This
 library is part of the [DeployEx][dye] project.
@@ -14,6 +14,9 @@ library is part of the [DeployEx][dye] project.
 
 ### Distributed tracing safe to use in production
 ![Tracing Dashboard](./guides/static/tracing_dash.png)
+
+### Function profiling with Count, Duration, Call Sequence and Flame Graph tools
+![Profiling Dashboard](./guides/static/profiling_dash.png)
 
 ### Application topology view with processes, ports, references, links and relations.
 ![Applications Dashboard](./guides/static/applications_tree.png)

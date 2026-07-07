@@ -58,6 +58,25 @@ defmodule Observer.Web.Components.Icons do
             />
           </g>
         </svg>
+      <% :profiling -> %>
+        <svg
+          class="flex-shrink-0 w-5 h-5 mr-4 text-gray-900 dark:text-white"
+          width="24px"
+          height="24px"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 3v18h18" /><rect
+            x="7"
+            y="12"
+            width="3"
+            height="6"
+          /><rect x="12" y="8" width="3" height="10" /><rect x="17" y="5" width="3" height="13" />
+        </svg>
       <% :metrics -> %>
         <svg
           class="flex-shrink-0 w-5 h-5 mr-4 text-gray-900 dark:text-white"

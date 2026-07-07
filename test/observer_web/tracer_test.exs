@@ -39,6 +39,18 @@ defmodule ObserverWeb.TracerTest do
              caller: %{pattern: [{:_, [], [{:message, {:caller}}]}]},
              process_dump: %{pattern: [{:_, [], [{:message, {:process_dump}}]}]}
            } = Tracer.get_default_functions_matchspecs()
+
+    # The tool-internal match specs must stay out of this map - the Tracing page renders every
+    # key here as a user-facing match-spec option.
+    refute Map.has_key?(Tracer.get_default_functions_matchspecs(), :capture_args)
+    refute Map.has_key?(Tracer.get_default_functions_matchspecs(), :call_seq)
+  end
+
+  test "get_tool_functions_matchspecs/0" do
+    assert %{
+             capture_args: %{pattern: [{:_, [], [{:message, :"$_"}]}]},
+             call_seq: %{pattern: [{:_, [], [{:return_trace}, {:message, :"$_"}]}]}
+           } = Tracer.get_tool_functions_matchspecs()
   end
 
   describe "start_trace/2" do
@@ -222,6 +234,34 @@ defmodule ObserverWeb.TracerTest do
       assert %Tracer{status: :running} = Tracer.state()
 
       terminate_tracing(session_id)
+    end
+
+    test "Notifies the requester with :stop_tracing when max_messages is reached" do
+      node = Node.self()
+
+      functions = [
+        %{
+          arity: 2,
+          function: :testing_adding_fun,
+          match_spec: [],
+          module: TracerFixtures,
+          node: node
+        }
+      ]
+
+      assert {:ok, %{session_id: session_id}} =
+               Tracer.start_trace(functions, %{max_messages: 1})
+
+      TracerFixtures.testing_adding_fun(1, 1)
+
+      assert_receive {:new_trace_message, ^session_id, ^node, 1, :call, _msg}, 1_000
+      assert_receive {:stop_tracing, ^session_id}, 1_000
+
+      # The session is fully reset, ready for the next one
+      assert %Tracer{status: :idle, session_id: nil} = Tracer.state()
+
+      # :dbg needs a moment to settle before the next test starts a new session
+      :timer.sleep(50)
     end
 
     test "Ignore stop_trace with invalid session_id [handle_info]" do

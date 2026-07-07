@@ -15,7 +15,10 @@ defmodule ObserverWeb.Tracer do
           max_messages: non_neg_integer(),
           session_timeout_ms: non_neg_integer(),
           functions_by_node: map(),
-          request_pid: pid() | nil
+          request_pid: pid() | nil,
+          tool: ObserverWeb.Tracer.Tool.t(),
+          tool_opts: map(),
+          tool_state: term()
         }
 
   defstruct status: :idle,
@@ -23,7 +26,10 @@ defmodule ObserverWeb.Tracer do
             max_messages: @default_max_msg,
             session_timeout_ms: @default_session_timeout_ms,
             functions_by_node: %{},
-            request_pid: nil
+            request_pid: nil,
+            tool: :display,
+            tool_opts: %{},
+            tool_state: nil
 
   ### ==========================================================================
   ### Public APIs
@@ -76,7 +82,12 @@ defmodule ObserverWeb.Tracer do
   end
 
   @doc """
-  This function retrieves all match specs available
+  This function retrieves all match specs available in the Tracing page's match-spec picker.
+
+  NOTE: `ObserverWeb.Tracer.Server` concatenates the patterns of every selected key into separate
+  match-spec clauses (not a single clause with combined actions), and Erlang match specs only run
+  the first clause whose head matches - since every clause here matches on `_`, selecting more than
+  one key at once means only the first selected key's actions actually run.
   """
   @spec get_default_functions_matchspecs :: map()
   def get_default_functions_matchspecs do
@@ -105,7 +116,42 @@ defmodule ObserverWeb.Tracer do
   end
 
   @doc """
+  Match specs forced in by the Profiling tools (see
+  `ObserverWeb.Tracer.Tool.forced_match_spec_keys/1`), kept separate from
+  `get_default_functions_matchspecs/0` so they don't show up as user-facing options in the Tracing
+  page's match-spec picker - `capture_args` is redundant there (the display tool already traces
+  full argument values) and `call_seq`'s captured arguments would be mislabeled as the caller by
+  the display decoding.
+
+  `call_seq` combines `return_trace()` and argument capture in a single clause because of the
+  first-matching-clause limitation described in `get_default_functions_matchspecs/0` - forcing
+  `return_trace` + `capture_args` as two clauses would only ever run the first one.
+  """
+  @spec get_tool_functions_matchspecs :: map()
+  def get_tool_functions_matchspecs do
+    %{
+      capture_args: %{
+        pattern: [{:_, [], [{:message, :"$_"}]}],
+        name: "Capture Arguments",
+        fun: "fun(_) -> message($_) end"
+      },
+      call_seq: %{
+        pattern: [{:_, [], [{:return_trace}, {:message, :"$_"}]}],
+        name: "Call Sequence (return + arguments)",
+        fun: "fun(_) -> return_trace(), message($_) end"
+      }
+    }
+  end
+
+  @doc """
   This function starts the trace for the passed module/functions
+
+  Accepts an optional `:tool` attr (any `ObserverWeb.Tracer.Tool.t()`: `:display` - the default -
+  `:count`, `:duration`, `:call_seq` or `:flame_graph`) selecting how trace events are reported
+  back: `:display` streams each event as a `{:new_trace_message, ...}` message like today, other
+  tools instead accumulate events and report a single `{:tool_report, session_id, report}` message
+  when the session ends. `:tool_opts` passes per-tool options, e.g. `%{aggregation: :avg}` for
+  `:duration`.
   """
   @spec start_trace(functions :: list(), attrs :: map()) ::
           {:ok, t()} | {:error, :already_started}
