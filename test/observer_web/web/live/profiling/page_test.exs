@@ -13,8 +13,11 @@ defmodule Observer.Web.Profiling.PageLiveTest do
   ]
 
   setup context do
-    # Calling this function guarantees that the module is loaded
+    # Calling these functions guarantees the modules are loaded, so the multi-select module
+    # picker lists them regardless of what order the test suite happens to run in (some other
+    # test loading these modules first isn't a given).
     ObserverWeb.TracerFixtures.testing_fun([])
+    Callee.add(0, 0)
 
     context
   end
@@ -114,6 +117,25 @@ defmodule Observer.Web.Profiling.PageLiveTest do
     assert html =~ "TracerFixtures.testing_adding_fun/2"
     assert html =~ "RUN"
     refute html =~ "STOP"
+
+    # Count's report is {{node, mod, fun, arity, message}, value} tuples - Call Sequence and Flame
+    # Graph expect a list of maps instead. Switching the Tool dropdown without re-running used to
+    # crash the LiveView trying to render the stale, mismatched report under the new tool.
+    html =
+      index_live
+      |> element("#profiling-update-form")
+      |> render_change(%{tool: "flame_graph", max_messages: 1, session_timeout_seconds: 30})
+
+    refute html =~ "Count Results"
+    assert html =~ "Select functions to trace and press RUN to collect counts."
+
+    html =
+      index_live
+      |> element("#profiling-update-form")
+      |> render_change(%{tool: "call_seq", max_messages: 1, session_timeout_seconds: 30})
+
+    refute html =~ "Count Results"
+    assert html =~ "Select functions to trace and press RUN to collect counts."
   end
 
   test "Switching to Duration shows the aggregation picker", %{conn: conn} do
@@ -243,9 +265,6 @@ defmodule Observer.Web.Profiling.PageLiveTest do
     node = Node.self() |> to_string
     service = Helpers.normalize_id(node)
 
-    # Calling this function guarantees the callee module is loaded
-    Callee.add(0, 0)
-
     RpcStubber.defaults()
     TelemetryStubber.defaults()
 
@@ -348,6 +367,76 @@ defmodule Observer.Web.Profiling.PageLiveTest do
     assert html =~ "TracerFixtures.Callee.add/2"
     assert html =~ "RUN"
     refute html =~ "STOP"
+  end
+
+  test "Flame Graph shows a Process picker and switches the rendered tree when multiple processes are traced",
+       %{conn: conn} do
+    node = Node.self() |> to_string
+    service = Helpers.normalize_id(node)
+
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/profiling")
+
+    index_live
+    |> element("#profiling-multi-select-toggle-options")
+    |> render_click()
+
+    index_live
+    |> element("#profiling-multi-select-services-#{service}-add-item")
+    |> render_click()
+
+    index_live
+    |> element(
+      "#profiling-multi-select-modules-Elixir-ObserverWeb-TracerFixtures-Callee-add-item"
+    )
+    |> render_click()
+
+    index_live
+    |> element("#profiling-update-form")
+    |> render_change(%{tool: "flame_graph", max_messages: 1_000, session_timeout_seconds: 30})
+
+    index_live
+    |> element("#profiling-multi-select-run", "RUN")
+    |> render_click()
+
+    test_pid = self()
+
+    other_pid =
+      spawn(fn ->
+        Callee.add(1, 1)
+        send(test_pid, :done)
+      end)
+
+    Callee.add(2, 3)
+    assert_receive :done, 1_000
+
+    :timer.sleep(50)
+
+    index_live
+    |> element("#profiling-multi-select-stop", "STOP")
+    |> render_click()
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "Flame Graph Results"
+    assert html =~ html_escape(inspect(self()))
+    assert html =~ html_escape(inspect(other_pid))
+    assert html =~ "Process"
+
+    html =
+      index_live
+      |> element("#profiling-update-form")
+      |> render_change(%{
+        tool: "flame_graph",
+        flame_pid: "1",
+        max_messages: 4,
+        session_timeout_seconds: 30
+      })
+
+    assert html =~ "Flame Graph Results"
   end
 
   test "Stop button reports the count collected so far", %{conn: conn} do
@@ -486,5 +575,13 @@ defmodule Observer.Web.Profiling.PageLiveTest do
     assert html = render(index_live)
     assert html =~ "services:#{node}"
     assert html =~ "modules:Elixir.ObserverWeb.TracerFixtures"
+  end
+
+  # Rendered HTML escapes "<"/">", so a raw inspect(pid) like "#PID<0.383.0>" never matches
+  # directly against the page's markup.
+  defp html_escape(string) do
+    string
+    |> String.replace("<", "&lt;")
+    |> String.replace(">", "&gt;")
   end
 end

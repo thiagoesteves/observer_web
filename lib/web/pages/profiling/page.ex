@@ -37,38 +37,18 @@ defmodule Observer.Web.Profiling.Page do
     show_tracing_options = trace_idle? and trace_owner? and assigns.show_tracing_options
 
     tool = assigns.form.params["tool"] || "count"
+    attention_msg = attention_msg(tool)
 
-    attention_msg =
-      case tool do
-        "duration" ->
-          ~H"""
-          Duration measures how long each traced function call takes. Like Live Tracing, it
-          enforces limits on the maximum number of events and applies a timeout (in seconds) to
-          ensure the debugger doesn't remain active unintentionally.
-          """
+    # A report only makes sense to render once the tool that produced it is still the one
+    # selected - the Tool dropdown can be switched (or a new run started with a different tool)
+    # before/without re-running, and each tool's report has a completely different shape (e.g.
+    # Count/Duration's {{node, mod, fun, arity, message}, value} tuples vs Call Sequence and Flame
+    # Graph's maps), so rendering a stale report under the wrong tool would crash.
+    report_matches_tool? = assigns.report != nil and tool == assigns.report_tool
 
-        "call_seq" ->
-          ~H"""
-          Call Sequence shows an indented call tree per process, with arguments on entry and
-          return values on exit. Like Live Tracing, it enforces limits on the maximum number of
-          events and applies a timeout (in seconds) to ensure the debugger doesn't remain active
-          unintentionally.
-          """
-
-        "flame_graph" ->
-          ~H"""
-          Flame Graph traces every call in the selected module(s) and shows how much time each
-          process spent in each call stack, as a sunburst chart (one ring per stack depth). Like
-          Live Tracing, it enforces limits on the maximum number of events and applies a timeout
-          (in seconds) to ensure the debugger doesn't remain active unintentionally.
-          """
-
-        _count ->
-          ~H"""
-          Count tallies how many times each traced function was called. Like Live Tracing, it
-          enforces limits on the maximum number of events and applies a timeout (in seconds) to
-          ensure the debugger doesn't remain active unintentionally.
-          """
+    flame_report =
+      if report_matches_tool? and tool == "flame_graph" do
+        flame_report_selected(assigns.report, assigns.form.params)
       end
 
     assigns =
@@ -81,6 +61,8 @@ defmodule Observer.Web.Profiling.Page do
       |> assign(show_tracing_options: show_tracing_options)
       |> assign(attention_msg: attention_msg)
       |> assign(tool: tool)
+      |> assign(report_matches_tool?: report_matches_tool?)
+      |> assign(flame_report: flame_report)
 
     ~H"""
     <div class="min-h-screen bg-white dark:bg-gray-800">
@@ -122,6 +104,16 @@ defmodule Observer.Web.Profiling.Page do
                 {"Max", "max"},
                 {"Distribution", "dist"}
               ]}
+            />
+
+            <Core.input
+              :if={@tool == "flame_graph" and @report_matches_tool? and length(@report) > 1}
+              field={@form[:flame_pid]}
+              type="select"
+              label="Process"
+              options={
+                Enum.with_index(@report, fn entry, index -> {entry.name, to_string(index)} end)
+              }
             />
 
             <Core.input
@@ -189,18 +181,21 @@ defmodule Observer.Web.Profiling.Page do
       </div>
       <div class="p-2">
         <div
-          :if={@report == nil and not @trace_idle?}
+          :if={not @report_matches_tool? and not @trace_idle?}
           class="p-4 text-sm text-gray-500 dark:text-gray-400"
         >
           Waiting for the session to end...
         </div>
         <div
-          :if={@report == nil and @trace_idle?}
+          :if={not @report_matches_tool? and @trace_idle?}
           class="p-4 text-sm text-gray-500 dark:text-gray-400"
         >
           Select functions to trace and press RUN to collect counts.
         </div>
-        <div :if={@report != nil} class="bg-white dark:bg-gray-800 w-full shadow-lg rounded">
+        <div
+          :if={@report_matches_tool?}
+          class="bg-white dark:bg-gray-800 w-full shadow-lg rounded"
+        >
           <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
             {result_title(@tool)}
           </h2>
@@ -236,33 +231,23 @@ defmodule Observer.Web.Profiling.Page do
             </:col>
           </Core.table_tracing>
           <div
-            :if={@tool == "flame_graph"}
+            :if={@tool == "flame_graph" and @flame_report != nil}
             id="profiling-flame-graph"
             class="ml-5 mr-5 mt-2"
-            phx-hook="ObserverEChart"
-            data-merge={false}
+            phx-hook="FlameGraphEChart"
           >
             <div
               id="profiling-flame-graph-chart"
               style="width: 100%; height: 600px;"
               phx-update="ignore"
             />
-            <div id="profiling-flame-graph-data" hidden>
-              {Jason.encode!(sunburst_chart_data(@report))}
-            </div>
+            <div id="profiling-flame-graph-data" hidden>{Jason.encode!(@flame_report)}</div>
           </div>
         </div>
       </div>
     </div>
     """
   end
-
-  # ObserverEChart (shared with Observer.Web.Apps.Page's tree chart) always pushes this event on
-  # tooltip render so its host can drill into the hovered node - the Flame Graph sunburst has no
-  # such drill-down, but without a matching handle_event/3 clause here the hook would crash this
-  # LiveComponent (no default/fallback clause exists) the first time a user hovers over it.
-  @impl Phoenix.LiveComponent
-  def handle_event("request-process", _params, socket), do: {:noreply, socket}
 
   @impl Page
   def handle_mount(socket) when is_connected?(socket) do
@@ -272,6 +257,7 @@ defmodule Observer.Web.Profiling.Page do
     |> assign(:node_info, Selection.update([], [], []))
     |> assign(:trace_session_id, nil)
     |> assign(:report, nil)
+    |> assign(:report_tool, nil)
     |> assign(:show_tracing_options, false)
     |> assign(:form, to_form(default_form_options()))
     |> assign(:form_search, to_form(default_form_search_options()))
@@ -282,6 +268,7 @@ defmodule Observer.Web.Profiling.Page do
     |> assign(:node_info, Selection.new())
     |> assign(:trace_session_id, nil)
     |> assign(:report, nil)
+    |> assign(:report_tool, nil)
     |> assign(:show_tracing_options, false)
     |> assign(form: to_form(default_form_options()))
     |> assign(form_search: to_form(default_form_search_options()))
@@ -340,7 +327,8 @@ defmodule Observer.Web.Profiling.Page do
 
     if tracer_state.status == :idle do
       functions_to_monitor = Selection.build_functions_to_monitor(node_info)
-      tool = tool_atom(form.params["tool"])
+      tool_param = form.params["tool"]
+      tool = tool_atom(tool_param)
 
       case Tracer.start_trace(functions_to_monitor, %{
              max_messages: String.to_integer(form.params["max_messages"]),
@@ -353,7 +341,8 @@ defmodule Observer.Web.Profiling.Page do
           {:noreply,
            socket
            |> assign(:trace_session_id, session_id)
-           |> assign(:report, nil)}
+           |> assign(:report, nil)
+           |> assign(:report_tool, tool_param)}
 
         # coveralls-ignore-start
         {:error, _} ->
@@ -524,28 +513,63 @@ defmodule Observer.Web.Profiling.Page do
 
   defp default_form_search_options, do: %{"modules" => "", "functions" => ""}
 
+  defp attention_msg("duration") do
+    assigns = %{}
+
+    ~H"""
+    Duration measures how long each traced function call takes. Like Live Tracing, it enforces
+    limits on the maximum number of events and applies a timeout (in seconds) to ensure the
+    debugger doesn't remain active unintentionally.
+    """
+  end
+
+  defp attention_msg("call_seq") do
+    assigns = %{}
+
+    ~H"""
+    Call Sequence shows an indented call tree per process, with arguments on entry and return
+    values on exit. Like Live Tracing, it enforces limits on the maximum number of events and
+    applies a timeout (in seconds) to ensure the debugger doesn't remain active unintentionally.
+    """
+  end
+
+  defp attention_msg("flame_graph") do
+    assigns = %{}
+
+    ~H"""
+    Flame Graph traces every call in the selected module(s) and shows, per process, how much time
+    was spent in each call stack: each bar is a function call, its width proportional to time
+    spent, stacked under its caller. Click a bar to zoom into it, click "Restore" (top right of the
+    chart) to zoom back out. Like Live Tracing, it enforces limits on the maximum number of events
+    and applies a timeout (in seconds) to ensure the debugger doesn't remain active
+    unintentionally.
+    """
+  end
+
+  defp attention_msg(_count) do
+    assigns = %{}
+
+    ~H"""
+    Count tallies how many times each traced function was called. Like Live Tracing, it enforces
+    limits on the maximum number of events and applies a timeout (in seconds) to ensure the
+    debugger doesn't remain active unintentionally.
+    """
+  end
+
   defp result_title("duration"), do: "Duration Results"
   defp result_title("call_seq"), do: "Call Sequence Results"
   defp result_title("flame_graph"), do: "Flame Graph Results"
   defp result_title(_count), do: "Count Results"
 
-  defp sunburst_chart_data(report) do
-    %{
-      tooltip: %{
-        trigger: "item",
-        triggerOn: "mousemove",
-        formatter: "{b}: {c}µs"
-      },
-      series: [
-        %{
-          type: "sunburst",
-          radius: [0, "95%"],
-          data: report,
-          label: %{rotate: "radial"},
-          emphasis: %{focus: "ancestor"}
-        }
-      ]
-    }
+  # FlameGraph.handle_stop/1 reports one root per traced process - the picker above lets the user
+  # pick which one to render (defaulting to the first, i.e. the one with the most time spent,
+  # since the list is sorted descending).
+  defp flame_report_selected(nil, _params), do: nil
+  defp flame_report_selected([], _params), do: nil
+
+  defp flame_report_selected(report, params) do
+    index = String.to_integer(params["flame_pid"] || "0")
+    Enum.at(report, index) || List.first(report)
   end
 
   # The :dist aggregation reports a %{bucket => count} power-of-two histogram (see
