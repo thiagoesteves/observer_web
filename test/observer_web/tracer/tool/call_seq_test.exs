@@ -1,10 +1,20 @@
 defmodule ObserverWeb.Tracer.Tool.CallSeqTest do
   use ExUnit.Case, async: true
 
+  import Mox
+
   alias ObserverWeb.Tracer.Tool.CallSeq
   alias ObserverWeb.Tracer.Tool.EventCall
   alias ObserverWeb.Tracer.Tool.EventIn
   alias ObserverWeb.Tracer.Tool.EventReturnFrom
+
+  setup :verify_on_exit!
+
+  # handle_stop/1 resolves process labels through Rpc.pinfo (see Tool.process_label/1).
+  setup do
+    stub(ObserverWeb.RpcMock, :pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
+    :ok
+  end
 
   defp call(mod, fun, arity, pid, message \\ nil) do
     %EventCall{
@@ -45,6 +55,7 @@ defmodule ObserverWeb.Tracer.Tool.CallSeqTest do
              %{
                node: node,
                pid: pid,
+               pid_label: inspect(pid),
                depth: 0,
                type: :enter,
                mod: String,
@@ -55,6 +66,7 @@ defmodule ObserverWeb.Tracer.Tool.CallSeqTest do
              %{
                node: node,
                pid: pid,
+               pid_label: inspect(pid),
                depth: 0,
                type: :exit,
                mod: String,
@@ -63,6 +75,20 @@ defmodule ObserverWeb.Tracer.Tool.CallSeqTest do
                detail: ["a", "b"]
              }
            ]
+  end
+
+  test "labels entries with the process's registered name when it has one" do
+    pid = self()
+    Process.register(pid, :call_seq_label_test)
+
+    state =
+      CallSeq.new()
+      |> CallSeq.handle_event(call(String, :split, 2, pid))
+      |> CallSeq.handle_event(return_from(String, :split, 2, pid))
+
+    assert [%{pid_label: ":call_seq_label_test"} | _rest] = CallSeq.handle_stop(state)
+  after
+    Process.unregister(:call_seq_label_test)
   end
 
   test "nested calls increase depth and unwind back down on exit" do

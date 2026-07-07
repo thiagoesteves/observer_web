@@ -1,6 +1,8 @@
 defmodule ObserverWeb.Tracer.ToolTest do
   use ExUnit.Case, async: true
 
+  import Mox
+
   alias ObserverWeb.Tracer.Tool
   alias ObserverWeb.Tracer.Tool.CallSeq
   alias ObserverWeb.Tracer.Tool.Count
@@ -12,6 +14,37 @@ defmodule ObserverWeb.Tracer.ToolTest do
   alias ObserverWeb.Tracer.Tool.EventReturnFrom
   alias ObserverWeb.Tracer.Tool.EventReturnTo
   alias ObserverWeb.Tracer.Tool.FlameGraph
+
+  setup :verify_on_exit!
+
+  # CallSeq's and FlameGraph's handle_stop resolve process labels through Rpc.pinfo (see
+  # Tool.process_label/1).
+  setup do
+    stub(ObserverWeb.RpcMock, :pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
+    :ok
+  end
+
+  describe "process_label/1" do
+    test "returns the registered name when the process has one" do
+      Process.register(self(), :tool_process_label_test)
+
+      assert Tool.process_label(self()) == ":tool_process_label_test"
+    after
+      Process.unregister(:tool_process_label_test)
+    end
+
+    test "falls back to the pid for unregistered processes" do
+      assert Tool.process_label(self()) == inspect(self())
+    end
+
+    test "falls back to the pid for dead processes" do
+      pid = spawn(fn -> :ok end)
+      ref = Process.monitor(pid)
+      assert_receive {:DOWN, ^ref, :process, ^pid, _reason}
+
+      assert Tool.process_label(pid) == inspect(pid)
+    end
+  end
 
   describe "dbg_flags/1" do
     test "display traces full argument values (no :arity flag)" do

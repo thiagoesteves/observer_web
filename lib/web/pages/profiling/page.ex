@@ -219,7 +219,7 @@ defmodule Observer.Web.Profiling.Page do
           </Core.table_tracing>
           <Core.table_tracing :if={@tool == "call_seq"} id="profiling-call-seq-results" rows={@report}>
             <:col :let={entry} label="SERVICE">{entry.node}</:col>
-            <:col :let={entry} label="PROCESS">{inspect(entry.pid)}</:col>
+            <:col :let={entry} label="PROCESS">{entry.pid_label}</:col>
             <:col :let={entry} label="CALL">
               <span style={"padding-left: #{entry.depth * 1.25}rem"}>
                 <%= if entry.type == :enter do %>

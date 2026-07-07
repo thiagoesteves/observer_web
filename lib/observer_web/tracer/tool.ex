@@ -8,6 +8,7 @@ defmodule ObserverWeb.Tracer.Tool do
   init/handle_event/handle_stop aggregation logic is ported.
   """
 
+  alias ObserverWeb.Rpc
   alias ObserverWeb.Tracer.Tool.CallSeq
   alias ObserverWeb.Tracer.Tool.Count
   alias ObserverWeb.Tracer.Tool.Duration
@@ -20,6 +21,22 @@ defmodule ObserverWeb.Tracer.Tool do
   alias ObserverWeb.Tracer.Tool.FlameGraph
 
   @type t :: :display | :count | :duration | :call_seq | :flame_graph
+
+  @doc """
+  Human-readable label for a traced process: its registered name when it has one, the inspected
+  pid otherwise. Works for local and remote pids (`ObserverWeb.Rpc.pinfo/2` is location
+  transparent), and falls back to the pid when the process has already died by the time the
+  report is built - common for short-lived traced processes.
+  """
+  @spec process_label(pid()) :: String.t()
+  def process_label(pid) do
+    case Rpc.pinfo(pid, :registered_name) do
+      # An alive-but-unregistered process reports {:registered_name, []} - the empty list fails
+      # the is_atom guard and falls through to the pid.
+      {:registered_name, name} when is_atom(name) -> inspect(name)
+      _dead_or_unregistered -> inspect(pid)
+    end
+  end
 
   @doc """
   `:dbg` trace flags required to run the given tool (always includes `:c` and `:timestamp`).

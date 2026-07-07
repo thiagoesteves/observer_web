@@ -1,9 +1,19 @@
 defmodule ObserverWeb.Tracer.Tool.FlameGraphTest do
   use ExUnit.Case, async: true
 
+  import Mox
+
   alias ObserverWeb.Tracer.Tool.EventCall
   alias ObserverWeb.Tracer.Tool.EventReturnTo
   alias ObserverWeb.Tracer.Tool.FlameGraph
+
+  setup :verify_on_exit!
+
+  # handle_stop/1 resolves process labels through Rpc.pinfo (see Tool.process_label/1).
+  setup do
+    stub(ObserverWeb.RpcMock, :pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
+    :ok
+  end
 
   defp call(mod, fun, arity, ts, pid),
     do: %EventCall{mod: mod, fun: fun, arity: arity, pid: pid, ts: ts}
@@ -34,6 +44,21 @@ defmodule ObserverWeb.Tracer.Tool.FlameGraphTest do
     assert [%{name: name, value: 250, children: children}] = FlameGraph.handle_stop(state)
     assert name == "#{inspect(pid)} (#{node})"
     assert [%{name: "String.split/2", value: 250, children: []}] = children
+  end
+
+  test "names the root after the process's registered name when it has one" do
+    pid = self()
+    Process.register(pid, :flame_graph_label_test)
+
+    state =
+      FlameGraph.new()
+      |> FlameGraph.handle_event(call(String, :split, 2, {0, 0, 0}, pid))
+      |> FlameGraph.handle_event(return_to(:undefined, :undefined, 0, {0, 0, 250}, pid))
+
+    assert [%{name: name}] = FlameGraph.handle_stop(state)
+    assert name == ":flame_graph_label_test (#{Node.self()})"
+  after
+    Process.unregister(:flame_graph_label_test)
   end
 
   test "builds a nested tree from a call/call/return_to/return_to sequence" do

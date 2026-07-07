@@ -28,6 +28,7 @@ defmodule ObserverWeb.Tracer.Tool.FlameGraph do
   """
 
   alias __MODULE__
+  alias ObserverWeb.Tracer.Tool
   alias ObserverWeb.Tracer.Tool.EventCall
   alias ObserverWeb.Tracer.Tool.EventReturnTo
 
@@ -112,8 +113,10 @@ defmodule ObserverWeb.Tracer.Tool.FlameGraph do
   defp ts_to_us({mega, seconds, micro}), do: (mega * 1_000_000 + seconds) * 1_000_000 + micro
 
   @doc """
-  Finalizes into a list of ECharts sunburst root nodes, one per traced process (`%{name:, value:,
+  Finalizes into a list of chart-ready root nodes, one per traced process (`%{name:, value:,
   children:}`), sorted by total time descending. Processes with no completed samples are dropped.
+  Roots are named by the process's registered name when it has one (see
+  `ObserverWeb.Tracer.Tool.process_label/1`), the pid otherwise.
   """
   @spec handle_stop(t()) :: [map()]
   def handle_stop(%FlameGraph{process_state: process_state}) do
@@ -124,7 +127,11 @@ defmodule ObserverWeb.Tracer.Tool.FlameGraph do
         |> collapse_stacks()
         |> build_tree()
 
-      %{name: "#{inspect(pid)} (#{node(pid)})", value: sum_values(children), children: children}
+      %{
+        name: "#{Tool.process_label(pid)} (#{node(pid)})",
+        value: sum_values(children),
+        children: children
+      }
     end)
     |> Enum.reject(&(&1.value == 0))
     |> Enum.sort_by(& &1.value, :desc)

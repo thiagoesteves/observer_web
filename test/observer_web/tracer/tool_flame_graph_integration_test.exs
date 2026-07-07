@@ -10,12 +10,22 @@ defmodule ObserverWeb.Tracer.ToolFlameGraphIntegrationTest do
   """
   use ExUnit.Case, async: false
 
+  import Mox
+
   alias ObserverWeb.Tracer
   alias ObserverWeb.TracerFixtures.Callee
+
+  # The tool report is built inside the Tracer.Server GenServer, and FlameGraph's handle_stop
+  # resolves process labels through Rpc.pinfo (see Tool.process_label/1) - so the mock must be
+  # global.
+  setup :set_mox_global
+  setup :verify_on_exit!
 
   # NOTE: :dbg needs a moment to settle after a session stops before the next test's
   # :dbg.tracer/2 call, or the dbg server itself crashes.
   setup do
+    stub(ObserverWeb.RpcMock, :pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
+
     on_exit(fn -> :timer.sleep(50) end)
   end
 

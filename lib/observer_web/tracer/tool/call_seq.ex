@@ -18,6 +18,7 @@ defmodule ObserverWeb.Tracer.Tool.CallSeq do
   """
 
   alias __MODULE__
+  alias ObserverWeb.Tracer.Tool
   alias ObserverWeb.Tracer.Tool.EventCall
   alias ObserverWeb.Tracer.Tool.EventReturnFrom
 
@@ -94,15 +95,18 @@ defmodule ObserverWeb.Tracer.Tool.CallSeq do
   end
 
   @doc """
-  Finalizes into a flat, ordered list of `%{node:, pid:, depth:, type:, mod:, fun:, arity:,
-  detail:}` maps - `detail` holds the call arguments on `:enter` and the return value on `:exit`.
-  Depth here is recomputed fresh per pid from the (already max-depth-capped) stack, so it's always
-  a valid 0-based nesting level regardless of how deep the untruncated call actually went.
+  Finalizes into a flat, ordered list of `%{node:, pid:, pid_label:, depth:, type:, mod:, fun:,
+  arity:, detail:}` maps - `detail` holds the call arguments on `:enter` and the return value on
+  `:exit`, and `pid_label` is the process's registered name when it has one (see
+  `ObserverWeb.Tracer.Tool.process_label/1`), the pid otherwise. Depth here is recomputed fresh
+  per pid from the (already max-depth-capped) stack, so it's always a valid 0-based nesting level
+  regardless of how deep the untruncated call actually went.
   """
   @spec handle_stop(t()) :: [map()]
   def handle_stop(%CallSeq{stacks: stacks}) do
     Enum.flat_map(stacks, fn {pid, stack} ->
       node = node(pid)
+      pid_label = Tool.process_label(pid)
 
       stack
       |> Enum.reverse()
@@ -111,6 +115,7 @@ defmodule ObserverWeb.Tracer.Tool.CallSeq do
           entry = %{
             node: node,
             pid: pid,
+            pid_label: pid_label,
             depth: depth,
             type: :enter,
             mod: mod,
@@ -130,6 +135,7 @@ defmodule ObserverWeb.Tracer.Tool.CallSeq do
           entry = %{
             node: node,
             pid: pid,
+            pid_label: pid_label,
             depth: depth,
             type: :exit,
             mod: mod,
