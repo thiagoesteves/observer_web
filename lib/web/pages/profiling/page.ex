@@ -568,7 +568,13 @@ defmodule Observer.Web.Profiling.Page do
   defp flame_report_selected([], _params), do: nil
 
   defp flame_report_selected(report, params) do
-    index = String.to_integer(params["flame_pid"] || "0")
+    # Integer.parse (not String.to_integer) so a crafted form payload can't crash the LiveView.
+    index =
+      case Integer.parse(params["flame_pid"] || "0") do
+        {index, ""} when index >= 0 -> index
+        _invalid -> 0
+      end
+
     Enum.at(report, index) || List.first(report)
   end
 

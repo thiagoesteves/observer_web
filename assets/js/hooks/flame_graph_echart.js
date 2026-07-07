@@ -87,11 +87,19 @@ function renderItem(params, api) {
       style: {
         text: api.value(3),
         fill: "#000",
-        width: width - 4,
+        width: Math.max(width - 4, 0),
         overflow: "truncate",
         ellipsis: ".."
       }
     }
+  }
+}
+
+function zoomOption(root) {
+  return {
+    xAxis: { max: Math.max(root.value, 1) },
+    yAxis: { max: Math.max(maxDepth(root), 1) },
+    series: [{ data: flatten(root) }]
   }
 }
 
@@ -131,7 +139,10 @@ const FlameGraphEChart = {
 
     this.chart.on("click", (params) => {
       const target = params.data && pruneToPath(this.root, params.data.id)
-      if (target) this.chart.setOption(buildOption(target), true)
+      // Zooming merge-updates only the data/axes (never notMerge): the toolbox Restore button
+      // reverts to the last notMerge option, so replacing the whole option here would make
+      // Restore "restore" the zoomed state instead of zooming back out.
+      if (target) this.chart.setOption(zoomOption(target))
     })
   },
   updated() {
@@ -142,6 +153,9 @@ const FlameGraphEChart = {
     this.rawData = rawData
     this.root = assignIds(JSON.parse(rawData), "0")
     this.chart.setOption(buildOption(this.root), true)
+  },
+  destroyed() {
+    if (this.chart) this.chart.dispose()
   }
 }
 

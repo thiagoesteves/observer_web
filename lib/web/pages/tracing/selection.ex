@@ -128,7 +128,11 @@ defmodule Observer.Web.Tracing.Selection do
 
           functions =
             Enum.reduce(node_info.selected_functions_keys, [], fn function_key, function_acc ->
-              function = Map.get(node_functions_info.functions, function_key, nil)
+              # node_functions_info is nil when the selected module doesn't exist on this
+              # service (heterogeneous clusters) - the modules_keys check below already filters
+              # those out, but the lookup must not crash before reaching it.
+              function =
+                node_functions_info && Map.get(node_functions_info.functions, function_key, nil)
 
               # credo:disable-for-lines:14
               if module_key in service_info.modules_keys and function do

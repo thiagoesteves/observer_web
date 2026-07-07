@@ -37,10 +37,20 @@ defmodule ObserverWeb.TracerTest do
              return_trace: %{pattern: [{:_, [], [{:return_trace}]}]},
              exception_trace: %{pattern: [{:_, [], [{:exception_trace}]}]},
              caller: %{pattern: [{:_, [], [{:message, {:caller}}]}]},
-             process_dump: %{pattern: [{:_, [], [{:message, {:process_dump}}]}]},
+             process_dump: %{pattern: [{:_, [], [{:message, {:process_dump}}]}]}
+           } = Tracer.get_default_functions_matchspecs()
+
+    # The tool-internal match specs must stay out of this map - the Tracing page renders every
+    # key here as a user-facing match-spec option.
+    refute Map.has_key?(Tracer.get_default_functions_matchspecs(), :capture_args)
+    refute Map.has_key?(Tracer.get_default_functions_matchspecs(), :call_seq)
+  end
+
+  test "get_tool_functions_matchspecs/0" do
+    assert %{
              capture_args: %{pattern: [{:_, [], [{:message, :"$_"}]}]},
              call_seq: %{pattern: [{:_, [], [{:return_trace}, {:message, :"$_"}]}]}
-           } = Tracer.get_default_functions_matchspecs()
+           } = Tracer.get_tool_functions_matchspecs()
   end
 
   describe "start_trace/2" do

@@ -51,7 +51,7 @@ defmodule ObserverWeb.Tracer.Tool.Duration do
         ts: ts,
         message: message
       }) do
-    entry = {mod, fun, arity, ts_to_ms(ts), message}
+    entry = {mod, fun, arity, ts_to_us(ts), message}
     %{state | stacks: Map.update(stacks, pid, [entry], &[entry | &1])}
   end
 
@@ -59,7 +59,7 @@ defmodule ObserverWeb.Tracer.Tool.Duration do
         %Duration{stacks: stacks, collect: collect} = state,
         %EventReturnFrom{pid: pid, mod: mod, fun: fun, arity: arity, ts: ts}
       ) do
-    exit_ts = ts_to_ms(ts)
+    exit_ts = ts_to_us(ts)
 
     case Map.get(stacks, pid, []) do
       # Ignore recursive self-calls: only pop once the frame below is a *different* invocation
@@ -111,7 +111,7 @@ defmodule ObserverWeb.Tracer.Tool.Duration do
     round(:math.pow(2, Float.floor(:math.log(value + 0.01) / :math.log(2))))
   end
 
-  defp ts_to_ms({mega, seconds, micro}), do: (mega * 1_000_000 + seconds) * 1_000_000 + micro
+  defp ts_to_us({mega, seconds, micro}), do: (mega * 1_000_000 + seconds) * 1_000_000 + micro
 
   defp message_repr(nil), do: nil
   defp message_repr(term), do: inspect(term)

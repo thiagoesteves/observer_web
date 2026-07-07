@@ -94,10 +94,11 @@ defmodule ObserverWeb.Tracer.Server do
       max_messages: max_messages
     }
 
-    default_functions_matchspecs = Tracer.get_default_functions_matchspecs()
+    default_functions_matchspecs =
+      Map.merge(Tracer.get_default_functions_matchspecs(), Tracer.get_tool_functions_matchspecs())
 
     # Start Tracer with Handler Function
-    :dbg.tracer(:process, {&handle_trace/2, {session_info, 1, tool, tool_state}})
+    :dbg.tracer(:process, {&handle_trace/2, {session_info, 1, tool}})
 
     Enum.each(functions_by_node, fn {node, functions} ->
       # Add node to tracing process (exclude local node since it is added by default)
@@ -163,30 +164,40 @@ defmodule ObserverWeb.Tracer.Server do
     {:noreply, state}
   end
 
-  # NOTE: Mirrors the tool's aggregation state (accumulated inside the separate process :dbg
-  # spawns for the tracer handler fun) so it's available here if the session ends via an explicit
-  # stop_trace/1 call or a timeout, neither of which run inside handle_trace/2.
+  # NOTE: Raw trace events forwarded by handle_trace/2 for non-display tools. The tool's
+  # aggregation state is folded here (not inside the separate process :dbg spawns for the tracer
+  # handler fun) so it's available when the session ends via an explicit stop_trace/1 call or a
+  # timeout, neither of which run inside handle_trace/2 - and so each event only copies the small
+  # raw trace tuple between processes, not the whole accumulated state.
   def handle_info(
-        {:tool_state_update, rcv_session_id, tool_state},
+        {:trace_event, rcv_session_id, trace_ms},
         %Tracer{
-          session_id: session_id
+          session_id: session_id,
+          tool: tool,
+          tool_state: tool_state
         } = state
       )
       when rcv_session_id == session_id do
-    {:noreply, %{state | tool_state: tool_state}}
+    {:noreply, %{state | tool_state: Tool.handle_event(tool, trace_ms, tool_state)}}
   end
 
-  def handle_info({:tool_state_update, _rcv_session_id, _tool_state}, state) do
+  def handle_info({:trace_event, _rcv_session_id, _trace_ms}, state) do
     {:noreply, state}
   end
 
-  # NOTE: Messages from handle_trace
-  def handle_info({:stop_tracing, rcv_session_id} = msg, %Tracer{
-        session_id: session_id,
-        max_messages: _max_messages,
-        request_pid: request_pid
-      })
+  # NOTE: Messages from handle_trace. Any {:trace_event, ...} the handler sent before this one is
+  # already processed (messages between the same two processes arrive in order), so the tool
+  # report is complete at this point.
+  def handle_info(
+        {:stop_tracing, rcv_session_id} = msg,
+        %Tracer{
+          session_id: session_id,
+          request_pid: request_pid
+        } = state
+      )
       when rcv_session_id == session_id do
+    maybe_report_tool_result(state)
+
     send(request_pid, msg)
 
     {:noreply, %Tracer{}}
@@ -259,13 +270,13 @@ defmodule ObserverWeb.Tracer.Server do
 
   def handle_trace(
         _trace_message,
-        {%{max_messages: max_messages} = session_info, index, tool, tool_state}
+        {%{max_messages: max_messages} = session_info, index, tool}
       )
       when index > max_messages do
     # coveralls-ignore-start
     :dbg.stop()
     # coveralls-ignore-stop
-    {session_info, index, tool, tool_state}
+    {session_info, index, tool}
   end
 
   def handle_trace(
@@ -276,7 +287,7 @@ defmodule ObserverWeb.Tracer.Server do
            request_pid: request_pid,
            monitored_nodes: monitored_nodes,
            max_messages: max_messages
-         } = session_info, index, tool, tool_state}
+         } = session_info, index, tool}
       ) do
     # NOTE: only :display is decoded into a formatted string here - other tools trace with
     # different dbg flags (see Tool.dbg_flags/1, e.g. :arity instead of full argument values), so
@@ -292,31 +303,24 @@ defmodule ObserverWeb.Tracer.Server do
     node = origin_pid && :erlang.node(origin_pid)
 
     if node in monitored_nodes do
-      tool_state = dispatch_to_tool(tool, tool_state, trace_ms, tracer_pid, session_id)
-
       if tool == :display do
         send(request_pid, {:new_trace_message, session_id, node, index, type, message})
+      else
+        send(tracer_pid, {:trace_event, session_id, trace_ms})
       end
 
       if index == max_messages do
-        stop_max_messages_reached(tool, tool_state, session_id, tracer_pid, request_pid)
+        # The tracer GenServer reports the tool result (and forwards :stop_tracing to the
+        # requester) when it processes this message - by then every forwarded trace event above is
+        # already folded into its state.
+        send(tracer_pid, {:stop_tracing, session_id})
+        :dbg.stop()
       else
-        {session_info, index + 1, tool, tool_state}
+        {session_info, index + 1, tool}
       end
     else
-      {session_info, index, tool, tool_state}
+      {session_info, index, tool}
     end
-  end
-
-  defp stop_max_messages_reached(tool, tool_state, session_id, tracer_pid, request_pid) do
-    unless tool == :display do
-      report = Tool.handle_stop(tool, tool_state)
-      send(request_pid, {:tool_report, session_id, report})
-    end
-
-    send(tracer_pid, {:stop_tracing, session_id})
-    send(request_pid, {:stop_tracing, session_id})
-    :dbg.stop()
   end
 
   defp decode_display_message(trace_ms, index) do
@@ -339,13 +343,13 @@ defmodule ObserverWeb.Tracer.Server do
         {{y, mm, d}, {h, m, s}} = :calendar.now_to_datetime(timestamp)
 
         {pid, type,
-         "[#{y}-#{mm}-#{d} #{h}:#{m}:#{s}] (#{inspect(pid)}) #{inspect(module)}.#{fun}/#{arity}}) return_value: #{inspect(return_value)}"}
+         "[#{y}-#{mm}-#{d} #{h}:#{m}:#{s}] (#{inspect(pid)}) #{inspect(module)}.#{fun}/#{arity}) return_value: #{inspect(return_value)}"}
 
       {_, pid, :exception_from = type, {module, fun, arity}, exception_value, timestamp} ->
         {{y, mm, d}, {h, m, s}} = :calendar.now_to_datetime(timestamp)
 
         {pid, type,
-         "[#{y}-#{mm}-#{d} #{h}:#{m}:#{s}] (#{inspect(pid)}) #{inspect(module)}.#{fun}/#{arity}}) exception_value: #{inspect(exception_value)}"}
+         "[#{y}-#{mm}-#{d} #{h}:#{m}:#{s}] (#{inspect(pid)}) #{inspect(module)}.#{fun}/#{arity}) exception_value: #{inspect(exception_value)}"}
 
       # coveralls-ignore-start
       trace_msg ->
@@ -356,13 +360,5 @@ defmodule ObserverWeb.Tracer.Server do
         {nil, nil, nil}
         # coveralls-ignore-stop
     end
-  end
-
-  defp dispatch_to_tool(:display, tool_state, _trace_ms, _tracer_pid, _session_id), do: tool_state
-
-  defp dispatch_to_tool(tool, tool_state, trace_ms, tracer_pid, session_id) do
-    new_tool_state = Tool.handle_event(tool, trace_ms, tool_state)
-    send(tracer_pid, {:tool_state_update, session_id, new_tool_state})
-    new_tool_state
   end
 end

@@ -122,10 +122,15 @@ defmodule ObserverWeb.Tracer.Tool.CallSeq do
           {entry, depth + 1}
 
         {:exit, mod, fun, arity, return_value}, depth ->
+          # Clamped at 0: a session can start between a call and its return, so the very first
+          # recorded event for a process may be an :exit with no matching :enter - without the
+          # clamp that would emit a negative depth (and invalid negative CSS padding in the UI).
+          depth = max(depth - 1, 0)
+
           entry = %{
             node: node,
             pid: pid,
-            depth: depth - 1,
+            depth: depth,
             type: :exit,
             mod: mod,
             fun: fun,
@@ -133,7 +138,7 @@ defmodule ObserverWeb.Tracer.Tool.CallSeq do
             detail: return_value
           }
 
-          {entry, depth - 1}
+          {entry, depth}
       end)
       |> elem(0)
     end)
