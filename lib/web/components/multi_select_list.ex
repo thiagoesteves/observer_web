@@ -137,7 +137,7 @@ defmodule Observer.Web.Components.MultiSelectList do
                   time: 300
                 )
               }>
-                <div class="flex grid mt-1 gap-1 items-top grid-cols-4">
+                <div class={["grid mt-1 gap-1 items-top", grid_cols(length(@unselected))]}>
                   <%= for item <- @unselected do %>
                     <div class="rounded-lg bg-white dark:bg-gray-600 border border-solid border-blueGray-100 block overflow-y-auto max-h-[300px]">
                       <div class="flex items-start items-center bg-white dark:bg-gray-600 p-2 sticky top-0 z-10">
@@ -207,6 +207,12 @@ defmodule Observer.Web.Components.MultiSelectList do
     </div>
     """
   end
+
+  # One column per selection group: the Tracing page passes four (services, modules, functions,
+  # match_spec), the Profiling page three (no match-spec picker). Literal class names, not
+  # interpolation - Tailwind only generates classes it finds verbatim in the source.
+  defp grid_cols(3), do: "grid-cols-3"
+  defp grid_cols(_four), do: "grid-cols-4"
 
   def border_item_color("services"), do: "border-teal-300"
   def border_item_color("modules"), do: "border-red-500"

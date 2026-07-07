@@ -155,7 +155,19 @@ defmodule Observer.Web.Tracing.Page do
         />
       </div>
       <div class="p-2">
-        <div class="bg-white dark:bg-gray-800 w-full shadow-lg rounded">
+        <div
+          :if={not @trace_messages? and @trace_idle?}
+          class="p-4 text-sm text-gray-500 dark:text-gray-400"
+        >
+          Select functions to trace and press RUN to stream calls live.
+        </div>
+        <div
+          :if={not @trace_messages? and not @trace_idle?}
+          class="p-4 text-sm text-gray-500 dark:text-gray-400"
+        >
+          Waiting for trace messages...
+        </div>
+        <div :if={@trace_messages?} class="bg-white dark:bg-gray-800 w-full shadow-lg rounded">
           <Core.table_tracing id="live-logs" rows={@streams.tracing_messages}>
             <:col :let={{_id, tracing_message}} label="SERVICE">
               <span>{tracing_message.service}</span>
@@ -199,6 +211,7 @@ defmodule Observer.Web.Tracing.Page do
     |> assign(:node_info, update_node_info())
     |> assign(:node_data, %{})
     |> assign(:trace_session_id, nil)
+    |> assign(:trace_messages?, false)
     |> assign(:show_tracing_options, false)
     |> assign(:form, to_form(default_form_options()))
     |> assign(:form_search, to_form(default_form_search_options()))
@@ -210,6 +223,7 @@ defmodule Observer.Web.Tracing.Page do
     |> assign(:node_info, node_info_new())
     |> assign(:node_data, %{})
     |> assign(:trace_session_id, nil)
+    |> assign(:trace_messages?, false)
     |> assign(:show_tracing_options, false)
     |> assign(form: to_form(default_form_options()))
     |> assign(form_search: to_form(default_form_search_options()))
@@ -291,6 +305,7 @@ defmodule Observer.Web.Tracing.Page do
           {:noreply,
            socket
            |> assign(:trace_session_id, session_id)
+           |> assign(:trace_messages?, false)
            |> stream(:tracing_messages, [], reset: true)}
 
         # coveralls-ignore-start
@@ -467,7 +482,10 @@ defmodule Observer.Web.Tracing.Page do
       content: message
     }
 
-    {:noreply, stream(socket, :tracing_messages, [data])}
+    {:noreply,
+     socket
+     |> assign(:trace_messages?, true)
+     |> stream(:tracing_messages, [data])}
   end
 
   def handle_info({event, _session_id}, socket)

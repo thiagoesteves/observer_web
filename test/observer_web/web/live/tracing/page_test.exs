@@ -219,7 +219,9 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     RpcStubber.defaults()
     TelemetryStubber.defaults()
 
-    {:ok, index_live, _html} = live(conn, "/observer/tracing")
+    {:ok, index_live, html} = live(conn, "/observer/tracing")
+
+    assert html =~ "Select functions to trace and press RUN to stream calls live."
 
     index_live
     |> element("#tracing-multi-select-toggle-options")
@@ -244,6 +246,7 @@ defmodule Observer.Web.Tracing.PageLiveTest do
 
     refute html =~ "RUN"
     assert html =~ "STOP"
+    assert html =~ "Waiting for trace messages..."
 
     ObserverWeb.Common.uuid4()
 
@@ -252,7 +255,10 @@ defmodule Observer.Web.Tracing.PageLiveTest do
       |> element("#tracing-multi-select-stop", "STOP")
       |> render_click()
 
-    assert render(index_live) =~ "ObserverWeb.Common.uuid4"
+    html_after_stop = render(index_live)
+    assert html_after_stop =~ "ObserverWeb.Common.uuid4"
+    refute html_after_stop =~ "Waiting for trace messages..."
+    refute html_after_stop =~ "Select functions to trace and press RUN to stream calls live."
 
     assert html =~ "RUN"
     refute html =~ "STOP"

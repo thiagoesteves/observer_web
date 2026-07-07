@@ -76,7 +76,7 @@ defmodule Observer.Web.Profiling.Page do
           <.form
             for={@form}
             id="profiling-update-form"
-            class="flex ml-2 mr-2 text-xs text-center text-zinc-800 dark:text-white  whitespace-nowrap gap-5"
+            class="flex shrink-0 ml-2 mr-2 text-xs text-center text-zinc-800 dark:text-white whitespace-nowrap gap-5"
             phx-change="form-update"
           >
             <Core.input
@@ -106,15 +106,19 @@ defmodule Observer.Web.Profiling.Page do
               ]}
             />
 
-            <Core.input
+            <div
               :if={@tool == "flame_graph" and @report_matches_tool? and length(@report) > 1}
-              field={@form[:flame_pid]}
-              type="select"
-              label="Process"
-              options={
-                Enum.with_index(@report, fn entry, index -> {entry.name, to_string(index)} end)
-              }
-            />
+              class="max-w-56"
+            >
+              <Core.input
+                field={@form[:flame_pid]}
+                type="select"
+                label="Process"
+                options={
+                  Enum.with_index(@report, fn entry, index -> {entry.name, to_string(index)} end)
+                }
+              />
+            </div>
 
             <Core.input
               field={@form[:max_messages]}
@@ -537,12 +541,10 @@ defmodule Observer.Web.Profiling.Page do
     assigns = %{}
 
     ~H"""
-    Flame Graph traces every call in the selected module(s) and shows, per process, how much time
-    was spent in each call stack: each bar is a function call, its width proportional to time
-    spent, stacked under its caller. Click a bar to zoom into it, click "Restore" (top right of the
-    chart) to zoom back out. Like Live Tracing, it enforces limits on the maximum number of events
-    and applies a timeout (in seconds) to ensure the debugger doesn't remain active
-    unintentionally.
+    Flame Graph shows how much time each process spent per call stack: each bar is a call, sized
+    by time spent, stacked under its caller - click a bar to zoom in, "Restore" to zoom out. Like
+    Live Tracing, it enforces limits on the maximum number of events and applies a timeout (in
+    seconds) to ensure the debugger doesn't remain active unintentionally.
     """
   end
 
