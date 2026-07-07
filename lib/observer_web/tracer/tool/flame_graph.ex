@@ -1,8 +1,9 @@
 defmodule ObserverWeb.Tracer.Tool.FlameGraph do
   @moduledoc """
   Tracks how much time each process spends in every call stack it goes through, and reports it as
-  an ECharts sunburst-ready tree (one root per traced process): each ring level is a stack depth
-  and each arc's size is proportional to time spent.
+  a plain `%{name:, value:, children:}` tree (one root per traced process) that the Profiling
+  page renders as a flame graph client-side with the `FlameGraphEChart` hook (an ECharts custom
+  series: one rect per call, width proportional to time spent, stacked under its caller).
 
   Ported and adapted from https://github.com/gabiz/tracer's `Tracer.Tool.FlameGraph`:
 
@@ -19,10 +20,8 @@ defmodule ObserverWeb.Tracer.Tool.FlameGraph do
       both noisy and a real performance/safety risk on a live system, so this only tracks active
       call-stack time, not idle time.
     * Upstream shells out to a bundled Perl script and writes to `/tmp` to render a literal flame
-      graph SVG. Instead of porting an external-process/filesystem dependency, this produces a
-      plain tree Observer Web renders client-side with ECharts' built-in sunburst chart (reusing
-      the same `ObserverEChart` hook and JSON-blob convention `ObserverWeb.Apps` already uses),
-      which needs no extra JS and no external binaries.
+      graph SVG. Rendering client-side with the echarts dependency the project already has means
+      no external-process/filesystem dependency and no new JS packages.
     * Caps how deep a single process's stack is tracked (not user-configurable), to keep runaway
       recursion from growing memory unbounded.
   """

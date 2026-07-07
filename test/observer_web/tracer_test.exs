@@ -236,6 +236,34 @@ defmodule ObserverWeb.TracerTest do
       terminate_tracing(session_id)
     end
 
+    test "Notifies the requester with :stop_tracing when max_messages is reached" do
+      node = Node.self()
+
+      functions = [
+        %{
+          arity: 2,
+          function: :testing_adding_fun,
+          match_spec: [],
+          module: TracerFixtures,
+          node: node
+        }
+      ]
+
+      assert {:ok, %{session_id: session_id}} =
+               Tracer.start_trace(functions, %{max_messages: 1})
+
+      TracerFixtures.testing_adding_fun(1, 1)
+
+      assert_receive {:new_trace_message, ^session_id, ^node, 1, :call, _msg}, 1_000
+      assert_receive {:stop_tracing, ^session_id}, 1_000
+
+      # The session is fully reset, ready for the next one
+      assert %Tracer{status: :idle, session_id: nil} = Tracer.state()
+
+      # :dbg needs a moment to settle before the next test starts a new session
+      :timer.sleep(50)
+    end
+
     test "Ignore stop_trace with invalid session_id [handle_info]" do
       functions = [
         %{
