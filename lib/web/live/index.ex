@@ -9,6 +9,7 @@ defmodule Observer.Web.IndexLive do
   use Observer.Web, :live_view
 
   alias Observer.Web.Apps.Page, as: AppsPage
+  alias Observer.Web.Ets.Page, as: EtsPage
   alias Observer.Web.Metrics.Page, as: MetricsPage
   alias Observer.Web.Processes.Page, as: ProcessesPage
   alias Observer.Web.Profiling.Page, as: ProfilingPage
@@ -94,10 +95,11 @@ defmodule Observer.Web.IndexLive do
   ## Render Helpers
 
   defp resolve_page(%{"page" => "applications"}), do: %{name: :applications, comp: AppsPage}
+  defp resolve_page(%{"page" => "ets"}), do: %{name: :ets, comp: EtsPage}
   defp resolve_page(%{"page" => "metrics"}), do: %{name: :metrics, comp: MetricsPage}
   defp resolve_page(%{"page" => "processes"}), do: %{name: :processes, comp: ProcessesPage}
   defp resolve_page(%{"page" => "profiling"}), do: %{name: :profiling, comp: ProfilingPage}
   defp resolve_page(%{"page" => "system"}), do: %{name: :system, comp: SystemPage}
   defp resolve_page(%{"page" => "tracing"}), do: %{name: :tracing, comp: TracingPage}
-  defp resolve_page(_params), do: %{name: :tracing, comp: TracingPage}
+  defp resolve_page(_params), do: %{name: :system, comp: SystemPage}
 end

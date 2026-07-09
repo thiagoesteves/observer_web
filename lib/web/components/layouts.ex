@@ -31,7 +31,7 @@ defmodule Observer.Web.Layouts do
 
   def logo(assigns) do
     ~H"""
-    <a href={@path || observer_path(:tracing, @params)} class="flex" title="Observer Web">
+    <a href={@path || observer_path(:system, @params)} class="flex" title="Observer Web">
       <div>
         <Icons.content name={:logo} />
       </div>
@@ -115,10 +115,10 @@ defmodule Observer.Web.Layouts do
   end
 
   defp list_pages_by_params(%{"iframe" => "true"}),
-    do: [:system, :tracing, :profiling, :processes, :applications, :metrics]
+    do: [:system, :tracing, :profiling, :processes, :applications, :ets, :metrics]
 
   defp list_pages_by_params(_params),
-    do: [:root, :system, :tracing, :profiling, :processes, :applications, :metrics]
+    do: [:root, :system, :tracing, :profiling, :processes, :applications, :ets, :metrics]
 
   @doc """
   Renders flash notices.

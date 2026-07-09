@@ -24,6 +24,9 @@ library is part of the [DeployEx][dye] project.
 ### System snapshot with VM limits and memory allocator utilization
 ![System Dashboard](./guides/static/system_dash.png)
 
+### ETS table browser with optional bounded content previews
+![ETS Dashboard](./guides/static/ets_dash.png)
+
 ### Application topology view with processes, ports, references, links and relations.
 ![Applications Dashboard](./guides/static/applications_tree.png)
 

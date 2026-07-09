@@ -276,6 +276,23 @@ config :observer_web,
 >
 > When using DeployEx, the BEAM VM statistics polling is also used to monitor and, if necessary, restart the application. The polling interval directly affects how quickly these actions are performed. While ports, atoms, and processes are configured via Observer Web, the memory check interval (also used by [DeployEx][dye]) is configured separately—refer to the relevant [documentation][mtc] for details.
 
+### ETS content inspection (opt-in)
+
+The ETS page always shows table metadata (owner, protection, type, size, memory). Previewing
+table *contents* is disabled by default, since ETS tables hold live production data. To enable
+bounded, read-only previews (at most 50 objects per request, rendered with inspect limits):
+
+```elixir
+config :observer_web,
+  ets_content_inspection: true
+```
+
+> #### Production data exposure {: .warning}
+>
+> Anyone with access to the Observer Web dashboard can read the previewed objects. Only enable
+> this where dashboard access is appropriately restricted (see the authentication resolver
+> section).
+
 ### Usage with Web and Clustering
 
 The Observer Web provides observer ability for the local application as well as any other that is
