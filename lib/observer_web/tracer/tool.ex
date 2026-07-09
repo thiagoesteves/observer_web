@@ -23,18 +23,60 @@ defmodule ObserverWeb.Tracer.Tool do
   @type t :: :display | :count | :duration | :call_seq | :flame_graph
 
   @doc """
-  Human-readable label for a traced process: its registered name when it has one, the inspected
-  pid otherwise. Works for local and remote pids (`ObserverWeb.Rpc.pinfo/2` is location
-  transparent), and falls back to the pid when the process has already died by the time the
-  report is built - common for short-lived traced processes.
+  Human-readable label for a traced process, resolved with the same fallback chain `etop` uses:
+  the registered name when it has one, otherwise the `Process.set_label/1` process label,
+  otherwise the `proc_lib` initial call (how GenServers, Supervisors and Tasks identify
+  themselves) suffixed with the pid to keep concurrent instances of the same module apart, and
+  finally the inspected pid alone.
+
+  Works for local and remote pids (`ObserverWeb.Rpc.pinfo/2` is location transparent) - most
+  traced processes on a remote node aren't locally registered (Registry/`:via` registrations
+  don't set `:registered_name`), so the fallbacks are what keep multi-node reports readable.
+  Falls back to the pid when the process has already died by the time the report is built -
+  common for short-lived traced processes.
   """
   @spec process_label(pid()) :: String.t()
   def process_label(pid) do
-    case Rpc.pinfo(pid, :registered_name) do
-      # An alive-but-unregistered process reports {:registered_name, []} - the empty list fails
-      # the is_atom guard and falls through to the pid.
-      {:registered_name, name} when is_atom(name) -> inspect(name)
-      _dead_or_unregistered -> inspect(pid)
+    # The whole dictionary is fetched instead of the leaner `{:dictionary, :"$process_label"}`
+    # item form because the latter requires OTP 26.2+ on the *observed* node.
+    case Rpc.pinfo(pid, [:registered_name, :dictionary, :initial_call]) do
+      [{:registered_name, name}, {:dictionary, dictionary}, {:initial_call, initial_call}] ->
+        registered_label(name) || dictionary_label(dictionary) ||
+          initial_call_label(dictionary, initial_call, pid) || inspect(pid)
+
+      _dead ->
+        inspect(pid)
+    end
+  end
+
+  # An alive-but-unregistered process reports [] as its registered name.
+  defp registered_label(name) when is_atom(name) and name != nil, do: inspect(name)
+  defp registered_label(_unregistered), do: nil
+
+  defp dictionary_label(dictionary) when is_list(dictionary) do
+    case List.keyfind(dictionary, :"$process_label", 0) do
+      {_key, label} when is_binary(label) -> label
+      {_key, label} -> inspect(label)
+      nil -> nil
+    end
+  end
+
+  defp dictionary_label(_no_dictionary), do: nil
+
+  # proc_lib-spawned processes carry their real starting MFA in the :"$initial_call" dictionary
+  # entry; the raw :initial_call for them is the meaningless proc_lib/erlang wrapper. Anything
+  # without the dictionary entry that only reports a generic spawn wrapper keeps the plain pid.
+  defp initial_call_label(dictionary, initial_call, pid) do
+    initial_call =
+      case is_list(dictionary) && List.keyfind(dictionary, :"$initial_call", 0) do
+        {_key, {_m, _f, _a} = mfa} -> mfa
+        _no_entry -> initial_call
+      end
+
+    case initial_call do
+      {mod, _f, _a} when mod in [:erlang, :proc_lib] -> nil
+      {mod, fun, arity} -> "#{inspect(mod)}.#{fun}/#{arity} #{inspect(pid)}"
+      _unknown -> nil
     end
   end
 

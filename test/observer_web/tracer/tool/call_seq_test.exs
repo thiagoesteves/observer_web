@@ -43,8 +43,22 @@ defmodule ObserverWeb.Tracer.Tool.CallSeqTest do
   end
 
   test "a single call/return pair is reported at depth 0" do
-    pid = self()
+    # A plain spawned process: no registered name, process label or proc_lib initial call, so
+    # pid_label falls back to the inspected pid (the ExUnit test process would resolve to the
+    # process label ExUnit sets on it).
+    test_pid = self()
     node = Node.self()
+
+    pid =
+      spawn(fn ->
+        send(test_pid, :ready)
+
+        receive do
+          :done -> :ok
+        end
+      end)
+
+    assert_receive :ready
 
     state =
       CallSeq.new()
@@ -75,6 +89,8 @@ defmodule ObserverWeb.Tracer.Tool.CallSeqTest do
                detail: ["a", "b"]
              }
            ]
+
+    send(pid, :done)
   end
 
   test "labels entries with the process's registered name when it has one" do
