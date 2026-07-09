@@ -24,18 +24,33 @@ defmodule Observer.Web.Telemetry do
   if_not_test do
     alias ObserverWeb.Telemetry.Producer.BeamVm
     alias ObserverWeb.Telemetry.Producer.PhxLvSocket
+    alias ObserverWeb.Telemetry.Producer.SchedulerWallTime
 
     defp add_telemetry_poller,
-      do: [
-        {:telemetry_poller,
-         name: :observer_web_phoenix_liveview_sockets,
-         measurements: [{PhxLvSocket, :process, []}],
-         period: Application.get_env(:observer_web, :phx_lv_sckt_poller_interval_ms) || 5_000},
-        {:telemetry_poller,
-         name: :observer_web_beam_vm,
-         measurements: [{BeamVm, :process, []}],
-         period: Application.get_env(:observer_web, :beam_vm_poller_interval_ms) || 1_000}
-      ]
+      do:
+        [
+          {:telemetry_poller,
+           name: :observer_web_phoenix_liveview_sockets,
+           measurements: [{PhxLvSocket, :process, []}],
+           period: Application.get_env(:observer_web, :phx_lv_sckt_poller_interval_ms) || 5_000},
+          {:telemetry_poller,
+           name: :observer_web_beam_vm,
+           measurements: [{BeamVm, :process, []}],
+           period: Application.get_env(:observer_web, :beam_vm_poller_interval_ms) || 1_000}
+        ] ++ scheduler_utilization_producer()
+
+    # Opt-in: scheduler wall time accounting adds a small permanent cost to every scheduler
+    # (see ObserverWeb.Telemetry.Producer.SchedulerWallTime), so the utilization series is only
+    # produced when an interval is configured.
+    defp scheduler_utilization_producer do
+      case Application.get_env(:observer_web, :scheduler_utilization_poller_interval_ms) do
+        interval_ms when is_integer(interval_ms) and interval_ms > 0 ->
+          [{SchedulerWallTime, interval_ms: interval_ms}]
+
+        _disabled ->
+          []
+      end
+    end
   else
     defp add_telemetry_poller, do: []
   end
@@ -79,7 +94,8 @@ defmodule Observer.Web.Telemetry do
       summary("vm.total_run_queue_lengths.io"),
       summary("vm.port.total"),
       summary("vm.atom.total"),
-      summary("vm.process.total")
+      summary("vm.process.total"),
+      summary("vm.scheduler.utilization", unit: :percent)
     ]
   end
 end

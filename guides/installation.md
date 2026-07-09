@@ -196,6 +196,18 @@ config :observer_web,
 > storage, refer to the Configuration section to set up a Central Hub application,
 > which can aggregate and retain metrics.
 
+#### Scheduler utilization (opt-in)
+
+Observer Web can also report a `vm.scheduler.utilization` time series (percent of scheduler
+time spent doing useful work, the same accounting the observer GUI's load charts use). Since
+scheduler wall time accounting adds a small permanent cost to every scheduler, this metric is
+off by default and only produced when an interval is configured:
+
+```elixir
+config :observer_web,
+  scheduler_utilization_poller_interval_ms: :timer.seconds(5)
+```
+
 #### 2. Configuration
 
 Observer Web can operate in two distinct metrics configurations: `Standalone` and `Metric Hub`.

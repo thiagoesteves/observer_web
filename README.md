@@ -21,6 +21,9 @@ library is part of the [DeployEx][dye] project.
 ### Busiest processes ranked by reductions, memory or message queue (etop style)
 ![Processes Dashboard](./guides/static/processes_dash.png)
 
+### System snapshot with VM limits and memory allocator utilization
+![System Dashboard](./guides/static/system_dash.png)
+
 ### Application topology view with processes, ports, references, links and relations.
 ![Applications Dashboard](./guides/static/applications_tree.png)
 

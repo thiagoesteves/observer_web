@@ -91,6 +91,22 @@ Task.async(fn ->
       {telemetry_module, [mode: mode, data_retention_period: retention_period]}
     )
 
+  # The scheduler utilization metric is opt-in (see the installation guide) and the application
+  # has already booted by the time this script runs, so the producer is started here as an extra
+  # child of the telemetry supervisor. Set the interval to 0 to disable it.
+  scheduler_interval_ms =
+    "OBSERVER_WEB_SCHEDULER_UTILIZATION_INTERVAL_MS"
+    |> System.get_env("5000")
+    |> String.to_integer()
+
+  if scheduler_interval_ms > 0 do
+    {:ok, _} =
+      Supervisor.start_child(
+        Observer.Web.Telemetry,
+        {ObserverWeb.Telemetry.Producer.SchedulerWallTime, interval_ms: scheduler_interval_ms}
+      )
+  end
+
   {:ok, _} = Supervisor.start_child(ObserverWeb.Application, WebDev.Endpoint)
 
   Process.sleep(:infinity)

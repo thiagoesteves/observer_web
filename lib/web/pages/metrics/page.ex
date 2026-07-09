@@ -16,6 +16,7 @@ defmodule Observer.Web.Metrics.Page do
   alias Observer.Web.Components.Metrics.VmPortMemory
   alias Observer.Web.Components.Metrics.VmProcessMemory
   alias Observer.Web.Components.Metrics.VmRunQueue
+  alias Observer.Web.Components.Metrics.VmSchedulerUtilization
   alias Observer.Web.Components.MultiSelect
   alias Observer.Web.Page
   alias ObserverWeb.Telemetry
@@ -133,6 +134,13 @@ defmodule Observer.Web.Metrics.Page do
                     metrics={Map.get(@streams, data_key)}
                   />
                   <VmRunQueue.content
+                    title={"#{metric} [#{app.name}]"}
+                    service={service}
+                    metric={metric}
+                    cols={@form.params["num_cols"]}
+                    metrics={Map.get(@streams, data_key)}
+                  />
+                  <VmSchedulerUtilization.content
                     title={"#{metric} [#{app.name}]"}
                     service={service}
                     metric={metric}
