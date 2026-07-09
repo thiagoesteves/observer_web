@@ -206,7 +206,12 @@ defmodule ObserverWeb.Telemetry.LocalStorageTest do
 
   defp create_consumer(context) do
     node = Node.self()
-    {:ok, pid} = Storage.start_link(mode: :local, data_retention_period: :timer.minutes(1))
+    # start_supervised! (instead of a bare start_link) guarantees the previous test's
+    # Storage - a globally named GenServer - is fully terminated before the next test
+    # starts, otherwise consecutive tests race the name release and fail with
+    # :already_started.
+    pid =
+      start_supervised!({Storage, [mode: :local, data_retention_period: :timer.minutes(1)]})
 
     context
     |> Map.put(:node, node)

@@ -786,7 +786,11 @@ defmodule Observer.Web.Apps.PageLiveTest do
     |> element("#apps-multi-select-services-#{service}-add-item")
     |> render_click()
 
-    port = Port.open({:spawn, "sleep 30000"}, [:binary])
+    # NOTE: `cat` blocks on stdin for the lifetime of the test and exits on stdin EOF, so it dies
+    # with the port (or the beam). A command that ignores stdin (e.g. `sleep`) would survive as an
+    # orphaned OS process holding the beam's stdio pipes open - piped test runs
+    # (`mix test | ...`, `mix coveralls` in CI) then appear to hang until the orphan exits.
+    port = Port.open({:spawn, "cat"}, [:binary])
 
     # Send the request 2 times to validate the path where the request
     # was already executed.
