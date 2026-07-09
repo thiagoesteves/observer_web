@@ -1,6 +1,17 @@
 # CHANGELOG (v0.2.X)
 
-## 0.2.5 (2026-07-07)
+## 0.2.5 ()
+
+### ⚠️ Backwards incompatible changes for 0.2.5
+ * None
+
+### Bug fixes
+ * None
+
+### Enhancements
+ * None
+
+## 0.2.5 🚀 (2026-07-07)
 
 ### ⚠️ Backwards incompatible changes for 0.2.4
  * None
