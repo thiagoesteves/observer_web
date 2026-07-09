@@ -77,6 +77,41 @@ defmodule Observer.Web.Components.Icons do
             height="6"
           /><rect x="12" y="8" width="3" height="10" /><rect x="17" y="5" width="3" height="13" />
         </svg>
+      <% :system -> %>
+        <svg
+          class="flex-shrink-0 w-5 h-5 mr-4 text-gray-900 dark:text-white"
+          width="24px"
+          height="24px"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path stroke="none" d="M0 0h24v24H0z" fill="none" /><rect
+            x="5"
+            y="5"
+            width="14"
+            height="14"
+            rx="1"
+          /><path d="M9 9h6v6h-6z" /><line x1="3" y1="10" x2="5" y2="10" /><line
+            x1="3"
+            y1="14"
+            x2="5"
+            y2="14"
+          /><line x1="10" y1="3" x2="10" y2="5" /><line x1="14" y1="3" x2="14" y2="5" /><line
+            x1="10"
+            y1="19"
+            x2="10"
+            y2="21"
+          /><line x1="14" y1="19" x2="14" y2="21" /><line x1="19" y1="10" x2="21" y2="10" /><line
+            x1="19"
+            y1="14"
+            x2="21"
+            y2="14"
+          />
+        </svg>
       <% :processes -> %>
         <svg
           class="flex-shrink-0 w-5 h-5 mr-4 text-gray-900 dark:text-white"

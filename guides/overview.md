@@ -36,6 +36,12 @@ stacktrace, links and more.
 
 ![Observer Processes Dashboard](./static/processes_dash.png)
 
+- **🧮 System Snapshot** - Runtime information, resource usage against the VM limits
+(processes, ports, atoms, ETS tables) and memory allocator carrier utilization, plus an
+opt-in scheduler utilization time series in the Metrics dashboard.
+
+![Observer System Dashboard](./static/system_dash.png)
+
 - **🔬 Process/Port Inspection** - View processes and ports details as well as their status and 
 connectivity (and much more).
 
