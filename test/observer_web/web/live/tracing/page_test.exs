@@ -18,13 +18,14 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     context
   end
 
-  test "GET /tracing - fallback on the default", %{conn: conn} do
+  test "GET /observer falls back to the System page (the default)", %{conn: conn} do
     RpcStubber.defaults()
     TelemetryStubber.defaults()
 
     {:ok, _index_live, html} = live(conn, "/observer")
 
-    assert html =~ "Live Tracing"
+    assert html =~ "System"
+    refute html =~ "Live Tracing"
   end
 
   test "GET /tracing", %{conn: conn} do
