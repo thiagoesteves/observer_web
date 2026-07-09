@@ -47,6 +47,12 @@ footprint, searchable and sortable - plus opt-in, read-only, bounded content pre
 
 ![Observer ETS Dashboard](./static/ets_dash.png)
 
+- **🌐 Network** - The busiest inet ports on any node ranked by bytes received/sent per
+interval, with local/remote endpoints, owning process, full statistics and socket options -
+plus the NIF-based socket module sockets that port listings miss.
+
+![Observer Network Dashboard](./static/network_dash.png)
+
 - **🔬 Process/Port Inspection** - View processes and ports details as well as their status and 
 connectivity (and much more).
 
