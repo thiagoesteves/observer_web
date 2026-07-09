@@ -47,7 +47,9 @@ defmodule ObserverWeb.Tracer.ToolFlameGraphIntegrationTest do
     assert_receive {:tool_report, ^session_id, report}, 1_000
 
     assert [%{name: name, value: value, children: children}] = report
-    assert name =~ inspect(self())
+    # The calling process is this ExUnit test process, which resolves to the process label
+    # ExUnit sets on it ({module, test name}).
+    assert name =~ "ToolFlameGraphIntegrationTest"
     assert value > 0
 
     assert [%{name: "ObserverWeb.TracerFixtures.Callee.add/2", value: ^value, children: []}] =

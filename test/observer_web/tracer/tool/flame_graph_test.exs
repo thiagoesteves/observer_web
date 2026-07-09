@@ -32,8 +32,21 @@ defmodule ObserverWeb.Tracer.Tool.FlameGraphTest do
   end
 
   test "attributes time spent in a single frame" do
-    pid = self()
-    node = Node.self()
+    # A plain spawned process: no registered name, process label or proc_lib initial call, so the
+    # root falls back to the inspected pid (the ExUnit test process would resolve to the process
+    # label ExUnit sets on it).
+    test_pid = self()
+
+    pid =
+      spawn(fn ->
+        send(test_pid, :ready)
+
+        receive do
+          :done -> :ok
+        end
+      end)
+
+    assert_receive :ready
 
     state =
       FlameGraph.new()
@@ -42,8 +55,10 @@ defmodule ObserverWeb.Tracer.Tool.FlameGraphTest do
       |> FlameGraph.handle_event(return_to(:undefined, :undefined, 0, {0, 0, 250}, pid))
 
     assert [%{name: name, value: 250, children: children}] = FlameGraph.handle_stop(state)
-    assert name == "#{inspect(pid)} (#{node})"
+    assert name == "#{inspect(pid)} (#{Node.self()})"
     assert [%{name: "String.split/2", value: 250, children: []}] = children
+
+    send(pid, :done)
   end
 
   test "names the root after the process's registered name when it has one" do

@@ -422,7 +422,9 @@ defmodule Observer.Web.Profiling.PageLiveTest do
 
     html = render(index_live)
     assert html =~ "Flame Graph Results"
-    assert html =~ html_escape(inspect(self()))
+    # This test process resolves to the process label ExUnit sets on it; the plain spawned
+    # process has no label and falls back to its pid.
+    assert html =~ "Profiling.PageLiveTest"
     assert html =~ html_escape(inspect(other_pid))
     assert html =~ "Process"
 

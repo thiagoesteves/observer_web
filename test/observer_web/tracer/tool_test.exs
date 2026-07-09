@@ -33,8 +33,57 @@ defmodule ObserverWeb.Tracer.ToolTest do
       Process.unregister(:tool_process_label_test)
     end
 
-    test "falls back to the pid for unregistered processes" do
-      assert Tool.process_label(self()) == inspect(self())
+    test "falls back to the process label for unregistered processes that set one" do
+      test_pid = self()
+
+      pid =
+        spawn(fn ->
+          Process.set_label("tool label test")
+          send(test_pid, :ready)
+
+          receive do
+            :done -> :ok
+          end
+        end)
+
+      assert_receive :ready
+
+      assert Tool.process_label(pid) == "tool label test"
+
+      send(pid, :done)
+    end
+
+    test "falls back to the proc_lib initial call, suffixed with the pid" do
+      {:ok, pid} = Task.start(fn -> Process.sleep(:infinity) end)
+
+      label = Tool.process_label(pid)
+
+      # proc_lib's :"$initial_call" for a Task is the anonymous function's generated module
+      # (this test module), formatted as an MFA and suffixed with the pid.
+      assert label =~ "ToolTest"
+      assert String.ends_with?(label, inspect(pid))
+      refute label == inspect(pid)
+
+      Process.exit(pid, :kill)
+    end
+
+    test "falls back to the pid for plain spawned processes without any label" do
+      test_pid = self()
+
+      pid =
+        spawn(fn ->
+          send(test_pid, :ready)
+
+          receive do
+            :done -> :ok
+          end
+        end)
+
+      assert_receive :ready
+
+      assert Tool.process_label(pid) == inspect(pid)
+
+      send(pid, :done)
     end
 
     test "falls back to the pid for dead processes" do
