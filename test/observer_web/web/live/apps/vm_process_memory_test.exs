@@ -25,10 +25,7 @@ defmodule Observer.Web.Apps.VmProcessMemoryTest do
     |> stub(:call, fn node, module, function, args, timeout ->
       :rpc.call(node, module, function, args, timeout)
     end)
-    |> stub(:pinfo, fn pid, information ->
-      send(test_pid_process, {:apps_page_pid, self()})
-      :rpc.pinfo(pid, information)
-    end)
+    |> stub(:pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
 
     TelemetryStubber.defaults()
     |> expect(:subscribe_for_new_data, fn _node, ^metric ->
@@ -63,10 +60,11 @@ defmodule Observer.Web.Apps.VmProcessMemoryTest do
     id = "#{inspect(id)}"
     series_name = "#{Node.self()}::app:kernel"
 
-    assert_receive {:apps_page_pid, apps_page_pid}, 1_000
-
-    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
-    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    # NOTE: sent straight to the LiveView pid - capturing it from a Rpc.pinfo stub side channel
+    # is racy here, since the memory Monitor also calls pinfo concurrently and its pid could be
+    # captured instead.
+    send(index_live.pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(index_live.pid, {"request-process", %{"id" => id, "series_name" => series_name}})
 
     html =
       index_live
@@ -101,7 +99,6 @@ defmodule Observer.Web.Apps.VmProcessMemoryTest do
   test "Select Service+Apps and a Monitored process and toggle monitor off", %{conn: conn} do
     node = Node.self() |> to_string
     service = Helpers.normalize_id(node)
-    test_pid_process = self()
     id = spawn(fn -> Process.sleep(:infinity) end)
     {:ok, %{metric: metric}} = Monitor.start_id_monitor(id)
     telemetry_data = TelemetryFixtures.build_telemetry_data_vm_process_total_memory()
@@ -110,10 +107,7 @@ defmodule Observer.Web.Apps.VmProcessMemoryTest do
     |> stub(:call, fn node, module, function, args, timeout ->
       :rpc.call(node, module, function, args, timeout)
     end)
-    |> stub(:pinfo, fn pid, information ->
-      send(test_pid_process, {:apps_page_pid, self()})
-      :rpc.pinfo(pid, information)
-    end)
+    |> stub(:pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
 
     TelemetryStubber.defaults()
     |> expect(:subscribe_for_new_data, fn ^node, ^metric -> :ok end)
@@ -140,10 +134,9 @@ defmodule Observer.Web.Apps.VmProcessMemoryTest do
     id = "#{inspect(id)}"
     series_name = "#{Node.self()}::app:kernel"
 
-    assert_receive {:apps_page_pid, apps_page_pid}, 1_000
-
-    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
-    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    # NOTE: sent straight to the LiveView pid - see the equivalent note in the test above.
+    send(index_live.pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+    send(index_live.pid, {"request-process", %{"id" => id, "series_name" => series_name}})
 
     assert index_live
            |> element("input[type=\"checkbox\"]")

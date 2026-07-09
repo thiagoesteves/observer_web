@@ -18,6 +18,9 @@ library is part of the [DeployEx][dye] project.
 ### Function profiling with Count, Duration, Call Sequence and Flame Graph tools
 ![Profiling Dashboard](./guides/static/profiling_dash.png)
 
+### Busiest processes ranked by reductions, memory or message queue (etop style)
+![Processes Dashboard](./guides/static/processes_dash.png)
+
 ### Application topology view with processes, ports, references, links and relations.
 ![Applications Dashboard](./guides/static/applications_tree.png)
 

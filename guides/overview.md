@@ -30,6 +30,12 @@ call sequence trees and flame graphs, all with the same production-safe limits a
 
 ![Observer Profiling Dashboard](./static/profiling_dash.png)
 
+- **📋 Process Top** - The busiest processes on any node, etop style: ranked by reductions
+per interval, memory or message queue length, with a drill-down into each process's status,
+stacktrace, links and more.
+
+![Observer Processes Dashboard](./static/processes_dash.png)
+
 - **🔬 Process/Port Inspection** - View processes and ports details as well as their status and 
 connectivity (and much more).
 
