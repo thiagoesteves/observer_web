@@ -115,10 +115,10 @@ defmodule Observer.Web.Layouts do
   end
 
   defp list_pages_by_params(%{"iframe" => "true"}),
-    do: [:tracing, :profiling, :processes, :applications, :metrics, :system]
+    do: [:tracing, :profiling, :processes, :applications, :system, :metrics]
 
   defp list_pages_by_params(_params),
-    do: [:root, :tracing, :profiling, :processes, :applications, :metrics, :system]
+    do: [:root, :tracing, :profiling, :processes, :applications, :system, :metrics]
 
   @doc """
   Renders flash notices.
