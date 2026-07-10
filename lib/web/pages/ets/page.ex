@@ -2,7 +2,7 @@ defmodule Observer.Web.Ets.Page do
   @moduledoc """
   This is the live component responsible for the ETS pillar: every ETS table on a selected node
   with its metadata (owner, protection, type, size, memory), searchable and sortable, plus an
-  optional bounded content preview gated behind the `:ets_content_inspection` config (see
+  optional bounded content preview gated behind the `:table_content_inspection` config (see
   `ObserverWeb.Ets` - table contents are live production data, so previews are off by default).
   """
 
@@ -14,9 +14,12 @@ defmodule Observer.Web.Ets.Page do
   alias Observer.Web.Components.Core
   alias Observer.Web.Page
   alias ObserverWeb.Ets
+  alias ObserverWeb.Mnesia
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
+    assigns = assign(assigns, :source, source_atom(assigns.form.params["source"]))
+
     ~H"""
     <div class="min-h-screen bg-white dark:bg-gray-800">
       <Attention.content
@@ -32,6 +35,13 @@ defmodule Observer.Web.Ets.Page do
             class="flex flex-col md:flex-row md:items-end shrink-0 ml-2 mr-2 py-2 text-xs text-center text-zinc-800 dark:text-white whitespace-nowrap gap-x-5 gap-y-1"
             phx-change="form-update"
           >
+            <Core.input
+              field={@form[:source]}
+              type="select"
+              label="Source"
+              options={[{"ETS", "ets"}, {"Mnesia", "mnesia"}]}
+            />
+
             <Core.input field={@form[:service]} type="select" label="Service" options={@services} />
 
             <Core.input
@@ -56,7 +66,16 @@ defmodule Observer.Web.Ets.Page do
       </Attention.content>
 
       <div class="p-2">
-        <div :if={@tables_error} class="p-4 text-sm text-red-500 dark:text-red-300">
+        <div
+          :if={@tables_error == :mnesia_not_running}
+          class="p-4 text-sm text-gray-500 dark:text-gray-400"
+        >
+          Mnesia is not running on {@form.params["service"]}.
+        </div>
+        <div
+          :if={@tables_error && @tables_error != :mnesia_not_running}
+          class="p-4 text-sm text-red-500 dark:text-red-300"
+        >
           Could not list tables on {@form.params["service"]}: {inspect(@tables_error)}
         </div>
 
@@ -89,7 +108,12 @@ defmodule Observer.Web.Ets.Page do
           <Core.table_tracing id="ets-results" rows={Enum.with_index(@rows)}>
             <:col :let={{table, _index}} label="NAME">{inspect(table.name)}</:col>
             <:col :let={{table, _index}} label="TYPE">{table.type}</:col>
-            <:col :let={{table, _index}} label="PROTECTION">{table.protection}</:col>
+            <:col
+              :let={{table, _index}}
+              label={if @source == :mnesia, do: "STORAGE", else: "PROTECTION"}
+            >
+              {if @source == :mnesia, do: table.storage, else: table.protection}
+            </:col>
             <:col :let={{table, _index}} label="OWNER">{table.owner_label}</:col>
             <:col :let={{table, _index}} label="OBJECTS">{table.size}</:col>
             <:col :let={{table, _index}} label="MEMORY">{format_bytes(table.memory)}</:col>
@@ -125,16 +149,7 @@ defmodule Observer.Web.Ets.Page do
 
           <div class="flex flex-wrap gap-2 px-4 py-2 text-xs">
             <span
-              :for={
-                {label, value} <- [
-                  {"type", @details.table.type},
-                  {"protection", @details.table.protection},
-                  {"owner", @details.table.owner_label},
-                  {"objects", @details.table.size},
-                  {"memory", format_bytes(@details.table.memory)},
-                  {"compressed", @details.table.compressed}
-                ]
-              }
+              :for={{label, value} <- details_badges(@details.table, @source)}
               class="px-2 py-1 rounded-full bg-gray-50 dark:bg-gray-700 border border-gray-300 text-gray-700 dark:text-gray-200"
             >
               {label}: {value}
@@ -146,7 +161,7 @@ defmodule Observer.Web.Ets.Page do
             class="px-4 pb-4 text-xs text-gray-500 dark:text-gray-400"
           >
             Content inspection is disabled. Table contents are live production data - to enable
-            bounded, read-only previews, set <code class="font-mono">config :observer_web, ets_content_inspection: true</code>.
+            bounded, read-only previews, set <code class="font-mono">config :observer_web, table_content_inspection: true</code>.
           </div>
 
           <div
@@ -195,7 +210,12 @@ defmodule Observer.Web.Ets.Page do
     |> assign(:tables_error, nil)
     |> assign(
       :form,
-      to_form(%{"service" => to_string(Node.self()), "sort_by" => "memory", "search" => ""})
+      to_form(%{
+        "source" => "ets",
+        "service" => to_string(Node.self()),
+        "sort_by" => "memory",
+        "search" => ""
+      })
     )
   end
 
@@ -210,7 +230,9 @@ defmodule Observer.Web.Ets.Page do
 
   @impl Page
   def handle_parent_event("form-update", params, socket) do
-    service_changed? = params["service"] != socket.assigns.form.params["service"]
+    service_changed? =
+      params["service"] != socket.assigns.form.params["service"] or
+        params["source"] != socket.assigns.form.params["source"]
 
     socket = assign(socket, :form, to_form(params))
 
@@ -240,7 +262,12 @@ defmodule Observer.Web.Ets.Page do
 
       table ->
         node = selected_service(socket)
-        content = Ets.table_content(node, table.handle)
+
+        content =
+          case source(socket) do
+            :mnesia -> Mnesia.table_content(node, table.name)
+            :ets -> Ets.table_content(node, table.handle)
+          end
 
         {:noreply, assign(socket, :details, %{table: table, content: content})}
     end
@@ -252,7 +279,7 @@ defmodule Observer.Web.Ets.Page do
 
   @impl Page
   def handle_info(:ets_refresh, socket) do
-    case Ets.list_tables(selected_service(socket)) do
+    case list_tables(socket) do
       {:ok, tables} ->
         {:noreply,
          socket
@@ -310,6 +337,42 @@ defmodule Observer.Web.Ets.Page do
 
   defp sort_rows(tables, :name), do: Enum.sort_by(tables, &inspect(&1.name))
   defp sort_rows(tables, key), do: Enum.sort_by(tables, &Map.fetch!(&1, key), :desc)
+
+  defp source(socket), do: source_atom(socket.assigns.form.params["source"])
+
+  defp source_atom("mnesia"), do: :mnesia
+  defp source_atom(_ets), do: :ets
+
+  defp details_badges(table, :ets) do
+    [
+      {"type", table.type},
+      {"protection", table.protection},
+      {"owner", table.owner_label},
+      {"objects", table.size},
+      {"memory", format_bytes(table.memory)},
+      {"compressed", table.compressed}
+    ]
+  end
+
+  defp details_badges(table, :mnesia) do
+    [
+      {"type", table.type},
+      {"storage", table.storage},
+      {"owner", table.owner_label},
+      {"objects", table.size},
+      {"memory", format_bytes(table.memory)},
+      {"index", inspect(table.index)}
+    ]
+  end
+
+  defp list_tables(socket) do
+    node = selected_service(socket)
+
+    case source(socket) do
+      :mnesia -> Mnesia.list_tables(node)
+      :ets -> Ets.list_tables(node)
+    end
+  end
 
   defp services do
     Enum.map([Node.self() | Node.list()], &{&1, to_string(&1)})

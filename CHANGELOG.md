@@ -1,6 +1,6 @@
 # CHANGELOG (v0.2.X)
 
-## 0.2.5 ()
+## 0.2.6 ()
 
 ### ⚠️ Backwards incompatible changes for 0.2.5
  * None

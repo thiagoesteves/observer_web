@@ -18,7 +18,7 @@ defmodule ObserverWeb.EtsTest do
 
   describe "list_tables/1" do
     test "lists named and unnamed tables with their metadata" do
-      named = :ets.new(:ets_context_test_named, [:named_table, :public])
+      _named = :ets.new(:ets_context_test_named, [:named_table, :public])
       unnamed = :ets.new(:ets_context_test_unnamed, [:public])
       :ets.insert(unnamed, {:a, 1})
 
@@ -59,13 +59,13 @@ defmodule ObserverWeb.EtsTest do
 
   describe "table_content/2" do
     setup do
-      original = Application.get_env(:observer_web, :ets_content_inspection)
+      original = Application.get_env(:observer_web, :table_content_inspection)
 
       on_exit(fn ->
         if original == nil do
-          Application.delete_env(:observer_web, :ets_content_inspection)
+          Application.delete_env(:observer_web, :table_content_inspection)
         else
-          Application.put_env(:observer_web, :ets_content_inspection, original)
+          Application.put_env(:observer_web, :table_content_inspection, original)
         end
       end)
 
@@ -82,7 +82,7 @@ defmodule ObserverWeb.EtsTest do
     end
 
     test "previews a bounded number of inspected objects when enabled" do
-      Application.put_env(:observer_web, :ets_content_inspection, true)
+      Application.put_env(:observer_web, :table_content_inspection, true)
 
       table = :ets.new(:ets_content_enabled_test, [:public, :ordered_set])
       for i <- 1..100, do: :ets.insert(table, {i, "value_#{i}"})
@@ -96,7 +96,7 @@ defmodule ObserverWeb.EtsTest do
     end
 
     test "reports an empty table" do
-      Application.put_env(:observer_web, :ets_content_inspection, true)
+      Application.put_env(:observer_web, :table_content_inspection, true)
 
       table = :ets.new(:ets_content_empty_test, [:public])
 
@@ -104,7 +104,7 @@ defmodule ObserverWeb.EtsTest do
     end
 
     test "reports private tables as not accessible (metadata stays visible)" do
-      Application.put_env(:observer_web, :ets_content_inspection, true)
+      Application.put_env(:observer_web, :table_content_inspection, true)
 
       test_pid = self()
 
@@ -125,7 +125,7 @@ defmodule ObserverWeb.EtsTest do
     end
 
     test "reports vanished tables as not accessible" do
-      Application.put_env(:observer_web, :ets_content_inspection, true)
+      Application.put_env(:observer_web, :table_content_inspection, true)
 
       table = :ets.new(:ets_content_gone_test, [:public])
       :ets.delete(table)
