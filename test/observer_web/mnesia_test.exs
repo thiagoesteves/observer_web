@@ -107,4 +107,57 @@ defmodule ObserverWeb.MnesiaTest do
       end)
     end
   end
+
+  test "list_tables/1 reports unexpected replies as errors" do
+    stub(ObserverWeb.RpcMock, :call, fn _node, _module, _function, _args, _timeout ->
+      :unexpected
+    end)
+
+    assert {:error, {:unexpected_reply, :unexpected}} = Mnesia.list_tables(Node.self())
+  end
+
+  test "table_content/2 previews disc_only_copies tables through dets" do
+    Application.put_env(:observer_web, :table_content_inspection, true)
+
+    # disc_only_copies requires a disc schema - kept in a scratch dir so nothing lands in the repo
+    dir =
+      Path.join(System.tmp_dir!(), "observer_web_mnesia_#{System.unique_integer([:positive])}")
+
+    File.mkdir_p!(dir)
+    :application.set_env(:mnesia, :dir, String.to_charlist(dir))
+
+    :ok = :mnesia.create_schema([node()])
+    :ok = :mnesia.start()
+
+    {:atomic, :ok} =
+      :mnesia.create_table(:mnesia_dets_test,
+        attributes: [:key, :value],
+        disc_only_copies: [node()]
+      )
+
+    {:atomic, :ok} =
+      :mnesia.create_table(:mnesia_dets_empty_test,
+        attributes: [:key, :value],
+        disc_only_copies: [node()]
+      )
+
+    :ok = :mnesia.dirty_write({:mnesia_dets_test, :on_disk, "value"})
+
+    assert {:ok, [object]} = Mnesia.table_content(Node.self(), :mnesia_dets_test)
+    assert object =~ ":on_disk"
+
+    assert {:ok, []} = Mnesia.table_content(Node.self(), :mnesia_dets_empty_test)
+
+    # An empty ram_copies table reports empty as well (ets end_of_table branch)
+    {:atomic, :ok} =
+      :mnesia.create_table(:mnesia_ram_empty_test,
+        attributes: [:key, :value],
+        ram_copies: [node()]
+      )
+
+    assert {:ok, []} = Mnesia.table_content(Node.self(), :mnesia_ram_empty_test)
+  after
+    :mnesia.stop()
+    :application.unset_env(:mnesia, :dir)
+  end
 end

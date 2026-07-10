@@ -53,19 +53,40 @@ defmodule ObserverWeb.NetworkTest do
     end
 
     test "reports NIF sockets with their counters" do
+      # A listener to give the NIF socket somewhere to write to, so the counters move
+      {:ok, listen} = :gen_tcp.listen(0, [:binary, active: false, reuseaddr: true])
+      {:ok, listen_port_number} = :inet.port(listen)
+
       {:ok, socket} = :socket.open(:inet, :stream, :tcp)
+
+      :ok =
+        :socket.connect(socket, %{family: :inet, addr: {127, 0, 0, 1}, port: listen_port_number})
+
+      {:ok, accepted} = :gen_tcp.accept(listen, 1_000)
+      :ok = :socket.send(socket, String.duplicate("y", 500))
+      {:ok, _data} = :gen_tcp.recv(accepted, 500, 1_000)
 
       assert {:ok, %{sockets: sockets}} = Network.sample(Node.self())
 
-      assert [socket_row | _rest] = sockets
+      assert socket_row = Enum.find(sockets, &(&1.protocol == :tcp and &1.write_bytes > 0))
       assert socket_row.id_str != ""
       assert socket_row.domain == :inet
       assert socket_row.type == :stream
-      assert socket_row.protocol == :tcp
-      assert is_integer(socket_row.read_bytes)
-      assert is_integer(socket_row.write_bytes)
+      # The regression this asserts: statistics counters are a keyword list, not a map - a map
+      # lookup silently reported every socket as 0 bytes.
+      assert socket_row.write_bytes >= 500
 
       :socket.close(socket)
+      :gen_tcp.close(accepted)
+      :gen_tcp.close(listen)
+    end
+
+    test "reports unexpected replies as errors" do
+      stub(ObserverWeb.RpcMock, :call, fn _node, _module, _function, _args, _timeout ->
+        :unexpected
+      end)
+
+      assert {:error, {:unexpected_reply, :unexpected}} = Network.sample(Node.self())
     end
 
     test "degrades to an empty socket list when get_socket_list is unavailable" do

@@ -135,7 +135,7 @@ defmodule ObserverWeb.Network do
   defp format_addr(addr), do: inspect(addr)
 
   defp decode_socket(%{} = info) do
-    counters = Map.get(info, :statistics) || %{}
+    counters = Map.get(info, :statistics) || []
 
     [
       %{
@@ -155,10 +155,11 @@ defmodule ObserverWeb.Network do
   defp decode_socket(_unexpected), do: []
   # coveralls-ignore-stop
 
-  defp counter(counters, key) when is_map(counters) do
-    case Map.get(counters, key, 0) do
-      value when is_integer(value) -> value
-      _unexpected -> 0
+  # get_socket_list reports the statistics counters as a keyword list
+  defp counter(counters, key) when is_list(counters) do
+    case List.keyfind(counters, key, 0) do
+      {^key, value} when is_integer(value) -> value
+      _missing -> 0
     end
   end
 

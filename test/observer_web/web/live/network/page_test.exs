@@ -147,4 +147,81 @@ defmodule Observer.Web.Network.PageLiveTest do
 
     assert render(index_live) =~ "Inet Ports"
   end
+
+  test "Sockets table lists NIF sockets and KB-scale port transfers", %{conn: conn} do
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, listen} = :gen_tcp.listen(0, [:binary, active: false, reuseaddr: true])
+    {:ok, listen_port_number} = :inet.port(listen)
+    {:ok, client} = :gen_tcp.connect(~c"localhost", listen_port_number, [:binary, active: false])
+    {:ok, accepted} = :gen_tcp.accept(listen, 1_000)
+
+    # Enough traffic to reach the KB formatting branch
+    :ok = :gen_tcp.send(client, String.duplicate("x", 4_096))
+    {:ok, _data} = :gen_tcp.recv(accepted, 4_096, 1_000)
+
+    {:ok, nif_socket} = :socket.open(:inet, :stream, :tcp)
+
+    :ok =
+      :socket.connect(nif_socket, %{family: :inet, addr: {127, 0, 0, 1}, port: listen_port_number})
+
+    {:ok, index_live, _html} = live(conn, "/observer/network")
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "Sockets (NIF)"
+    assert html =~ "DOMAIN"
+    assert html =~ "PROTOCOL"
+    assert html =~ ":inet"
+    assert html =~ " KB"
+
+    :socket.close(nif_socket)
+    :gen_tcp.close(client)
+    :gen_tcp.close(accepted)
+    :gen_tcp.close(listen)
+  end
+
+  test "Control changes, unknown rows and nodedown of the selected service are safe", %{
+    conn: conn
+  } do
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    with_tcp_connection(fn _listen_port_number ->
+      {:ok, index_live, _html} = live(conn, "/observer/network")
+
+      :timer.sleep(50)
+      render(index_live)
+
+      # Open the details panel, then refresh: the panel follows the newest sample
+      index_live
+      |> element("#network-select-row-0")
+      |> render_click()
+
+      index_live
+      |> element("#network-refresh", "REFRESH")
+      |> render_click()
+
+      :timer.sleep(50)
+      assert render(index_live) =~ "recv (total)"
+
+      # Sort by sent, unknown service (falls back to the local node) and invalid interval
+      index_live
+      |> element("#network-update-form")
+      |> render_change(%{service: "ghost@nohost", sort_by: "send", refresh_seconds: "abc"})
+
+      :timer.sleep(50)
+      assert render(index_live) =~ "Inet Ports"
+
+      # A stale/out-of-range row index is ignored
+      render_click(index_live, "network-select-row", %{"index" => "9999"})
+
+      # Losing the selected service falls back to the local node
+      send(index_live.pid, {:nodedown, Node.self()})
+      :timer.sleep(50)
+      assert render(index_live) =~ "Inet Ports"
+    end)
+  end
 end

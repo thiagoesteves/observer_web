@@ -67,6 +67,46 @@ defmodule Observer.Web.Profiling.PageLiveTest do
       |> render_click()
 
     refute html =~ "functions:testing_adding_fun/2"
+
+    html =
+      index_live
+      |> element("#profiling-multi-select-modules-Elixir-ObserverWeb-TracerFixtures-remove-item")
+      |> render_click()
+
+    refute html =~ "modules:Elixir.ObserverWeb.TracerFixtures"
+
+    html =
+      index_live
+      |> element("#profiling-multi-select-services-#{service}-remove-item")
+      |> render_click()
+
+    refute html =~ "services:#{node}"
+  end
+
+  test "Filtering modules and functions by search", %{conn: conn} do
+    node = Node.self() |> to_string
+    service = Helpers.normalize_id(node)
+
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/profiling")
+
+    index_live
+    |> element("#profiling-multi-select-toggle-options")
+    |> render_click()
+
+    index_live
+    |> element("#profiling-multi-select-services-#{service}-add-item")
+    |> render_click()
+
+    html =
+      index_live
+      |> element("#multi-select-list-search-form-profiling-multi-select-modules")
+      |> render_change(%{"_target" => "modules", "modules" => "TracerFixtures"})
+
+    assert html =~ "TracerFixtures"
+    refute html =~ "Elixir.Enum\n"
   end
 
   test "Run Count for ObserverWeb.TracerFixtures.testing_adding_fun/2", %{conn: conn} do
@@ -585,5 +625,111 @@ defmodule Observer.Web.Profiling.PageLiveTest do
     string
     |> String.replace("<", "&lt;")
     |> String.replace(">", "&gt;")
+  end
+
+  %{1 => "avg", 2 => "min", 3 => "max"}
+  |> Enum.each(fn {element, aggregation} ->
+    test "#{element} - Run Duration with the #{aggregation} aggregation", %{conn: conn} do
+      node = Node.self() |> to_string
+      service = Helpers.normalize_id(node)
+      aggregation = unquote(aggregation)
+
+      RpcStubber.defaults()
+      TelemetryStubber.defaults()
+
+      {:ok, index_live, _html} = live(conn, "/observer/profiling")
+
+      index_live
+      |> element("#profiling-multi-select-toggle-options")
+      |> render_click()
+
+      index_live
+      |> element("#profiling-multi-select-services-#{service}-add-item")
+      |> render_click()
+
+      index_live
+      |> element("#profiling-multi-select-modules-Elixir-ObserverWeb-TracerFixtures-add-item")
+      |> render_click()
+
+      index_live
+      |> element("#profiling-multi-select-functions-testing_adding_fun-2-add-item")
+      |> render_click()
+
+      index_live
+      |> element("#profiling-update-form")
+      |> render_change(%{
+        tool: "duration",
+        aggregation: aggregation,
+        max_messages: 2,
+        session_timeout_seconds: 30
+      })
+
+      index_live
+      |> element("#profiling-multi-select-run", "RUN")
+      |> render_click()
+
+      ObserverWeb.TracerFixtures.testing_adding_fun(1, 1)
+
+      :timer.sleep(50)
+
+      html = render(index_live)
+      assert html =~ "Duration Results"
+      assert html =~ "TracerFixtures.testing_adding_fun/2"
+    end
+  end)
+
+  test "Flame Graph with no completed samples renders an empty report", %{conn: conn} do
+    node = Node.self() |> to_string
+    service = Helpers.normalize_id(node)
+
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/profiling")
+
+    index_live
+    |> element("#profiling-multi-select-toggle-options")
+    |> render_click()
+
+    index_live
+    |> element("#profiling-multi-select-services-#{service}-add-item")
+    |> render_click()
+
+    index_live
+    |> element(
+      "#profiling-multi-select-modules-Elixir-ObserverWeb-TracerFixtures-Callee-add-item"
+    )
+    |> render_click()
+
+    index_live
+    |> element("#profiling-update-form")
+    |> render_change(%{tool: "flame_graph", max_messages: 100, session_timeout_seconds: 30})
+
+    index_live
+    |> element("#profiling-multi-select-run", "RUN")
+    |> render_click()
+
+    # No traced calls happen before stopping: the report is empty and no chart renders
+    index_live
+    |> element("#profiling-multi-select-stop", "STOP")
+    |> render_click()
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "Flame Graph Results"
+    refute html =~ "profiling-flame-graph-chart"
+
+    # An invalid process selection is also safe with an empty report
+    index_live
+    |> element("#profiling-update-form")
+    |> render_change(%{
+      tool: "flame_graph",
+      flame_pid: "abc",
+      max_messages: 100,
+      session_timeout_seconds: 30
+    })
+
+    assert render(index_live) =~ "Flame Graph Results"
   end
 end

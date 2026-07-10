@@ -193,6 +193,18 @@ defmodule Observer.Web.Ets.PageLiveTest do
     html = render(index_live)
     assert html =~ "Mnesia is not running on"
     refute html =~ "Could not list tables"
+
+    # Changing a control while no tables are loaded must not crash (rows stay unset)
+    index_live
+    |> element("#ets-update-form")
+    |> render_change(%{
+      source: "mnesia",
+      service: to_string(Node.self()),
+      sort_by: "name",
+      search: "x"
+    })
+
+    assert render(index_live) =~ "Mnesia is not running on"
   end
 
   test "Mnesia source lists tables with storage and previews contents", %{conn: conn} do
@@ -243,5 +255,43 @@ defmodule Observer.Web.Ets.PageLiveTest do
   after
     :mnesia.delete_table(:ets_page_mnesia_test)
     :mnesia.stop()
+  end
+
+  test "REFRESH, size sort, unknown rows and nodedown of the selected service are safe", %{
+    conn: conn
+  } do
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/ets")
+
+    :timer.sleep(50)
+
+    index_live
+    |> element("#ets-refresh", "REFRESH")
+    |> render_click()
+
+    :timer.sleep(50)
+    assert render(index_live) =~ "Tables:"
+
+    index_live
+    |> element("#ets-update-form")
+    |> render_change(%{
+      source: "ets",
+      service: to_string(Node.self()),
+      sort_by: "size",
+      search: ""
+    })
+
+    assert render(index_live) =~ "OBJECTS"
+
+    # Stale/out-of-range and non-numeric row indexes are ignored
+    render_click(index_live, "ets-select-row", %{"index" => "99999"})
+    render_click(index_live, "ets-select-row", %{"index" => "abc"})
+
+    # Losing the selected service falls back to the local node
+    send(index_live.pid, {:nodedown, Node.self()})
+    :timer.sleep(50)
+    assert render(index_live) =~ "Tables:"
   end
 end

@@ -149,4 +149,50 @@ defmodule Observer.Web.Processes.PageLiveTest do
 
     assert render(index_live) =~ "Processes:"
   end
+
+  test "Control changes, unknown rows and nodedown of the selected service are safe", %{
+    conn: conn
+  } do
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/processes")
+
+    :timer.sleep(50)
+    render(index_live)
+
+    # Open the details panel, then refresh: the panel follows the newest sample
+    index_live
+    |> element("#processes-select-row-0")
+    |> render_click()
+
+    index_live
+    |> element("#processes-refresh", "REFRESH")
+    |> render_click()
+
+    :timer.sleep(50)
+    assert render(index_live) =~ "current stacktrace"
+
+    # Unknown service (falls back to the local node and clears state), message-queue sort and
+    # an invalid limit (falls back to the default)
+    index_live
+    |> element("#processes-update-form")
+    |> render_change(%{
+      service: "ghost@nohost",
+      sort_by: "message_queue_len",
+      limit: "abc",
+      refresh_seconds: "0"
+    })
+
+    :timer.sleep(50)
+    assert render(index_live) =~ "Processes:"
+
+    # A stale/out-of-range row index is ignored
+    render_click(index_live, "processes-select-row", %{"index" => "9999"})
+
+    # Losing the selected service falls back to the local node
+    send(index_live.pid, {:nodedown, Node.self()})
+    :timer.sleep(50)
+    assert render(index_live) =~ "Processes:"
+  end
 end
