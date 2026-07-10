@@ -13,10 +13,12 @@ defmodule Observer.Web.Apps.Page do
   alias Observer.Web.Apps.Process
   alias Observer.Web.Components.Attention
   alias Observer.Web.Components.Confirm
+  alias Observer.Web.Components.Core
   alias Observer.Web.Components.MultiSelect
   alias Observer.Web.Helpers
   alias Observer.Web.Page
   alias ObserverWeb.Apps
+  alias ObserverWeb.Apps.Aggregator
   alias ObserverWeb.Monitor
   alias ObserverWeb.Telemetry
 
@@ -145,6 +147,40 @@ defmodule Observer.Web.Apps.Page do
             <div id="apps-tree-data" hidden>{Jason.encode!(@chart_tree_data)}</div>
           </div>
         </div>
+        <div
+          :if={@observer_data != %{}}
+          class="mt-4 bg-white dark:bg-gray-800 w-full shadow-lg rounded"
+        >
+          <div class="flex items-center justify-between px-4 pt-2">
+            <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-200">
+              Applications Summary
+            </h2>
+            <button
+              id="apps-load-stats"
+              phx-click="apps-load-stats"
+              class="text-xs font-semibold text-blue-600 dark:text-blue-300 hover:underline"
+            >
+              LOAD STATS
+            </button>
+          </div>
+          <Core.table_tracing id="apps-aggregation" rows={aggregation_rows(assigns)}>
+            <:col :let={row} label="SERVICE">{row.service}</:col>
+            <:col :let={row} label="APP">{row.app}</:col>
+            <:col :let={row} label="VERSION">{row.version}</:col>
+            <:col :let={row} label="PROCESSES">{row.counts.processes}</:col>
+            <:col :let={row} label="PORTS">{row.counts.ports}</:col>
+            <:col :let={row} label="REFS">{row.counts.references}</:col>
+            <:col :let={row} label="MEMORY">{stat(row.stats, :memory, &format_bytes/1)}</:col>
+            <:col :let={row} label="REDUCTIONS">{stat(row.stats, :reductions)}</:col>
+            <:col :let={row} label="MSG QUEUE">{stat(row.stats, :message_queue_len)}</:col>
+          </Core.table_tracing>
+          <div
+            :if={partial_stats?(@apps_stats)}
+            class="px-4 pb-2 text-xs text-gray-500 dark:text-gray-400"
+          >
+            * partial: stats sampled over the first 2000 processes of a larger tree.
+          </div>
+        </div>
         <% data_key = data_key(@current_selected_id.node, @current_selected_id.metric) %>
         <%= if @current_selected_id.type == "pid" do %>
           <Process.content
@@ -208,6 +244,7 @@ defmodule Observer.Web.Apps.Page do
     |> assign(process_msg_form: to_form(%{"message" => ""}))
     |> assign(:show_observer_options, false)
     |> assign(:selected_id_action_confirmation, nil)
+    |> assign(:apps_stats, %{})
     |> stream(:empty, [])
   end
 
@@ -221,6 +258,7 @@ defmodule Observer.Web.Apps.Page do
     |> assign(process_msg_form: to_form(%{"message" => ""}))
     |> assign(:show_observer_options, false)
     |> assign(:selected_id_action_confirmation, nil)
+    |> assign(:apps_stats, %{})
     |> stream(:empty, [])
   end
 
@@ -427,6 +465,42 @@ defmodule Observer.Web.Apps.Page do
      assign(socket,
        form: to_form(%{"initial_tree_depth" => depth, "get_state_timeout" => get_state_timeout})
      )}
+  end
+
+  # Summing per-app stats does one pinfo per process (see ObserverWeb.Apps.Aggregator), so it
+  # only runs when explicitly requested instead of on every tree refresh.
+  def handle_parent_event(
+        "apps-load-stats",
+        _data,
+        %{assigns: %{observer_data: observer_data}} = socket
+      ) do
+    versions =
+      observer_data
+      |> Map.keys()
+      |> Enum.map(&(&1 |> decompose_data_key() |> hd()))
+      |> Enum.uniq()
+      |> Map.new(fn service ->
+        apps =
+          service
+          |> String.to_existing_atom()
+          |> Apps.list()
+          |> Map.new(&{to_string(&1.name), &1.version})
+
+        {service, apps}
+      end)
+
+    apps_stats =
+      Map.new(observer_data, fn {data_key, %{"data" => tree}} ->
+        [service, app] = decompose_data_key(data_key)
+
+        {data_key,
+         %{
+           stats: Aggregator.stats(tree),
+           version: versions |> Map.get(service, %{}) |> Map.get(app, "-")
+         }}
+      end)
+
+    {:noreply, assign(socket, :apps_stats, apps_stats)}
   end
 
   def handle_parent_event(
@@ -887,4 +961,42 @@ defmodule Observer.Web.Apps.Page do
       id: Helpers.identifier_to_safe_id(id)
     }
   end
+
+  defp aggregation_rows(%{observer_data: observer_data, apps_stats: apps_stats}) do
+    observer_data
+    |> Enum.map(fn {data_key, %{"data" => tree}} ->
+      [service, app] = decompose_data_key(data_key)
+      loaded = Map.get(apps_stats, data_key, %{})
+
+      %{
+        service: service,
+        app: app,
+        version: Map.get(loaded, :version, "-"),
+        counts: Aggregator.count(tree),
+        stats: Map.get(loaded, :stats)
+      }
+    end)
+    |> Enum.sort_by(&{&1.service, &1.app})
+  end
+
+  defp stat(stats, key, format \\ &to_string/1)
+
+  defp stat(nil, _key, _format), do: "-"
+
+  defp stat(%{partial?: partial?} = stats, key, format) do
+    formatted = stats |> Map.fetch!(key) |> format.()
+
+    if partial?, do: formatted <> " *", else: formatted
+  end
+
+  defp partial_stats?(apps_stats) do
+    Enum.any?(apps_stats, fn {_key, %{stats: stats}} -> stats.partial? end)
+  end
+
+  defp format_bytes(bytes) when bytes >= 1_073_741_824,
+    do: "#{Float.round(bytes / 1_073_741_824, 1)} GB"
+
+  defp format_bytes(bytes) when bytes >= 1_048_576, do: "#{Float.round(bytes / 1_048_576, 1)} MB"
+  defp format_bytes(bytes) when bytes >= 1_024, do: "#{Float.round(bytes / 1_024, 1)} KB"
+  defp format_bytes(bytes), do: "#{bytes} B"
 end
