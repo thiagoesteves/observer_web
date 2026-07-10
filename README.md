@@ -30,7 +30,7 @@ library is part of the [DeployEx][dye] project.
 ### Busiest network connections ranked by throughput, including NIF sockets
 ![Network Dashboard](./guides/static/network_dash.png)
 
-### Application topology view with processes, ports, references, links and relations.
+### Application topology view with per-app summary, processes, ports, links and relations.
 ![Applications Dashboard](./guides/static/applications_tree.png)
 
 ### Process inspector with actions (send messages, kill, GC, memory monitoring)

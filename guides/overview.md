@@ -54,7 +54,8 @@ plus the NIF-based socket module sockets that port listings miss.
 ![Observer Network Dashboard](./static/network_dash.png)
 
 - **🔬 Process/Port Inspection** - View processes and ports details as well as their status and 
-connectivity (and much more).
+connectivity (and much more), with a per-application summary table: process/port counts,
+version and on-demand memory/reductions totals.
 
 ![Observer Application Dashboard](./static/applications_tree.png)
 

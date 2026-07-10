@@ -4,8 +4,10 @@ defmodule Observer.Web.Apps.Legend do
 
   def content(assigns) do
     ~H"""
-    <div class="p-3 border border-black relative mt-5 bg-white dark:bg-gray-800">
-      <h2 class="absolute -top-1/2 translate-y-1/2">Legend</h2>
+    <div class="p-3 border border-black dark:border-gray-400 relative mt-5 bg-white dark:bg-gray-800">
+      <h2 class="absolute -top-3 left-3 px-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+        Legend
+      </h2>
       <div class="flex items-center">
         <span class="text-gray-600 dark:text-neutral-400">Process (App)</span>
         <div class="w-6 h-6 mr-3 flex items-center justify-center">
