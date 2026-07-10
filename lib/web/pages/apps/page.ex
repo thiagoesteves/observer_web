@@ -138,18 +138,9 @@ defmodule Observer.Web.Apps.Page do
         />
       </div>
       <div class="p-2">
-        <%= if @observer_data != %{}  do %>
-          <Legend.content />
-        <% end %>
-        <div>
-          <div id="apps-tree" class="ml-5 mr-5 mt-10" phx-hook="ObserverEChart" data-merge={false}>
-            <div id="apps-tree-chart" style="width: 100%; height: 600px;" phx-update="ignore" />
-            <div id="apps-tree-data" hidden>{Jason.encode!(@chart_tree_data)}</div>
-          </div>
-        </div>
         <div
           :if={@observer_data != %{}}
-          class="mt-4 bg-white dark:bg-gray-800 w-full shadow-lg rounded"
+          class="mt-2 bg-white dark:bg-gray-800 w-full shadow-lg rounded"
         >
           <div class="flex items-center justify-between px-4 pt-2">
             <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-200">
@@ -179,6 +170,15 @@ defmodule Observer.Web.Apps.Page do
             class="px-4 pb-2 text-xs text-gray-500 dark:text-gray-400"
           >
             * partial: stats sampled over the first 2000 processes of a larger tree.
+          </div>
+        </div>
+        <%= if @observer_data != %{}  do %>
+          <Legend.content />
+        <% end %>
+        <div>
+          <div id="apps-tree" class="ml-5 mr-5 mt-10" phx-hook="ObserverEChart" data-merge={false}>
+            <div id="apps-tree-chart" style="width: 100%; height: 600px;" phx-update="ignore" />
+            <div id="apps-tree-data" hidden>{Jason.encode!(@chart_tree_data)}</div>
           </div>
         </div>
         <% data_key = data_key(@current_selected_id.node, @current_selected_id.metric) %>
