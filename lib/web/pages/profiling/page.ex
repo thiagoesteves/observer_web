@@ -76,7 +76,7 @@ defmodule Observer.Web.Profiling.Page do
           <.form
             for={@form}
             id="profiling-update-form"
-            class="flex shrink-0 ml-2 mr-2 text-xs text-center text-zinc-800 dark:text-white whitespace-nowrap gap-5"
+            class="flex flex-col md:flex-row md:items-end shrink-0 ml-2 mr-2 py-2 text-xs text-center text-zinc-800 dark:text-white whitespace-nowrap gap-x-5 gap-y-1"
             phx-change="form-update"
           >
             <Core.input
@@ -144,7 +144,7 @@ defmodule Observer.Web.Profiling.Page do
             :if={@trace_idle? and @trace_owner?}
             id="profiling-multi-select-run"
             phx-click="profiling-run"
-            class="phx-submit-loading:opacity-75 rounded-r-xl bg-green-500 dark:bg-green-700 transform active:scale-75 transition-transform hover:bg-green-800 dark:hover:bg-green-800 py-10 w-64 text-sm font-semibold text-white active:text-white/80"
+            class="phx-submit-loading:opacity-75 rounded-r-xl bg-green-500 dark:bg-green-700 transform active:scale-75 transition-transform hover:bg-green-800 dark:hover:bg-green-800 self-stretch w-40 xl:w-64 flex items-center justify-center text-sm font-semibold text-white active:text-white/80"
           >
             RUN
           </button>
@@ -152,14 +152,14 @@ defmodule Observer.Web.Profiling.Page do
             :if={@trace_idle? == false and @trace_owner?}
             id="profiling-multi-select-stop"
             phx-click="profiling-stop"
-            class="phx-submit-loading:opacity-75 rounded-r-xl bg-red-500 dark:bg-red-700 transform active:scale-75 transition-transform hover:bg-red-600 dark:hover:bg-red-800 py-10 w-64 text-sm font-semibold text-white active:text-white/80 animate-pulse"
+            class="phx-submit-loading:opacity-75 rounded-r-xl bg-red-500 dark:bg-red-700 transform active:scale-75 transition-transform hover:bg-red-600 dark:hover:bg-red-800 self-stretch w-40 xl:w-64 flex items-center justify-center text-sm font-semibold text-white active:text-white/80 animate-pulse"
           >
             STOP
           </button>
 
           <button
             :if={not @trace_owner?}
-            class="phx-submit-loading:opacity-75 rounded-r-xl bg-red-500 dark:bg-red-700 transform active:scale-75 transition-transform hover:bg-red-600 dark:hover:bg-red-800 py-10 w-64 text-sm font-semibold text-white active:text-white/80 animate-pulse"
+            class="phx-submit-loading:opacity-75 rounded-r-xl bg-red-500 dark:bg-red-700 transform active:scale-75 transition-transform hover:bg-red-600 dark:hover:bg-red-800 self-stretch w-40 xl:w-64 flex items-center justify-center text-sm font-semibold text-white active:text-white/80 animate-pulse"
           >
             IN USE
           </button>

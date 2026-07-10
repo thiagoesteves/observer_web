@@ -11,14 +11,14 @@ defmodule Observer.Web.Components.Attention do
 
   def content(assigns) do
     ~H"""
-    <div class="flex items-center justify-between bg-gray-200 dark:bg-gray-800 w-full">
+    <div class="flex items-stretch justify-between bg-gray-200 dark:bg-gray-800 w-full">
       <div
         id={"live-#{@id}-alert"}
-        class={["p-2 bg-gray-300 dark:bg-gray-700 border-l-8 rounded-l-lg", @class]}
+        class={["p-2 bg-gray-300 dark:bg-gray-700 border-l-8 rounded-l-lg grow", @class]}
         role="alert"
       >
         <div class="flex items-center">
-          <div class="flex items-center py-8 ">
+          <div class="hidden lg:flex items-center py-8">
             <svg
               class="flex-shrink-0 w-4 h-4 me-2"
               aria-hidden="true"
@@ -31,10 +31,14 @@ defmodule Observer.Web.Components.Attention do
             <span class="sr-only">Info</span>
             <h3 class="text-sm  font-bold">{@title}</h3>
           </div>
-          <div class="ml-2 mr-2 mt-2 mb-2 text-xs">
-            {@message}
+          <div class="hidden lg:block flex-1 min-w-0 ml-2 mr-2 mt-2 mb-2 text-xs">
+            <div class="line-clamp-4">
+              {@message}
+            </div>
           </div>
+          <div class="grow lg:hidden"></div>
           {render_slot(@inner_form)}
+          <div class="grow lg:hidden"></div>
         </div>
       </div>
       {render_slot(@inner_button)}
