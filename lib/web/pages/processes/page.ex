@@ -32,7 +32,7 @@ defmodule Observer.Web.Processes.Page do
           <.form
             for={@form}
             id="processes-update-form"
-            class="flex shrink-0 ml-2 mr-2 text-xs text-center text-zinc-800 dark:text-white whitespace-nowrap gap-5"
+            class="flex flex-col md:flex-row md:items-end shrink-0 ml-2 mr-2 py-2 text-xs text-center text-zinc-800 dark:text-white whitespace-nowrap gap-x-5 gap-y-1"
             phx-change="form-update"
           >
             <Core.input
@@ -72,7 +72,7 @@ defmodule Observer.Web.Processes.Page do
           <button
             id="processes-refresh"
             phx-click="processes-refresh"
-            class="phx-submit-loading:opacity-75 rounded-r-xl bg-green-500 dark:bg-green-700 transform active:scale-75 transition-transform hover:bg-green-800 dark:hover:bg-green-800 py-10 w-64 text-sm font-semibold text-white active:text-white/80"
+            class="phx-submit-loading:opacity-75 rounded-r-xl bg-green-500 dark:bg-green-700 transform active:scale-75 transition-transform hover:bg-green-800 dark:hover:bg-green-800 self-stretch w-40 xl:w-64 flex items-center justify-center text-sm font-semibold text-white active:text-white/80"
           >
             REFRESH
           </button>
