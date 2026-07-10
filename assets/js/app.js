@@ -6,6 +6,7 @@ import { loadAll } from "./lib/settings";
 import LiveMetricsEChart from "./hooks/live_metrics_echart";
 import ObserverEChart from "./hooks/observer_echart";
 import FlameGraphEChart from "./hooks/flame_graph_echart";
+import NavOverflow from "./hooks/nav_overflow";
 import ScrollBottom from "./hooks/scroll_bottom";
 import Themer from "./hooks/themer";
 import AutoDismissFlash from "./hooks/auto_dismiss_flash";
@@ -14,6 +15,7 @@ const hooks = {
   LiveMetricsEChart,
   ObserverEChart,
   FlameGraphEChart,
+  NavOverflow,
   ScrollBottom,
   Themer,
   AutoDismissFlash,

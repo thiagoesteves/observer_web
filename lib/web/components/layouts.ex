@@ -53,18 +53,47 @@ defmodule Observer.Web.Layouts do
 
   def nav(assigns) do
     ~H"""
-    <nav class="flex space-x-1">
-      <.link
-        :for={page <- list_pages_by_params(@params)}
-        class={link_class(@page, page)}
-        data-shortcut={JS.navigate(observer_path(page, @params))}
-        id={"nav-#{page}"}
-        navigate={observer_path(page, @params)}
-        title={"Navigate to #{String.capitalize(to_string(page))}"}
+    <nav id="main-nav" phx-hook="NavOverflow" class="relative flex-1 min-w-0">
+      <div data-nav-items class="flex items-center gap-1 overflow-hidden">
+        <.link
+          :for={page <- list_pages_by_params(@params)}
+          class={link_class(@page, page)}
+          data-shortcut={JS.navigate(observer_path(page, @params))}
+          id={"nav-#{page}"}
+          navigate={observer_path(page, @params)}
+          title={"Navigate to #{String.capitalize(to_string(page))}"}
+        >
+          <Icons.content name={page} />
+          {String.upcase(to_string(page))}
+        </.link>
+        <button
+          id="nav-more"
+          data-nav-more
+          hidden
+          class="flex items-center shrink-0 px-4 py-2.5 text-sm font-bold transition-all duration-200 text-gray-900 dark:text-white rounded-lg hover:text-black dark:hover:text-white hover:bg-cyan-500 dark:hover:bg-cyan-800"
+        >
+          MORE
+          <svg
+            class="w-4 h-4 ml-1"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+      </div>
+      <div
+        id="nav-more-panel"
+        data-nav-panel
+        hidden
+        class="absolute right-0 top-full z-50 mt-1 flex flex-col gap-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 shadow-lg p-1"
       >
-        <Icons.content name={page} />
-        {String.upcase(to_string(page))}
-      </.link>
+      </div>
     </nav>
     """
   end
