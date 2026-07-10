@@ -1,0 +1,119 @@
+defmodule Observer.Web.Crashdump.PageLiveTest do
+  use Observer.Web.ConnCase, async: false
+
+  import Mox
+
+  alias Observer.Web.Mocks.RpcStubber
+  alias Observer.Web.Mocks.TelemetryStubber
+  alias ObserverWeb.CrashdumpFixtures
+
+  setup [
+    :set_mox_global,
+    :verify_on_exit!
+  ]
+
+  setup do
+    original = Application.get_env(:observer_web, :crashdump_dirs)
+
+    :ok = Supervisor.terminate_child(ObserverWeb.Application, ObserverWeb.Crashdump.Server)
+    {:ok, _pid} = Supervisor.restart_child(ObserverWeb.Application, ObserverWeb.Crashdump.Server)
+
+    on_exit(fn ->
+      if original == nil do
+        Application.delete_env(:observer_web, :crashdump_dirs)
+      else
+        Application.put_env(:observer_web, :crashdump_dirs, original)
+      end
+    end)
+
+    :ok
+  end
+
+  defp await_loaded(index_live, retries \\ 100)
+
+  defp await_loaded(_index_live, 0), do: raise("dump never finished loading")
+
+  defp await_loaded(index_live, retries) do
+    if render(index_live) =~ "Slogan:" do
+      :ok
+    else
+      Process.sleep(100)
+      await_loaded(index_live, retries - 1)
+    end
+  end
+
+  test "GET /crashdump explains the configuration when no dirs are allowlisted", %{conn: conn} do
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, _index_live, html} = live(conn, "/observer/crashdump")
+
+    assert html =~ "No crash dump directories are configured"
+    assert html =~ "crashdump_dirs:"
+  end
+
+  test "Lists, loads and browses a real crash dump", %{conn: conn} do
+    %{dir: dir} = CrashdumpFixtures.ensure_dump!()
+    Application.put_env(:observer_web, :crashdump_dirs, [dir])
+
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, html} = live(conn, "/observer/crashdump")
+
+    assert html =~ "Crash Dumps"
+    assert html =~ "erl_crash.dump"
+    assert html =~ "MODIFIED"
+
+    index_live
+    |> element("#crashdump-load-0", "LOAD")
+    |> render_click()
+
+    await_loaded(index_live)
+
+    html = render(index_live)
+    assert html =~ "observer web test crash"
+    assert html =~ "Processes at crash time"
+    assert html =~ "CURRENT FUNCTION"
+    assert html =~ "REDUCTIONS"
+
+    # Search and sort re-rank the table
+    html =
+      index_live
+      |> element("#crashdump-update-form")
+      |> render_change(%{sort_by: "reds", search: "init"})
+
+    assert html =~ "Processes at crash time"
+
+    index_live
+    |> element("#crashdump-update-form")
+    |> render_change(%{sort_by: "memory", search: ""})
+
+    # Drill into the first process and close the panel again
+    html =
+      index_live
+      |> element("#crashdump-select-row-0")
+      |> render_click()
+
+    assert html =~ "stack dump"
+
+    html =
+      index_live
+      |> element("#crashdump-details-close", "CLOSE")
+      |> render_click()
+
+    refute html =~ "stack dump"
+
+    # Out-of-range and non-numeric indexes are ignored
+    render_click(index_live, "crashdump-select-row", %{"index" => "99999"})
+    render_click(index_live, "crashdump-load", %{"index" => "99999"})
+    render_click(index_live, "crashdump-select-row", %{"index" => "abc"})
+
+    # REFRESH re-lists the dump files
+    index_live
+    |> element("#crashdump-refresh", "REFRESH")
+    |> render_click()
+
+    assert render(index_live) =~ "erl_crash.dump"
+  end
+end

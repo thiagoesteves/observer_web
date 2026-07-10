@@ -23,6 +23,9 @@ defmodule ObserverWeb.MixProject do
       docs: docs(),
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
+      # :crashdump_viewer (observer app) is called only behind a runtime availability check -
+      # hosts without :observer in their release get a graceful "unavailable" notice.
+      elixirc_options: [no_warn_undefined: [:crashdump_viewer]],
       dialyzer: [
         plt_add_apps: [:ex_unit, :mix],
         check_plt: true,

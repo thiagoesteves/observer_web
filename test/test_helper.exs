@@ -2,6 +2,7 @@
 # deliberately absent from extra_applications (host releases decide whether they ship it),
 # and Mix prunes undeclared OTP applications from the code path (Elixir 1.15+).
 Mix.ensure_application!(:mnesia)
+Mix.ensure_application!(:observer)
 
 Application.put_env(:observer_web, Observer.Web.Endpoint,
   check_origin: false,
