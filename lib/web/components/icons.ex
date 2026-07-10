@@ -15,12 +15,36 @@ defmodule Observer.Web.Components.Icons do
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          stroke-width="2"
+          stroke-width="1.8"
           stroke-linecap="round"
           stroke-linejoin="round"
           class="flex-shrink-0 w-12 h-12"
         >
-          <path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M20 18a2 2 0 1 0 -4 0a2 2 0 0 0 4 0z" /><path d="M8 18a2 2 0 1 0 -4 0a2 2 0 0 0 4 0z" /><path d="M8 6a2 2 0 1 0 -4 0a2 2 0 0 0 4 0z" /><path d="M20 6a2 2 0 1 0 -4 0a2 2 0 0 0 4 0z" /><path d="M6 8v8" /><path d="M18 16v-8" /><path d="M8 6h8" /><path d="M16 18h-8" /><path d="M7.5 7.5l9 9" /><path d="M7.5 16.5l9 -9" />
+          <defs>
+            <linearGradient id="ow-logo-gradient" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0" stop-color="#2563eb" />
+              <stop offset="1" stop-color="#06b6d4" />
+            </linearGradient>
+          </defs>
+          <circle cx="10.5" cy="10.5" r="7.5" /><line
+            x1="16.2"
+            y1="16.2"
+            x2="21"
+            y2="21"
+            stroke-width="2.4"
+          /><line x1="10.5" y1="8" x2="7.2" y2="13" /><line x1="10.5" y1="8" x2="13.8" y2="13" /><circle
+            cx="10.5"
+            cy="7.6"
+            r="1.7"
+            fill="url(#ow-logo-gradient)"
+            stroke="none"
+          /><circle cx="7.0" cy="13.4" r="1.4" fill="currentColor" stroke="none" /><circle
+            cx="14.0"
+            cy="13.4"
+            r="1.4"
+            fill="currentColor"
+            stroke="none"
+          />
         </svg>
       <% :tracing -> %>
         <svg

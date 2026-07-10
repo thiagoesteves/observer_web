@@ -8,6 +8,12 @@
 
     <title>{assigns[:page_title] || "Observer Web"}</title>
 
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%232563eb'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cdefs%3E%3ClinearGradient%20id='g'%20x1='0'%20y1='1'%20x2='1'%20y2='0'%3E%3Cstop%20offset='0'%20stop-color='%232563eb'/%3E%3Cstop%20offset='1'%20stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle%20cx='10.5'%20cy='10.5'%20r='7.5'/%3E%3Cline%20x1='16.2'%20y1='16.2'%20x2='21'%20y2='21'%20stroke-width='2.6'/%3E%3Cline%20x1='10.5'%20y1='8'%20x2='7.2'%20y2='13'/%3E%3Cline%20x1='10.5'%20y1='8'%20x2='13.8'%20y2='13'/%3E%3Ccircle%20cx='10.5'%20cy='7.6'%20r='1.9'%20fill='url(%23g)'%20stroke='none'/%3E%3Ccircle%20cx='7'%20cy='13.4'%20r='1.6'%20fill='%2306b6d4'%20stroke='none'/%3E%3Ccircle%20cx='14'%20cy='13.4'%20r='1.6'%20fill='%2306b6d4'%20stroke='none'/%3E%3C/svg%3E"
+    />
+
     <link rel="stylesheet" nonce={@csp_nonces.style} href={asset_path(@conn, :css)} />
 
     <script nonce={@csp_nonces.script}>
