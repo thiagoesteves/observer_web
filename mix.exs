@@ -38,9 +38,15 @@ defmodule ObserverWeb.MixProject do
   def application do
     [
       mod: {ObserverWeb.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools] ++ env_applications(Mix.env())
     ]
   end
+
+  # :mnesia is loaded (never started) in dev/test so the Mnesia browser can be exercised from
+  # dev nodes and tests - Mix prunes undeclared OTP applications from the code path since
+  # Elixir 1.15. Host applications decide whether to ship and run mnesia themselves.
+  defp env_applications(env) when env in [:dev, :test], do: [{:mnesia, :load}]
+  defp env_applications(_env), do: []
 
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]

@@ -42,8 +42,9 @@ opt-in scheduler utilization time series in the Metrics dashboard.
 
 ![Observer System Dashboard](./static/system_dash.png)
 
-- **🗄️ ETS Browser** - Every ETS table on any node with owner, protection, type and memory
-footprint, searchable and sortable - plus opt-in, read-only, bounded content previews.
+- **🗄️ ETS & Mnesia Browser** - Every ETS or Mnesia table on any node with owner,
+protection/storage, type and memory footprint, searchable and sortable - plus opt-in,
+read-only, bounded content previews.
 
 ![Observer ETS Dashboard](./static/ets_dash.png)
 

@@ -12,13 +12,13 @@ defmodule Observer.Web.Ets.PageLiveTest do
   ]
 
   setup do
-    original = Application.get_env(:observer_web, :ets_content_inspection)
+    original = Application.get_env(:observer_web, :table_content_inspection)
 
     on_exit(fn ->
       if original == nil do
-        Application.delete_env(:observer_web, :ets_content_inspection)
+        Application.delete_env(:observer_web, :table_content_inspection)
       else
-        Application.put_env(:observer_web, :ets_content_inspection, original)
+        Application.put_env(:observer_web, :table_content_inspection, original)
       end
     end)
 
@@ -91,7 +91,7 @@ defmodule Observer.Web.Ets.PageLiveTest do
   end
 
   test "DETAILS previews contents when inspection is enabled", %{conn: conn} do
-    Application.put_env(:observer_web, :ets_content_inspection, true)
+    Application.put_env(:observer_web, :table_content_inspection, true)
 
     table = :ets.new(:ets_page_preview_test, [:named_table, :public])
     :ets.insert(table, {:preview_key, "preview_value"})
@@ -169,5 +169,79 @@ defmodule Observer.Web.Ets.PageLiveTest do
     :timer.sleep(50)
 
     assert render(index_live) =~ "Tables:"
+  end
+
+  test "Switching the source to Mnesia reports when it is not running", %{conn: conn} do
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/ets")
+
+    :timer.sleep(50)
+
+    index_live
+    |> element("#ets-update-form")
+    |> render_change(%{
+      source: "mnesia",
+      service: to_string(Node.self()),
+      sort_by: "memory",
+      search: ""
+    })
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "Mnesia is not running on"
+    refute html =~ "Could not list tables"
+  end
+
+  test "Mnesia source lists tables with storage and previews contents", %{conn: conn} do
+    Application.put_env(:observer_web, :table_content_inspection, true)
+
+    :ok = :mnesia.start()
+
+    {:atomic, :ok} =
+      :mnesia.create_table(:ets_page_mnesia_test,
+        attributes: [:key, :value],
+        ram_copies: [node()]
+      )
+
+    :ok = :mnesia.dirty_write({:ets_page_mnesia_test, :page_key, "page_value"})
+
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/ets")
+
+    :timer.sleep(50)
+
+    index_live
+    |> element("#ets-update-form")
+    |> render_change(%{
+      source: "mnesia",
+      service: to_string(Node.self()),
+      sort_by: "memory",
+      search: "ets_page_mnesia_test"
+    })
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "STORAGE"
+    assert html =~ "ram_copies"
+    assert html =~ "ets_page_mnesia_test"
+
+    html =
+      index_live
+      |> element("#ets-select-row-0")
+      |> render_click()
+
+    assert html =~ "storage:"
+    assert html =~ "First objects (bounded preview)"
+    assert html =~ "page_key"
+    assert html =~ "page_value"
+  after
+    :mnesia.delete_table(:ets_page_mnesia_test)
+    :mnesia.stop()
   end
 end

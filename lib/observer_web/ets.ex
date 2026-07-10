@@ -12,7 +12,7 @@ defmodule ObserverWeb.Ets do
   Table contents are live production data, so previewing them is **disabled by default** and
   gated behind an explicit opt-in:
 
-      config :observer_web, ets_content_inspection: true
+      config :observer_web, table_content_inspection: true
 
   Even when enabled, previews are read-only and bounded: at most 50 objects per request,
   each rendered with `inspect` limits. Note that the objects are copied from the observed node
@@ -90,7 +90,7 @@ defmodule ObserverWeb.Ets do
   """
   @spec content_inspection_enabled? :: boolean()
   def content_inspection_enabled? do
-    Application.get_env(:observer_web, :ets_content_inspection, false) == true
+    Application.get_env(:observer_web, :table_content_inspection, false) == true
   end
 
   @doc """

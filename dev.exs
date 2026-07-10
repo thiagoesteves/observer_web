@@ -110,10 +110,10 @@ Task.async(fn ->
   # ETS content previews are opt-in (see the installation guide). The flag is read at request
   # time, so setting it here after boot works - enabled by default in the dev server, set the
   # env to "false" to disable.
-  ets_content_inspection? =
-    "OBSERVER_WEB_ETS_CONTENT_INSPECTION" |> System.get_env("true") |> String.to_atom()
+  table_content_inspection? =
+    "OBSERVER_WEB_TABLE_CONTENT_INSPECTION" |> System.get_env("true") |> String.to_atom()
 
-  Application.put_env(:observer_web, :ets_content_inspection, ets_content_inspection? == true)
+  Application.put_env(:observer_web, :table_content_inspection, table_content_inspection? == true)
 
   {:ok, _} = Supervisor.start_child(ObserverWeb.Application, WebDev.Endpoint)
 
