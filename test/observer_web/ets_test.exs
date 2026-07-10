@@ -18,7 +18,7 @@ defmodule ObserverWeb.EtsTest do
 
   describe "list_tables/1" do
     test "lists named and unnamed tables with their metadata" do
-      named = :ets.new(:ets_context_test_named, [:named_table, :public])
+      _named = :ets.new(:ets_context_test_named, [:named_table, :public])
       unnamed = :ets.new(:ets_context_test_unnamed, [:public])
       :ets.insert(unnamed, {:a, 1})
 
