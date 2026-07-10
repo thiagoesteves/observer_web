@@ -77,6 +77,8 @@ Application.put_env(:observer_web, WebDev.Endpoint,
   ]
 )
 
+# TODO: Update for testing
+Application.put_env(:observer_web, :crashdump_dirs, ["/path/to/dir/"])
 Application.put_env(:phoenix, :serve_endpoints, true)
 Application.put_env(:phoenix, :persistent, true)
 

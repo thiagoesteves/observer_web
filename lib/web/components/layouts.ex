@@ -144,7 +144,17 @@ defmodule Observer.Web.Layouts do
   end
 
   defp list_pages_by_params(%{"iframe" => "true"}),
-    do: [:system, :tracing, :profiling, :processes, :applications, :network, :ets, :metrics, :crashdump]
+    do: [
+      :system,
+      :tracing,
+      :profiling,
+      :processes,
+      :applications,
+      :network,
+      :ets,
+      :metrics,
+      :crashdump
+    ]
 
   defp list_pages_by_params(_params),
     do: [
