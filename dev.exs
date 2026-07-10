@@ -1,5 +1,10 @@
 # Development server for Observer Web
 
+# :mnesia is not part of the application's declared dependencies (host releases decide whether
+# they ship it), and Mix prunes undeclared OTP applications from the code path (Elixir 1.15+).
+# Load it here so the Mnesia browser can be exercised: :mnesia.start() from a remsh, then browse.
+Mix.ensure_application!(:mnesia)
+
 # Phoenix
 
 defmodule WebDev.Router do
