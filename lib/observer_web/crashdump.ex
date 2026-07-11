@@ -4,26 +4,44 @@ defmodule ObserverWeb.Crashdump do
   `crashdump_viewer` GUI, reusing its battle-tested parser (`:crashdump_viewer`, part of the
   `:observer` application) instead of reimplementing the dump format.
 
-  ## Availability
+  ## Enabling
 
-  The `:observer` application ships with OTP but is commonly excluded from releases. The feature
-  detects it at runtime and reports `{:error, :crashdump_viewer_unavailable}` when missing - the
-  host decides whether to ship `:observer` (no GUI/wx is ever started; only the parsing
-  `gen_server` is used).
+  The whole feature - including its navigation tab - is **off by default** and turned on with a
+  single flag:
+
+      config :observer_web, crashdump: true
+
+  Parsing needs OTP's `:crashdump_viewer` (part of the `:observer` application, which ships with
+  OTP but is commonly excluded from releases). No GUI/wx is ever started; only the parsing
+  `gen_server` is used. When the flag is on but `:observer` isn't in the release, the page
+  explains what to add.
+
+  ## Ingesting a dump
+
+  Two ways, both available once enabled:
+
+    * **Upload** an `erl_crash.dump` straight from the browser (e.g. one pulled off a crashed
+      Nerves device) - it's parsed on the dashboard node and the temporary copy is discarded.
+    * **Browse** dumps already present on the dashboard host, from directories the host
+      explicitly allowlists (never a free path):
+
+          config :observer_web, crashdump_dirs: ["/var/log/my_app/crashdumps"]
 
   ## Security
 
   Crash dumps contain everything the VM held at crash time: process states, message queues,
-  application data. There is deliberately **no free path input**: only files found in the
-  directories explicitly allowlisted by the host are offered, and with no configuration the
-  feature is off:
-
-      config :observer_web, crashdump_dirs: ["/var/log/my_app/crashdumps"]
-
-  Dumps are parsed on the dashboard node only - never fetched from remote nodes.
+  application data. Directory browsing is limited to the allowlisted directories, uploads are
+  size-capped, and dumps are parsed on the dashboard node only - never fetched from remote nodes.
   """
 
   alias ObserverWeb.Crashdump.Server
+
+  @doc """
+  Whether the Crashdump feature is enabled (`config :observer_web, crashdump: true`). Off by
+  default; gates both the navigation tab and the page.
+  """
+  @spec enabled? :: boolean()
+  def enabled?, do: Application.get_env(:observer_web, :crashdump, false) == true
 
   @doc """
   Whether the `:crashdump_viewer` parser is available on this node.
@@ -78,6 +96,18 @@ defmodule ObserverWeb.Crashdump do
     with :ok <- check_available(),
          {:ok, dumps} <- list_dumps(),
          %{path: ^path} <- Enum.find(dumps, &(&1.path == path)) || {:error, :unknown_dump} do
+      Server.load(path)
+    end
+  end
+
+  @doc """
+  Loads a dump from an uploaded file's already-consumed temporary path. Unlike `load/1` this
+  skips the directory allowlist: the path isn't user-supplied text but a temp file LiveView
+  produced from a size-capped upload (see `Observer.Web.Crashdump.Page`).
+  """
+  @spec load_upload(String.t()) :: :ok | {:error, term()}
+  def load_upload(path) do
+    with :ok <- check_available() do
       Server.load(path)
     end
   end

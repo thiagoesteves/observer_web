@@ -37,6 +37,39 @@ defmodule ObserverWeb.CrashdumpTest do
     assert Crashdump.available?()
   end
 
+  test "enabled?/0 is off by default and reads the :crashdump flag" do
+    original = Application.get_env(:observer_web, :crashdump)
+
+    Application.delete_env(:observer_web, :crashdump)
+    refute Crashdump.enabled?()
+
+    Application.put_env(:observer_web, :crashdump, true)
+    assert Crashdump.enabled?()
+  after
+    original = Application.get_env(:observer_web, :crashdump)
+
+    if original == nil,
+      do: Application.delete_env(:observer_web, :crashdump),
+      else: Application.put_env(:observer_web, :crashdump, original)
+  end
+
+  test "load_upload/1 loads a dump from a path outside the configured directories" do
+    %{path: path} = CrashdumpFixtures.ensure_dump!()
+
+    # An uploaded dump is copied to a temp path that is not in any configured directory
+    dest = Path.join(System.tmp_dir!(), "cdv_upload_#{System.unique_integer([:positive])}.dump")
+    File.cp!(path, dest)
+
+    :ok = Crashdump.subscribe()
+    assert :ok = Crashdump.load_upload(dest)
+    await_loaded()
+
+    assert {:ok, info} = Crashdump.general_info()
+    assert info.slogan =~ "observer web test crash"
+  after
+    :ok
+  end
+
   test "list_dumps/0 is not configured by default" do
     assert {:error, :not_configured} = Crashdump.list_dumps()
   end

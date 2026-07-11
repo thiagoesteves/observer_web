@@ -143,32 +143,22 @@ defmodule Observer.Web.Layouts do
     end
   end
 
-  defp list_pages_by_params(%{"iframe" => "true"}),
-    do: [
-      :system,
-      :tracing,
-      :profiling,
-      :processes,
-      :applications,
-      :network,
-      :ets,
-      :metrics,
-      :crashdump
-    ]
+  defp list_pages_by_params(%{"iframe" => "true"}) do
+    [:system, :tracing, :profiling, :processes, :applications, :network, :ets]
+    |> maybe_crashdump()
+    |> Kernel.++([:metrics])
+  end
 
-  defp list_pages_by_params(_params),
-    do: [
-      :root,
-      :system,
-      :tracing,
-      :profiling,
-      :processes,
-      :applications,
-      :network,
-      :ets,
-      :metrics,
-      :crashdump
-    ]
+  defp list_pages_by_params(_params) do
+    [:root, :system, :tracing, :profiling, :processes, :applications, :network, :ets]
+    |> maybe_crashdump()
+    |> Kernel.++([:metrics])
+  end
+
+  # The Crashdump tab only appears when the feature is enabled (see ObserverWeb.Crashdump).
+  defp maybe_crashdump(pages) do
+    if ObserverWeb.Crashdump.enabled?(), do: pages ++ [:crashdump], else: pages
+  end
 
   @doc """
   Renders flash notices.

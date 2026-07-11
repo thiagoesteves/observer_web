@@ -30,7 +30,7 @@ library is part of the [DeployEx][dye] project.
 ### Busiest network connections ranked by throughput, including NIF sockets
 ![Network Dashboard](./guides/static/network_dash.png)
 
-### Crash dump browser: slogan, VM state and every dumped process
+### Crash dump browser (upload or host dirs): slogan, VM state and every dumped process
 ![Crashdump Dashboard](./guides/static/crashdump_dash.png)
 
 ### Application topology view with per-app summary, processes, ports, links and relations.

@@ -13,21 +13,22 @@ defmodule Observer.Web.Crashdump.PageLiveTest do
   ]
 
   setup do
-    original = Application.get_env(:observer_web, :crashdump_dirs)
+    original_dirs = Application.get_env(:observer_web, :crashdump_dirs)
+    original_enabled = Application.get_env(:observer_web, :crashdump)
 
     :ok = Supervisor.terminate_child(ObserverWeb.Application, ObserverWeb.Crashdump.Server)
     {:ok, _pid} = Supervisor.restart_child(ObserverWeb.Application, ObserverWeb.Crashdump.Server)
 
     on_exit(fn ->
-      if original == nil do
-        Application.delete_env(:observer_web, :crashdump_dirs)
-      else
-        Application.put_env(:observer_web, :crashdump_dirs, original)
-      end
+      restore(:crashdump_dirs, original_dirs)
+      restore(:crashdump, original_enabled)
     end)
 
     :ok
   end
+
+  defp restore(key, nil), do: Application.delete_env(:observer_web, key)
+  defp restore(key, value), do: Application.put_env(:observer_web, key, value)
 
   defp await_loaded(index_live, retries \\ 100)
 
@@ -42,28 +43,70 @@ defmodule Observer.Web.Crashdump.PageLiveTest do
     end
   end
 
-  test "GET /crashdump explains the configuration when no dirs are allowlisted", %{conn: conn} do
+  test "GET /crashdump explains how to enable it when disabled", %{conn: conn} do
+    Application.delete_env(:observer_web, :crashdump)
+
     RpcStubber.defaults()
     TelemetryStubber.defaults()
 
     {:ok, _index_live, html} = live(conn, "/observer/crashdump")
 
-    assert html =~ "No crash dump directories are configured"
-    assert html =~ "crashdump_dirs:"
+    assert html =~ "The Crashdump viewer is disabled"
+    assert html =~ "crashdump: true"
+    refute html =~ "Upload a crash dump"
   end
 
-  test "Lists, loads and browses a real crash dump", %{conn: conn} do
+  test "When enabled, offers upload and lists dumps on the host", %{conn: conn} do
     %{dir: dir} = CrashdumpFixtures.ensure_dump!()
+    Application.put_env(:observer_web, :crashdump, true)
     Application.put_env(:observer_web, :crashdump_dirs, [dir])
+
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, _index_live, html} = live(conn, "/observer/crashdump")
+
+    assert html =~ "Upload a crash dump"
+    assert html =~ "Crash Dumps on this host"
+    assert html =~ "erl_crash.dump"
+    assert html =~ "MODIFIED"
+  end
+
+  test "Shows the upload zone and handles validate/submit without a pending entry", %{conn: conn} do
+    Application.put_env(:observer_web, :crashdump, true)
+    Application.delete_env(:observer_web, :crashdump_dirs)
 
     RpcStubber.defaults()
     TelemetryStubber.defaults()
 
     {:ok, index_live, html} = live(conn, "/observer/crashdump")
 
-    assert html =~ "Crash Dumps"
-    assert html =~ "erl_crash.dump"
-    assert html =~ "MODIFIED"
+    assert html =~ "Upload a crash dump"
+    # No host directory configured, so no host-dump table
+    refute html =~ "Crash Dumps on this host"
+
+    # The validate handler exists (LiveView needs it for upload entry tracking)
+    index_live
+    |> element("#crashdump-upload-form")
+    |> render_change(%{"_target" => ["dump"]})
+
+    # Submitting with no pending entry is a no-op (the empty-consume branch)
+    index_live
+    |> element("#crashdump-upload-form")
+    |> render_submit()
+
+    refute render(index_live) =~ "Slogan:"
+  end
+
+  test "Lists, loads from the host directory and browses a real crash dump", %{conn: conn} do
+    %{dir: dir} = CrashdumpFixtures.ensure_dump!()
+    Application.put_env(:observer_web, :crashdump, true)
+    Application.put_env(:observer_web, :crashdump_dirs, [dir])
+
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/crashdump")
 
     index_live
     |> element("#crashdump-load-0", "LOAD")

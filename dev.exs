@@ -77,8 +77,11 @@ Application.put_env(:observer_web, WebDev.Endpoint,
   ]
 )
 
+# The Crashdump viewer is off by default; enable it (and its nav tab) for the dev server. The
+# crashdump_dirs listing is optional now that dumps can be uploaded straight from the browser.
+Application.put_env(:observer_web, :crashdump, true)
 # TODO: Update for testing
-Application.put_env(:observer_web, :crashdump_dirs, ["/path/to/dir/"])
+Application.put_env(:observer_web, :crashdump_dirs, ["/Users/testeves/Workspace/Esl/deployex/"])
 Application.put_env(:phoenix, :serve_endpoints, true)
 Application.put_env(:phoenix, :persistent, true)
 

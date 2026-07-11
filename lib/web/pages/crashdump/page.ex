@@ -63,37 +63,78 @@ defmodule Observer.Web.Crashdump.Page do
       </Attention.content>
 
       <div class="p-2">
-        <div :if={not @available?} class="p-4 text-sm text-gray-500 dark:text-gray-400">
+        <div :if={not @enabled?} class="p-4 text-sm text-gray-500 dark:text-gray-400">
+          The Crashdump viewer is disabled. Crash dumps contain everything the VM held at crash
+          time, so the feature (and this tab) is off by default. Enable it with: <pre class="mt-2 font-mono text-xs bg-gray-100 dark:bg-gray-700 rounded p-2">config :observer_web,
+    crashdump: true</pre>
+        </div>
+
+        <div
+          :if={@enabled? and not @available?}
+          class="p-4 text-sm text-gray-500 dark:text-gray-400"
+        >
           The <code class="font-mono">:observer</code>
           application is not available on this node, so crash dumps cannot be parsed. Add
           <code class="font-mono">:observer</code>
-          to your release's applications to enable this page.
+          to your release's applications (no GUI is started - only its dump parser is used).
         </div>
 
         <div
-          :if={@available? and @dumps == {:error, :not_configured}}
-          class="p-4 text-sm text-gray-500 dark:text-gray-400"
-        >
-          No crash dump directories are configured. Crash dumps contain everything the VM held
-          at crash time, so only explicitly allowlisted directories are browsable: <pre class="mt-2 font-mono text-xs bg-gray-100 dark:bg-gray-700 rounded p-2">config :observer_web,
-    crashdump_dirs: ["/var/log/my_app/crashdumps"]</pre>
-        </div>
-
-        <div
-          :if={@available? and match?({:ok, _}, @dumps)}
+          :if={@enabled? and @available?}
           class="bg-white dark:bg-gray-800 w-full shadow-lg rounded mb-4"
         >
           <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
-            Crash Dumps
+            Upload a crash dump
           </h2>
-          <div :if={elem(@dumps, 1) == []} class="p-4 text-xs text-gray-500 dark:text-gray-400">
-            No crash dump files found in the configured directories.
-          </div>
-          <Core.table_tracing
-            :if={elem(@dumps, 1) != []}
-            id="crashdump-files"
-            rows={Enum.with_index(elem(@dumps, 1))}
+          <form
+            id="crashdump-upload-form"
+            phx-change="crashdump-validate"
+            phx-submit="crashdump-upload"
+            class="p-4"
           >
+            <label
+              phx-drop-target={@uploads.dump.ref}
+              class="flex flex-col items-center justify-center py-6 text-center border border-dashed border-gray-300 dark:border-gray-600 rounded cursor-pointer text-sm text-gray-600 dark:text-gray-300 hover:border-blue-400"
+            >
+              <span>Drag an <code class="font-mono">erl_crash.dump</code> here, or click to choose</span>
+              <.live_file_input upload={@uploads.dump} class="sr-only" />
+            </label>
+
+            <div :for={entry <- @uploads.dump.entries} class="mt-3 flex items-center gap-3">
+              <span class="text-xs text-gray-700 dark:text-gray-200 truncate">
+                {entry.client_name} ({format_bytes(entry.client_size)})
+              </span>
+              <progress value={entry.progress} max="100" class="flex-1" />
+              <button
+                type="button"
+                phx-click="crashdump-cancel-upload"
+                phx-value-ref={entry.ref}
+                class="text-xs font-semibold text-gray-500 hover:underline"
+              >
+                CANCEL
+              </button>
+              <button
+                type="submit"
+                class="text-xs font-semibold text-blue-600 dark:text-blue-300 hover:underline"
+              >
+                LOAD
+              </button>
+            </div>
+
+            <p :for={err <- upload_errors(@uploads.dump)} class="mt-2 text-xs text-red-500">
+              {upload_error_to_string(err)}
+            </p>
+          </form>
+        </div>
+
+        <div
+          :if={@enabled? and @available? and match?({:ok, _}, @dumps) and elem(@dumps, 1) != []}
+          class="bg-white dark:bg-gray-800 w-full shadow-lg rounded mb-4"
+        >
+          <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+            Crash Dumps on this host
+          </h2>
+          <Core.table_tracing id="crashdump-files" rows={Enum.with_index(elem(@dumps, 1))}>
             <:col :let={{dump, _index}} label="FILE">{dump.name}</:col>
             <:col :let={{dump, _index}} label="PATH">{dump.path}</:col>
             <:col :let={{dump, _index}} label="SIZE">{format_bytes(dump.size)}</:col>
@@ -223,30 +264,53 @@ defmodule Observer.Web.Crashdump.Page do
 
   @impl Page
   def handle_mount(socket) when is_connected?(socket) do
-    Crashdump.subscribe()
+    socket = socket |> assign_defaults() |> allow_dump_upload()
 
-    socket
-    |> assign_defaults()
-    |> assign(:load_status, Crashdump.status())
-    |> refresh_loaded()
+    if Crashdump.enabled?() do
+      Crashdump.subscribe()
+
+      socket
+      |> assign(:load_status, Crashdump.status())
+      |> refresh_loaded()
+    else
+      socket
+    end
   end
 
   def handle_mount(socket) do
-    assign_defaults(socket)
+    socket
+    |> assign_defaults()
+    |> allow_dump_upload()
   end
 
   defp assign_defaults(socket) do
     socket
+    |> assign(:enabled?, Crashdump.enabled?())
     |> assign(:available?, Crashdump.available?())
     |> assign(:dumps, Crashdump.list_dumps())
     |> assign(:load_status, :idle)
     |> assign(:load_error, nil)
+    |> assign(:uploaded_temp, nil)
     |> assign(:general_info, nil)
     |> assign(:processes, nil)
     |> assign(:rows, nil)
     |> assign(:details, nil)
     |> assign(:displayed_rows, @displayed_rows)
     |> assign(:form, to_form(%{"sort_by" => "memory", "search" => ""}))
+  end
+
+  # The upload lives on the enclosing LiveView (handle_mount pipes its socket) so @uploads.dump
+  # is available to this component. Registered even when disabled/unavailable so the assign
+  # always exists; the input is only rendered when the feature is on.
+  defp allow_dump_upload(socket) do
+    # accept: :any - ".dump" has no registered MIME type, and a crash dump can also be named
+    # erl_crash.dump with no extension at all. A non-dump file simply fails to parse and the
+    # error is shown.
+    allow_upload(socket, :dump,
+      accept: :any,
+      max_entries: 1,
+      max_file_size: 2_000_000_000
+    )
   end
 
   @impl Page
@@ -270,22 +334,51 @@ defmodule Observer.Web.Crashdump.Page do
     {:noreply, assign(socket, :dumps, Crashdump.list_dumps())}
   end
 
+  # LiveView needs a phx-change handler for the upload form to track the selected entry.
+  def handle_parent_event("crashdump-validate", _params, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_parent_event("crashdump-cancel-upload", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :dump, ref)}
+  end
+
+  def handle_parent_event("crashdump-upload", _params, socket) do
+    # consume_uploaded_entries deletes the temp file once the callback returns, but the parser
+    # re-reads the file for every query (general_info/processes/proc_details) - so copy it to a
+    # stable temp path that survives the session, cleaning up the previous upload.
+    consumed =
+      consume_uploaded_entries(socket, :dump, fn %{path: tmp_path}, entry ->
+        dest =
+          Path.join(
+            System.tmp_dir!(),
+            "observer_web_crashdump_upload_#{System.unique_integer([:positive])}_#{entry.client_name}"
+          )
+
+        File.cp!(tmp_path, dest)
+        {:ok, dest}
+      end)
+
+    case consumed do
+      [dest] ->
+        if socket.assigns.uploaded_temp, do: File.rm(socket.assigns.uploaded_temp)
+
+        case Crashdump.load_upload(dest) do
+          :ok -> {:noreply, start_loading(socket, dest) |> assign(:uploaded_temp, dest)}
+          {:error, reason} -> {:noreply, assign(socket, :load_error, reason)}
+        end
+
+      [] ->
+        {:noreply, socket}
+    end
+  end
+
   def handle_parent_event("crashdump-load", %{"index" => index}, socket) do
     with {:ok, dumps} <- socket.assigns.dumps,
          %{path: path} <- Enum.at(dumps, positive_int(index, 0)) do
       case Crashdump.load(path) do
-        :ok ->
-          {:noreply,
-           socket
-           |> assign(:load_status, {:loading, path, 0})
-           |> assign(:load_error, nil)
-           |> assign(:general_info, nil)
-           |> assign(:processes, nil)
-           |> assign(:rows, nil)
-           |> assign(:details, nil)}
-
-        {:error, reason} ->
-          {:noreply, assign(socket, :load_error, reason)}
+        :ok -> {:noreply, start_loading(socket, path)}
+        {:error, reason} -> {:noreply, assign(socket, :load_error, reason)}
       end
     else
       _unknown -> {:noreply, socket}
@@ -347,6 +440,16 @@ defmodule Observer.Web.Crashdump.Page do
 
   defp refresh_loaded(socket), do: socket
 
+  defp start_loading(socket, path) do
+    socket
+    |> assign(:load_status, {:loading, path, 0})
+    |> assign(:load_error, nil)
+    |> assign(:general_info, nil)
+    |> assign(:processes, nil)
+    |> assign(:rows, nil)
+    |> assign(:details, nil)
+  end
+
   defp assign_rows(%{assigns: %{processes: nil}} = socket), do: socket
 
   defp assign_rows(%{assigns: %{processes: processes, form: form}} = socket) do
@@ -398,12 +501,19 @@ defmodule Observer.Web.Crashdump.Page do
     assigns = %{}
 
     ~H"""
-    Browse Erlang crash dumps from the directories allowlisted in the configuration: the crash
-    slogan, the VM's state at crash time and every dumped process, including stacks and message
-    queues. Parsing happens on the dashboard node with OTP's own crashdump_viewer parser -
-    nothing is fetched from remote nodes.
+    Inspect Erlang crash dumps: upload one from your machine (e.g. pulled off a crashed device)
+    or browse dumps present on the dashboard host, then read the crash slogan, the VM's state at
+    crash time and every dumped process including stacks and message queues. Parsing happens on
+    the dashboard node with OTP's own crashdump_viewer parser - nothing is fetched from remote
+    nodes.
     """
   end
+
+  defp upload_error_to_string(:too_large), do: "The file is larger than the allowed size."
+  defp upload_error_to_string(:too_many_files), do: "Only one dump can be loaded at a time."
+  # coveralls-ignore-start
+  defp upload_error_to_string(other), do: "Upload failed: #{inspect(other)}"
+  # coveralls-ignore-stop
 
   defp format_mtime(posix) do
     posix |> DateTime.from_unix!() |> Calendar.strftime("%Y-%m-%d %H:%M:%S")
