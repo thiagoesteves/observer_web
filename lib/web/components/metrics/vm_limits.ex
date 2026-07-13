@@ -110,6 +110,7 @@ defmodule Observer.Web.Components.Metrics.VmLimits do
           "Limit",
           "Total"
         ],
+        top: 0,
         right: "25%"
       },
       grid: %{

@@ -166,6 +166,7 @@ defmodule Observer.Web.Components.Metrics.VmMemory do
           "System",
           "Total"
         ],
+        top: 0,
         right: "25%"
       },
       grid: %{

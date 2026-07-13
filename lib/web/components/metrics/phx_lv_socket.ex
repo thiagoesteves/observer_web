@@ -114,6 +114,7 @@ defmodule Observer.Web.Components.Metrics.PhxLvSocket do
           "Supervisors Total",
           "Sockets Connected"
         ],
+        top: 0,
         right: "25%"
       },
       grid: %{

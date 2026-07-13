@@ -141,6 +141,7 @@ defmodule Observer.Web.Components.Metrics.VmProcessMemory do
           "GC min heap",
           "GC full sweep"
         ],
+        top: 0,
         right: "25%"
       },
       grid: %{
