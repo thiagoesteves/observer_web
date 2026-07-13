@@ -1,15 +1,26 @@
 # CHANGELOG (v0.2.X)
 
-## 0.2.6 ()
+## 0.2.6 🚀 (2026-07-13)
 
 ### ⚠️ Backwards incompatible changes for 0.2.5
  * None
 
 ### Bug fixes
- * None
+ * [[`7f23100`](https://github.com/thiagoesteves/observer_web/commit/7f23100)] Fix NIF socket byte counters and raise page test coverage
 
 ### Enhancements
- * None
+ * [[`PR-50`](https://github.com/thiagoesteves/observer_web/pull/50)] Add Processes pillar with etop-style live ranking
+ * [[`PR-51`](https://github.com/thiagoesteves/observer_web/pull/51)] Resolve process labels for unregistered processes in Profiling
+ * [[`PR-52`](https://github.com/thiagoesteves/observer_web/pull/52)] Add System pillar and opt-in scheduler utilization metric
+ * [[`PR-53`](https://github.com/thiagoesteves/observer_web/pull/53)] Add ETS pillar with gated content previews; System becomes the default page
+ * [[`PR-54`](https://github.com/thiagoesteves/observer_web/pull/54)] Add Network pillar with inet throughput and NIF sockets
+ * [[`PR-55`](https://github.com/thiagoesteves/observer_web/pull/55)] Add per-application summary table to the Applications page
+ * [[`PR-56`](https://github.com/thiagoesteves/observer_web/pull/56)] Responsive header and page controls for smaller monitors
+ * [[`f398830`](https://github.com/thiagoesteves/observer_web/commit/f398830)] Shrink navigation properly on smaller monitors
+ * [[`PR-57`](https://github.com/thiagoesteves/observer_web/pull/57)] New Supervision Lens logo and browser tab favicon
+ * [[`PR-58`](https://github.com/thiagoesteves/observer_web/pull/58)] Add Mnesia option in the ETS feature
+ * [[`PR-59`](https://github.com/thiagoesteves/observer_web/pull/59)] Add Crashdump pillar browsing erl_crash.dump files
+ * [[`PR-60`](https://github.com/thiagoesteves/observer_web/pull/60)] Update echarts from 5.6.0 to 6.1.0
 
 ## 0.2.5 🚀 (2026-07-07)
 
