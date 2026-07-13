@@ -1,9 +1,11 @@
 # Development server for Observer Web
 
-# :mnesia is not part of the application's declared dependencies (host releases decide whether
-# they ship it), and Mix prunes undeclared OTP applications from the code path (Elixir 1.15+).
-# Load it here so the Mnesia browser can be exercised: :mnesia.start() from a remsh, then browse.
+# :mnesia and :observer are not part of the application's declared dependencies (host releases
+# decide whether they ship them), and Mix prunes undeclared OTP applications from the code path
+# (Elixir 1.15+). Load them here so the Mnesia browser and the Crashdump viewer can be
+# exercised. Comment out the :observer line to preview the Crashdump "not available" notice.
 Mix.ensure_application!(:mnesia)
+Mix.ensure_application!(:observer)
 
 # Phoenix
 
@@ -76,6 +78,9 @@ Application.put_env(:observer_web, WebDev.Endpoint,
   ]
 )
 
+# The crashdump_dirs listing is optional now that dumps can be uploaded straight from the
+# browser. Point it at a real directory to exercise the host-dump listing.
+Application.put_env(:observer_web, :crashdump_dirs, ["/path/to/dumps/"])
 Application.put_env(:phoenix, :serve_endpoints, true)
 Application.put_env(:phoenix, :persistent, true)
 

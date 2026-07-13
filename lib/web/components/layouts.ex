@@ -143,11 +143,23 @@ defmodule Observer.Web.Layouts do
     end
   end
 
-  defp list_pages_by_params(%{"iframe" => "true"}),
-    do: [:system, :tracing, :profiling, :processes, :applications, :network, :ets, :metrics]
+  # Crashdump sits last since it is an occasional-use tool (see ObserverWeb.Crashdump).
+  defp list_pages_by_params(%{"iframe" => "true"}) do
+    [
+      :system,
+      :tracing,
+      :profiling,
+      :processes,
+      :applications,
+      :network,
+      :ets,
+      :metrics,
+      :crashdump
+    ]
+  end
 
-  defp list_pages_by_params(_params),
-    do: [
+  defp list_pages_by_params(_params) do
+    [
       :root,
       :system,
       :tracing,
@@ -156,8 +168,10 @@ defmodule Observer.Web.Layouts do
       :applications,
       :network,
       :ets,
-      :metrics
+      :metrics,
+      :crashdump
     ]
+  end
 
   @doc """
   Renders flash notices.

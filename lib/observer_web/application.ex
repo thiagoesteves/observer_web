@@ -14,6 +14,7 @@ defmodule ObserverWeb.Application do
         Observer.Web.Telemetry,
         ObserverWeb.Tracer.Server,
         ObserverWeb.Monitor.ProcessPort,
+        ObserverWeb.Crashdump.Server,
         {Phoenix.PubSub, [name: ObserverWeb.PubSub]}
       ] ++ telemetry_servers()
 
