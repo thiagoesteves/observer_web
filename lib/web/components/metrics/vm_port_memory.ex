@@ -94,6 +94,7 @@ defmodule Observer.Web.Components.Metrics.VmPortMemory do
         data: [
           "Total"
         ],
+        top: 0,
         right: "25%"
       },
       grid: %{
