@@ -14,14 +14,12 @@ defmodule Observer.Web.Crashdump.PageLiveTest do
 
   setup do
     original_dirs = Application.get_env(:observer_web, :crashdump_dirs)
-    original_enabled = Application.get_env(:observer_web, :crashdump)
 
     :ok = Supervisor.terminate_child(ObserverWeb.Application, ObserverWeb.Crashdump.Server)
     {:ok, _pid} = Supervisor.restart_child(ObserverWeb.Application, ObserverWeb.Crashdump.Server)
 
     on_exit(fn ->
       restore(:crashdump_dirs, original_dirs)
-      restore(:crashdump, original_enabled)
     end)
 
     :ok
@@ -43,22 +41,8 @@ defmodule Observer.Web.Crashdump.PageLiveTest do
     end
   end
 
-  test "GET /crashdump explains how to enable it when disabled", %{conn: conn} do
-    Application.delete_env(:observer_web, :crashdump)
-
-    RpcStubber.defaults()
-    TelemetryStubber.defaults()
-
-    {:ok, _index_live, html} = live(conn, "/observer/crashdump")
-
-    assert html =~ "The Crashdump viewer is disabled"
-    assert html =~ "crashdump: true"
-    refute html =~ "Upload a crash dump"
-  end
-
-  test "When enabled, offers upload and lists dumps on the host", %{conn: conn} do
+  test "Offers upload and lists dumps on the host", %{conn: conn} do
     %{dir: dir} = CrashdumpFixtures.ensure_dump!()
-    Application.put_env(:observer_web, :crashdump, true)
     Application.put_env(:observer_web, :crashdump_dirs, [dir])
 
     RpcStubber.defaults()
@@ -73,7 +57,6 @@ defmodule Observer.Web.Crashdump.PageLiveTest do
   end
 
   test "Shows the upload zone and handles validate/submit without a pending entry", %{conn: conn} do
-    Application.put_env(:observer_web, :crashdump, true)
     Application.delete_env(:observer_web, :crashdump_dirs)
 
     RpcStubber.defaults()
@@ -100,7 +83,6 @@ defmodule Observer.Web.Crashdump.PageLiveTest do
 
   test "Lists, loads from the host directory and browses a real crash dump", %{conn: conn} do
     %{dir: dir} = CrashdumpFixtures.ensure_dump!()
-    Application.put_env(:observer_web, :crashdump, true)
     Application.put_env(:observer_web, :crashdump_dirs, [dir])
 
     RpcStubber.defaults()

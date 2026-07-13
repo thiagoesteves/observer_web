@@ -63,26 +63,16 @@ defmodule Observer.Web.Crashdump.Page do
       </Attention.content>
 
       <div class="p-2">
-        <div :if={not @enabled?} class="p-4 text-sm text-gray-500 dark:text-gray-400">
-          The Crashdump viewer is disabled. Crash dumps contain everything the VM held at crash
-          time, so the feature (and this tab) is off by default. Enable it with: <pre class="mt-2 font-mono text-xs bg-gray-100 dark:bg-gray-700 rounded p-2">config :observer_web,
-    crashdump: true</pre>
-        </div>
-
-        <div
-          :if={@enabled? and not @available?}
-          class="p-4 text-sm text-gray-500 dark:text-gray-400"
-        >
+        <div :if={not @available?} class="p-4 text-sm text-gray-500 dark:text-gray-400">
           The <code class="font-mono">:observer</code>
           application is not available on this node, so crash dumps cannot be parsed. Add
           <code class="font-mono">:observer</code>
-          to your release's applications (no GUI is started - only its dump parser is used).
+          to your release's applications to enable it. Enabling it only puts its
+          modules on the code path - <code class="font-mono">:observer</code>
+          has no application callback and starts no processes (and never any GUI).
         </div>
 
-        <div
-          :if={@enabled? and @available?}
-          class="bg-white dark:bg-gray-800 w-full shadow-lg rounded mb-4"
-        >
+        <div :if={@available?} class="bg-white dark:bg-gray-800 w-full shadow-lg rounded mb-4">
           <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
             Upload a crash dump
           </h2>
@@ -128,7 +118,7 @@ defmodule Observer.Web.Crashdump.Page do
         </div>
 
         <div
-          :if={@enabled? and @available? and match?({:ok, _}, @dumps) and elem(@dumps, 1) != []}
+          :if={@available? and match?({:ok, _}, @dumps) and elem(@dumps, 1) != []}
           class="bg-white dark:bg-gray-800 w-full shadow-lg rounded mb-4"
         >
           <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
@@ -264,17 +254,13 @@ defmodule Observer.Web.Crashdump.Page do
 
   @impl Page
   def handle_mount(socket) when is_connected?(socket) do
-    socket = socket |> assign_defaults() |> allow_dump_upload()
+    Crashdump.subscribe()
 
-    if Crashdump.enabled?() do
-      Crashdump.subscribe()
-
-      socket
-      |> assign(:load_status, Crashdump.status())
-      |> refresh_loaded()
-    else
-      socket
-    end
+    socket
+    |> assign_defaults()
+    |> allow_dump_upload()
+    |> assign(:load_status, Crashdump.status())
+    |> refresh_loaded()
   end
 
   def handle_mount(socket) do
@@ -285,7 +271,6 @@ defmodule Observer.Web.Crashdump.Page do
 
   defp assign_defaults(socket) do
     socket
-    |> assign(:enabled?, Crashdump.enabled?())
     |> assign(:available?, Crashdump.available?())
     |> assign(:dumps, Crashdump.list_dumps())
     |> assign(:load_status, :idle)
@@ -300,8 +285,8 @@ defmodule Observer.Web.Crashdump.Page do
   end
 
   # The upload lives on the enclosing LiveView (handle_mount pipes its socket) so @uploads.dump
-  # is available to this component. Registered even when disabled/unavailable so the assign
-  # always exists; the input is only rendered when the feature is on.
+  # is available to this component. Registered even when :observer is unavailable so the assign
+  # always exists; the input is only rendered when the parser is available.
   defp allow_dump_upload(socket) do
     # accept: :any - ".dump" has no registered MIME type, and a crash dump can also be named
     # erl_crash.dump with no extension at all. A non-dump file simply fails to parse and the

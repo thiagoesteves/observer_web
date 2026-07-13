@@ -4,21 +4,15 @@ defmodule ObserverWeb.Crashdump do
   `crashdump_viewer` GUI, reusing its battle-tested parser (`:crashdump_viewer`, part of the
   `:observer` application) instead of reimplementing the dump format.
 
-  ## Enabling
-
-  The whole feature - including its navigation tab - is **off by default** and turned on with a
-  single flag:
-
-      config :observer_web, crashdump: true
+  ## Requirements
 
   Parsing needs OTP's `:crashdump_viewer` (part of the `:observer` application, which ships with
   OTP but is commonly excluded from releases). No GUI/wx is ever started; only the parsing
-  `gen_server` is used. When the flag is on but `:observer` isn't in the release, the page
-  explains what to add.
+  `gen_server` is used. When `:observer` isn't in the release, the page explains what to add.
 
   ## Ingesting a dump
 
-  Two ways, both available once enabled:
+  Two ways:
 
     * **Upload** an `erl_crash.dump` straight from the browser (e.g. one pulled off a crashed
       Nerves device) - it's parsed on the dashboard node and the temporary copy is discarded.
@@ -35,13 +29,6 @@ defmodule ObserverWeb.Crashdump do
   """
 
   alias ObserverWeb.Crashdump.Server
-
-  @doc """
-  Whether the Crashdump feature is enabled (`config :observer_web, crashdump: true`). Off by
-  default; gates both the navigation tab and the page.
-  """
-  @spec enabled? :: boolean()
-  def enabled?, do: Application.get_env(:observer_web, :crashdump, false) == true
 
   @doc """
   Whether the `:crashdump_viewer` parser is available on this node.

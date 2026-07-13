@@ -294,19 +294,16 @@ config :observer_web,
 > this where dashboard access is appropriately restricted (see the authentication resolver
 > section).
 
-### Crash dump browser (opt-in)
+### Crash dump browser
 
 The Crashdump page opens `erl_crash.dump` files with OTP's own `crashdump_viewer` parser (part
-of the `:observer` application - ship it in your release; no GUI is ever started, only the
-parser). Because crash dumps contain everything the VM held at crash time, the whole feature -
-including its navigation tab - is **off by default**. Turn it on with:
+of the `:observer` application).
 
-```elixir
-config :observer_web,
-  crashdump: true
-```
+Parsing needs the `:observer` application on the node, so add it to your release's applications.
+Enabling `:observer` only puts its modules on the code path - it has no application callback and starts no processes (and never any GUI/wx); Observer Web only ever calls its dump parser.
+When it is missing, the page shows a notice explaining what to add instead of the viewer.
 
-Once enabled, there are two ways to open a dump:
+There are two ways to open a dump:
 
 - **Upload** an `erl_crash.dump` straight from the browser (for example, one pulled off a
   crashed Nerves device). It is parsed on the dashboard node and the temporary copy is
@@ -323,7 +320,8 @@ Once enabled, there are two ways to open a dump:
 >
 > A crash dump includes process states, message queues and application data at crash time.
 > Anyone with access to the Observer Web dashboard can read the dumps they upload or browse -
-> only enable this where dashboard access is appropriately restricted.
+> make sure dashboard access is appropriately restricted (see the authentication resolver
+> section).
 
 ### Usage with Web and Clustering
 

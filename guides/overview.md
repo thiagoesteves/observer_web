@@ -57,7 +57,7 @@ plus the NIF-based socket module sockets that port listings miss.
 - **💥 Crash Dump Browser** - Upload an `erl_crash.dump` from your machine, or open one from
 an allowlisted directory on the host, then read the crash slogan, the VM's state at crash time
 and every dumped process - stacks and message queues included - parsed with OTP's own
-crashdump_viewer. Off by default; enabled with `config :observer_web, crashdump: true`.
+crashdump_viewer. Requires the `:observer` application in your release.
 
 ![Observer Crashdump Dashboard](./static/crashdump_dash.png)
 
