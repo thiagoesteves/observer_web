@@ -13,7 +13,7 @@ defmodule ObserverWeb.Version.Server do
   @type t :: %__MODULE__{
           status: :ok | :warning | :empty,
           local: String.t() | nil,
-          nodes: tuple() | nil
+          nodes: %{node() => String.t()} | nil
         }
 
   defstruct status: :empty,

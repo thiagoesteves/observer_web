@@ -4,7 +4,6 @@ defmodule Observer.Web.SettingsComponent do
   """
   use Observer.Web, :live_component
 
-  alias Observer.Web.Components.Core
   alias Observer.Web.Components.Icons
 
   @impl Phoenix.LiveComponent
@@ -37,23 +36,57 @@ defmodule Observer.Web.SettingsComponent do
         </div>
       </button>
 
-      <Core.tooltip
-        :if={@version.status == :warning}
-        label={
-    "Version mismatch across nodes:\n" <>
-    Enum.map_join(@version.nodes, "\n", fn {node, ver} -> "#{node}: v#{ver}" end)}
-      >
+      <div :if={@version.status == :warning} class="relative" id="version-info">
         <button
-          id="version-info"
+          id="version-info-toggle"
           type="button"
-          class="inline-flex items-center px-4 text-sm font-medium text-gray-900 bg-white border-t border-b border-gray-200 hover:bg-gray-100 hover:text-blue-700 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:text-white dark:hover:bg-gray-600"
+          aria-expanded="false"
+          aria-haspopup="listbox"
+          data-title="Show versions per node"
+          phx-click={JS.toggle(to: "#version-info-menu")}
+          class="inline-flex items-center h-full px-4 text-sm font-medium text-gray-900 bg-white border-t border-b border-gray-200 hover:bg-gray-100 hover:text-blue-700 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:text-white dark:hover:bg-gray-600"
         >
-          <Icons.exclamation_circle class="w-6 h-6 text-red-300 dark:text-red-200" />
+          <Icons.exclamation_circle class="w-6 h-6 text-amber-500 dark:text-amber-300" />
           <div class="ml-2">
             Version
           </div>
         </button>
-      </Core.tooltip>
+
+        <div
+          class="hidden absolute z-50 top-full right-0 mt-2 w-80 rounded-md shadow-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-left"
+          id="version-info-menu"
+          phx-click-away={JS.hide(to: "#version-info-menu")}
+        >
+          <div class="px-3 py-2 border-b border-gray-200 dark:border-gray-600">
+            <p class="text-xs font-semibold text-gray-800 dark:text-gray-100">
+              Version mismatch across nodes
+            </p>
+            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              This node runs <span class="font-mono">v{@version.local}</span>.
+              Highlighted nodes run a different version.
+            </p>
+          </div>
+          <ul class="max-h-64 overflow-y-auto py-1">
+            <li
+              :for={{node, version} <- sorted_versions(@version)}
+              class="flex items-center justify-between gap-3 px-3 py-1 text-xs"
+            >
+              <span class="truncate font-mono text-gray-700 dark:text-gray-200">{node}</span>
+              <span class={[
+                "shrink-0 px-2 py-0.5 rounded-full font-mono border",
+                if(version == @version.local,
+                  do:
+                    "bg-gray-50 border-gray-300 text-gray-600 dark:bg-gray-700 dark:border-gray-500 dark:text-gray-300",
+                  else:
+                    "bg-amber-50 border-amber-400 text-amber-700 dark:bg-amber-900/40 dark:border-amber-500 dark:text-amber-200"
+                )
+              ]}>
+                v{version}
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
 
       <div
         class="relative"
@@ -89,6 +122,12 @@ defmodule Observer.Web.SettingsComponent do
       </div>
     </div>
     """
+  end
+
+  # Nodes running a version other than the local one come first, so the
+  # divergent nodes are visible without scrolling.
+  defp sorted_versions(%{nodes: nodes, local: local}) do
+    Enum.sort_by(nodes, fn {node, version} -> {version == local, to_string(node)} end)
   end
 
   attr :myself, :any, required: true
