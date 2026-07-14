@@ -108,14 +108,16 @@ defmodule Observer.Web.Processes.Page do
 
         <div :if={@rows != []} class="bg-white dark:bg-gray-800 w-full shadow-lg rounded">
           <Core.table_tracing id="processes-results" rows={Enum.with_index(@rows)}>
-            <:col :let={{row, _index}} label="NAME">{row.name}</:col>
+            <:col :let={{row, _index}} label="NAME"><Core.truncated value={row.name} /></:col>
             <:col :let={{row, _index}} label="PID">{inspect(row.pid)}</:col>
             <:col :let={{row, _index}} label="MEMORY">{format_bytes(row.memory)}</:col>
             <:col :let={{row, _index}} label={reductions_label(@form.params["sort_by"])}>
               {row.reductions_diff}
             </:col>
             <:col :let={{row, _index}} label="MSG QUEUE">{row.message_queue_len}</:col>
-            <:col :let={{row, _index}} label="CURRENT FUNCTION">{row.current_function}</:col>
+            <:col :let={{row, _index}} label="CURRENT FUNCTION">
+              <Core.truncated value={row.current_function} />
+            </:col>
             <:col :let={{_row, index}} label="">
               <button
                 id={"processes-select-row-#{index}"}

@@ -92,6 +92,31 @@ defmodule Observer.Web.Components.Core do
   end
 
   @doc ~S"""
+  Renders a value that stays plain text while it is short and collapses behind
+  a click-to-expand summary when it exceeds `max_chars`, following the same
+  pattern as the tracing results content.
+
+  ## Examples
+
+      <.truncated value={row.name} />
+      <.truncated value={table.owner_label} max_chars={30} />
+  """
+  attr :value, :string, required: true
+  attr :max_chars, :integer, default: 40
+
+  def truncated(assigns) do
+    ~H"""
+    <span :if={String.length(@value) <= @max_chars}>{@value}</span>
+    <details :if={String.length(@value) > @max_chars}>
+      <summary class="cursor-pointer whitespace-nowrap" title={@value}>
+        {String.slice(@value, 0, @max_chars)}…
+      </summary>
+      <div class="mt-2 max-w-md whitespace-pre-wrap break-all">{@value}</div>
+    </details>
+    """
+  end
+
+  @doc ~S"""
   Renders a table with process styling.
 
   ## Examples

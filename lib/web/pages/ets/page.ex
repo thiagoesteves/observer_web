@@ -106,7 +106,9 @@ defmodule Observer.Web.Ets.Page do
           class="bg-white dark:bg-gray-800 w-full shadow-lg rounded"
         >
           <Core.table_tracing id="ets-results" rows={Enum.with_index(@rows)}>
-            <:col :let={{table, _index}} label="NAME">{inspect(table.name)}</:col>
+            <:col :let={{table, _index}} label="NAME">
+              <Core.truncated value={inspect(table.name)} />
+            </:col>
             <:col :let={{table, _index}} label="TYPE">{table.type}</:col>
             <:col
               :let={{table, _index}}
@@ -114,7 +116,9 @@ defmodule Observer.Web.Ets.Page do
             >
               {if @source == :mnesia, do: table.storage, else: table.protection}
             </:col>
-            <:col :let={{table, _index}} label="OWNER">{table.owner_label}</:col>
+            <:col :let={{table, _index}} label="OWNER">
+              <Core.truncated value={table.owner_label} />
+            </:col>
             <:col :let={{table, _index}} label="OBJECTS">{table.size}</:col>
             <:col :let={{table, _index}} label="MEMORY">{format_bytes(table.memory)}</:col>
             <:col :let={{_table, index}} label="">
