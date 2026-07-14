@@ -90,7 +90,9 @@ defmodule Observer.Web.Network.Page do
           <Core.table_tracing :if={@rows != []} id="network-results" rows={Enum.with_index(@rows)}>
             <:col :let={{row, _index}} label="PORT">{inspect(row.port)}</:col>
             <:col :let={{row, _index}} label="DRIVER">{row.name}</:col>
-            <:col :let={{row, _index}} label="OWNER">{row.owner_label}</:col>
+            <:col :let={{row, _index}} label="OWNER">
+              <Core.truncated value={row.owner_label} />
+            </:col>
             <:col :let={{row, _index}} label="LOCAL">{row.local}</:col>
             <:col :let={{row, _index}} label="REMOTE">{row.remote}</:col>
             <:col :let={{row, _index}} label="RECV (Δ)">{format_bytes(row.recv_diff)}</:col>

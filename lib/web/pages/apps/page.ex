@@ -30,42 +30,6 @@ defmodule Observer.Web.Apps.Page do
     unselected_apps_keys =
       assigns.node_info.apps_keys -- assigns.node_info.selected_apps_keys
 
-    # credo:disable-for-lines:9
-    adjust_series_position = fn series ->
-      case Enum.count(series) do
-        n when n > 0 ->
-          step = 100.0 / n
-
-          {series, _top, _bottom} =
-            Enum.reduce(series, {[], 0.0, 100.0}, fn serie, {acc, top, bottom} ->
-              bottom = bottom - step
-
-              new_serie = %{
-                serie
-                | top: :erlang.float_to_binary(top, [{:decimals, 0}]) <> "%",
-                  bottom: :erlang.float_to_binary(bottom, [{:decimals, 0}]) <> "%"
-              }
-
-              {acc ++ [new_serie], top + step, bottom}
-            end)
-
-          series
-
-        _ ->
-          series
-      end
-    end
-
-    initial_tree_depth = assigns.form.params["initial_tree_depth"]
-
-    chart_tree_data =
-      assigns.observer_data
-      |> Enum.reduce([], fn {key, %{"data" => info}}, acc ->
-        acc ++ [series(key, info, initial_tree_depth)]
-      end)
-      |> adjust_series_position.()
-      |> flare_chart_data()
-
     attention_msg = ~H"""
     The <b>Observer Web</b> visualizes process relationships, supervisor trees, and more.
     Hover over an element to view detailed information about the process or port.
@@ -75,7 +39,6 @@ defmodule Observer.Web.Apps.Page do
 
     assigns =
       assigns
-      |> assign(chart_tree_data: chart_tree_data)
       |> assign(unselected_services_keys: unselected_services_keys)
       |> assign(unselected_apps_keys: unselected_apps_keys)
       |> assign(attention_msg: attention_msg)
@@ -245,6 +208,7 @@ defmodule Observer.Web.Apps.Page do
     |> assign(:show_observer_options, false)
     |> assign(:selected_id_action_confirmation, nil)
     |> assign(:apps_stats, %{})
+    |> assign_chart_tree_data()
     |> stream(:empty, [])
   end
 
@@ -259,6 +223,7 @@ defmodule Observer.Web.Apps.Page do
     |> assign(:show_observer_options, false)
     |> assign(:selected_id_action_confirmation, nil)
     |> assign(:apps_stats, %{})
+    |> assign_chart_tree_data()
     |> stream(:empty, [])
   end
 
@@ -462,9 +427,11 @@ defmodule Observer.Web.Apps.Page do
         socket
       ) do
     {:noreply,
-     assign(socket,
+     socket
+     |> assign(
        form: to_form(%{"initial_tree_depth" => depth, "get_state_timeout" => get_state_timeout})
-     )}
+     )
+     |> assign_chart_tree_data()}
   end
 
   # Summing per-app stats does one pinfo per process (see ObserverWeb.Apps.Aggregator), so it
@@ -520,7 +487,8 @@ defmodule Observer.Web.Apps.Page do
 
     {:noreply,
      socket
-     |> assign(:observer_data, new_observer_data)}
+     |> assign(:observer_data, new_observer_data)
+     |> assign_chart_tree_data()}
   end
 
   def handle_parent_event(
@@ -544,7 +512,8 @@ defmodule Observer.Web.Apps.Page do
     {:noreply,
      socket
      |> assign(:node_info, node_info)
-     |> assign(:current_selected_id, %Identifier{})}
+     |> assign(:current_selected_id, %Identifier{})
+     |> assign_chart_tree_data()}
   end
 
   def handle_parent_event(
@@ -568,7 +537,8 @@ defmodule Observer.Web.Apps.Page do
     {:noreply,
      socket
      |> assign(:node_info, node_info)
-     |> assign(:current_selected_id, %Identifier{})}
+     |> assign(:current_selected_id, %Identifier{})
+     |> assign_chart_tree_data()}
   end
 
   def handle_parent_event(
@@ -606,7 +576,8 @@ defmodule Observer.Web.Apps.Page do
     {:noreply,
      socket
      |> assign(:node_info, node_info)
-     |> assign(:current_selected_id, %Identifier{})}
+     |> assign(:current_selected_id, %Identifier{})
+     |> assign_chart_tree_data()}
   end
 
   def handle_parent_event(
@@ -644,120 +615,22 @@ defmodule Observer.Web.Apps.Page do
     {:noreply,
      socket
      |> assign(:node_info, node_info)
-     |> assign(:current_selected_id, %Identifier{})}
+     |> assign(:current_selected_id, %Identifier{})
+     |> assign_chart_tree_data()}
   end
 
   @impl Page
   def handle_info(
         {"request-process", %{"id" => request_id, "series_name" => series_name}},
-        %{
-          assigns: %{
-            current_selected_id: %{id_string: id_string, debouncing: debouncing},
-            form: form
-          }
-        } =
-          socket
-      )
-      when id_string != request_id or debouncing < 0 do
-    get_state_timeout = form.params["get_state_timeout"] |> String.to_integer()
-    [service, _app] = decompose_data_key(series_name)
-    node = String.to_existing_atom(service)
-
-    case Helpers.parse_identifier(request_id) do
-      {:pid, pid} ->
-        current_selected_id = %Identifier{
-          info: Apps.Process.info(pid, get_state_timeout),
-          id_string: request_id,
-          type: "pid",
-          node: node
-        }
-
-        case Monitor.id_info(pid) do
-          {:ok, %{metric: metric}} ->
-            # Subscribe to receive events
-            Telemetry.subscribe_for_new_data(service, metric)
-
-            # Read current metrics
-            data_key = data_key(service, metric)
-
-            data =
-              service
-              |> Telemetry.list_data_by_node_key(metric, from: 15)
-              |> Enum.map(&Map.put(&1, :id, &1.timestamp))
-
-            {:noreply,
-             socket
-             |> stream(data_key, [], reset: true)
-             |> stream(data_key, data)
-             |> assign(:current_selected_id, %{
-               current_selected_id
-               | metric: metric,
-                 memory_monitor: true
-             })}
-
-          _ ->
-            {:noreply,
-             socket
-             |> assign(:current_selected_id, %{current_selected_id | memory_monitor: false})}
-        end
-
-      {:port, port} ->
-        current_selected_id = %Identifier{
-          info: Apps.Port.info(node, port),
-          id_string: request_id,
-          type: "port",
-          node: node
-        }
-
-        case Monitor.id_info(port) do
-          {:ok, %{metric: metric}} ->
-            # Subscribe to receive events
-            Telemetry.subscribe_for_new_data(service, metric)
-
-            # Read current metrics
-            data_key = data_key(service, metric)
-
-            data =
-              service
-              |> Telemetry.list_data_by_node_key(metric, from: 15)
-              |> Enum.map(&Map.put(&1, :id, &1.timestamp))
-
-            {:noreply,
-             socket
-             |> stream(data_key, [], reset: true)
-             |> stream(data_key, data)
-             |> assign(:current_selected_id, %{
-               current_selected_id
-               | metric: metric,
-                 memory_monitor: true
-             })}
-
-          _ ->
-            {:noreply,
-             socket
-             |> assign(:current_selected_id, %{current_selected_id | memory_monitor: false})}
-        end
-
-      {:none, _any} ->
-        current_selected_id = %Identifier{id_string: request_id, node: node}
-
-        {:noreply,
-         socket
-         |> assign(:current_selected_id, current_selected_id)}
-    end
-  end
-
-  # The debouncing added here will reduce the number of Process.info requests since
-  # tooltips are high demand signals.
-  def handle_info(
-        {"request-process", _data},
-        %{assigns: %{current_selected_id: current_selected_id}} = socket
+        %{assigns: %{current_selected_id: current_selected_id, form: form}} = socket
       ) do
-    {:noreply,
-     assign(socket, :current_selected_id, %{
-       current_selected_id
-       | debouncing: current_selected_id.debouncing - 1
-     })}
+    if request_process_info?(current_selected_id, request_id) do
+      fetch_process_info(socket, request_id, series_name, form)
+    else
+      # NOTE: Throttling for the currently selected id, since tooltips are
+      # high demand signals and each request runs Process.info/get_state.
+      {:noreply, socket}
+    end
   end
 
   @impl Page
@@ -796,7 +669,120 @@ defmodule Observer.Web.Apps.Page do
     {:noreply,
      socket
      |> assign(:node_info, node_info)
-     |> assign(:current_selected_id, %Identifier{})}
+     |> assign(:current_selected_id, %Identifier{})
+     |> assign_chart_tree_data()}
+  end
+
+  # Any other message is ignored, e.g. late replies from :sys.get_state or
+  # :sys.get_status calls that timed out, which would otherwise crash the
+  # LiveView process.
+  def handle_info(_message, socket), do: {:noreply, socket}
+
+  defp fetch_process_info(socket, request_id, series_name, form) do
+    get_state_timeout = form.params["get_state_timeout"] |> String.to_integer()
+    [service, _app] = decompose_data_key(series_name)
+    node = String.to_existing_atom(service)
+
+    case Helpers.parse_identifier(request_id) do
+      {:pid, pid} ->
+        current_selected_id = %Identifier{
+          info: Apps.Process.info(pid, get_state_timeout),
+          id_string: request_id,
+          type: "pid",
+          node: node,
+          fetched_at: System.monotonic_time(:millisecond)
+        }
+
+        case Monitor.id_info(pid) do
+          {:ok, %{metric: metric}} ->
+            # Subscribe to receive events
+            Telemetry.subscribe_for_new_data(service, metric)
+
+            # Read current metrics
+            data_key = data_key(service, metric)
+
+            data =
+              service
+              |> Telemetry.list_data_by_node_key(metric, from: 15)
+              |> Enum.map(&Map.put(&1, :id, &1.timestamp))
+
+            {:noreply,
+             socket
+             |> stream(data_key, [], reset: true)
+             |> stream(data_key, data)
+             |> assign(:current_selected_id, %{
+               current_selected_id
+               | metric: metric,
+                 memory_monitor: true
+             })}
+
+          _ ->
+            {:noreply,
+             socket
+             |> assign(:current_selected_id, %{current_selected_id | memory_monitor: false})}
+        end
+
+      {:port, port} ->
+        current_selected_id = %Identifier{
+          info: Apps.Port.info(node, port),
+          id_string: request_id,
+          type: "port",
+          node: node,
+          fetched_at: System.monotonic_time(:millisecond)
+        }
+
+        case Monitor.id_info(port) do
+          {:ok, %{metric: metric}} ->
+            # Subscribe to receive events
+            Telemetry.subscribe_for_new_data(service, metric)
+
+            # Read current metrics
+            data_key = data_key(service, metric)
+
+            data =
+              service
+              |> Telemetry.list_data_by_node_key(metric, from: 15)
+              |> Enum.map(&Map.put(&1, :id, &1.timestamp))
+
+            {:noreply,
+             socket
+             |> stream(data_key, [], reset: true)
+             |> stream(data_key, data)
+             |> assign(:current_selected_id, %{
+               current_selected_id
+               | metric: metric,
+                 memory_monitor: true
+             })}
+
+          _ ->
+            {:noreply,
+             socket
+             |> assign(:current_selected_id, %{current_selected_id | memory_monitor: false})}
+        end
+
+      {:none, _any} ->
+        current_selected_id = %Identifier{
+          id_string: request_id,
+          node: node,
+          fetched_at: System.monotonic_time(:millisecond)
+        }
+
+        {:noreply,
+         socket
+         |> assign(:current_selected_id, current_selected_id)}
+    end
+  end
+
+  # NOTE: Minimum interval before re-fetching info for the same selected id,
+  # since tooltips are high demand signals and each request runs
+  # Process.info + :sys.get_state.
+  @same_id_refetch_ms 1_000
+
+  defp request_process_info?(%Identifier{} = current_selected_id, request_id) do
+    current_selected_id.id_string != request_id or
+      current_selected_id.fetched_at == nil or
+      System.monotonic_time(:millisecond) - current_selected_id.fetched_at >=
+        @same_id_refetch_ms
   end
 
   @service_apps_delimiter "::app:"
@@ -875,6 +861,48 @@ defmodule Observer.Web.Apps.Page do
 
       %{acc | services_keys: services_keys, apps_keys: apps_keys, node: node}
     end)
+  end
+
+  # Rebuilding the chart tree and encoding it can be expensive for large trees,
+  # so it is only re-assigned when the observer data or the form options change,
+  # keeping hover-driven renders small.
+  defp assign_chart_tree_data(%{assigns: %{observer_data: observer_data, form: form}} = socket) do
+    initial_tree_depth = form.params["initial_tree_depth"]
+
+    chart_tree_data =
+      observer_data
+      |> Enum.reduce([], fn {key, %{"data" => info}}, acc ->
+        acc ++ [series(key, info, initial_tree_depth)]
+      end)
+      |> adjust_series_position()
+      |> flare_chart_data()
+
+    assign(socket, :chart_tree_data, chart_tree_data)
+  end
+
+  defp adjust_series_position(series) do
+    case Enum.count(series) do
+      n when n > 0 ->
+        step = 100.0 / n
+
+        {series, _top, _bottom} =
+          Enum.reduce(series, {[], 0.0, 100.0}, fn serie, {acc, top, bottom} ->
+            bottom = bottom - step
+
+            new_serie = %{
+              serie
+              | top: :erlang.float_to_binary(top, [{:decimals, 0}]) <> "%",
+                bottom: :erlang.float_to_binary(bottom, [{:decimals, 0}]) <> "%"
+            }
+
+            {acc ++ [new_serie], top + step, bottom}
+          end)
+
+        series
+
+      _ ->
+        series
+    end
   end
 
   defp flare_chart_data(series) do
