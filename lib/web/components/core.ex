@@ -493,5 +493,4 @@ defmodule Observer.Web.Components.Core do
     </label>
     """
   end
-
 end
