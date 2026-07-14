@@ -3,7 +3,7 @@ defmodule ObserverWeb.Ets do
   Lists a node's ETS tables and (optionally) previews their contents - the web equivalent of the
   observer GUI's Table Viewer and observer_cli's Ets pane.
 
-  Table listing delegates to `:observer_backend.get_table_list/2` (runtime_tools, already
+  Table listing delegates to `:observer_backend.get_table_list` (runtime_tools, already
   required on every node for `:dbg` tracing): one RPC round trip returns every table's metadata,
   regardless of the observer_web version on the observed node.
 

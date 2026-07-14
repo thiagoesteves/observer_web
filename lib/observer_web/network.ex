@@ -5,7 +5,7 @@ defmodule ObserverWeb.Network do
   listings miss entirely - the web equivalent of observer_cli's Network pane and the observer
   GUI's Ports/Sockets tabs.
 
-  Sampling delegates to `:observer_backend.get_port_list/0` and `get_socket_list/0`
+  Sampling delegates to `:observer_backend.get_port_list` and `:observer_backend.get_socket_list`
   (runtime_tools, already required on every node for `:dbg` tracing): one RPC round trip each
   returns every endpoint's metadata and counters, regardless of the observer_web version on the
   observed node.

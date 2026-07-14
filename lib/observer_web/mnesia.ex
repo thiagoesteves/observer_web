@@ -4,7 +4,7 @@ defmodule ObserverWeb.Mnesia do
   observer GUI's Table Viewer, sharing the Tables page (and its safety gating) with
   `ObserverWeb.Ets`.
 
-  Table listing delegates to `:observer_backend.get_table_list/2` (runtime_tools, already
+  Table listing delegates to `:observer_backend.get_table_list` (runtime_tools, already
   required on every node for `:dbg` tracing). Nodes where Mnesia isn't running - or whose
   release doesn't ship the `:mnesia` application at all - report `{:error, :mnesia_not_running}`
   instead of crashing.

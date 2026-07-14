@@ -2,13 +2,13 @@ defmodule ObserverWeb.Processes do
   @moduledoc """
   Samples and ranks the processes of a node, etop-style.
 
-  Sampling delegates to `:observer_backend.etop_collect/1` (part of `runtime_tools`, which
+  Sampling delegates to `:observer_backend.etop_collect` (part of `runtime_tools`, which
   Observer Web already requires on every node for `:dbg` tracing) - the same collector `etop`
   itself uses against remote nodes, so one RPC round trip returns every process's memory,
   cumulative reductions, message queue length, name and current function, regardless of the
   observer_web version (or absence) on the observed node.
 
-  NOTE: `:observer_backend.etop_collect/1` has a documented side effect: when the
+  NOTE: `:observer_backend.etop_collect` has a documented side effect: when the
   `:scheduler_wall_time` system flag is off, it turns the flag on and holds it (via a monitor)
   until the collector process - here, the LiveView showing the Processes page - dies. This is
   exactly how running `etop` against a node behaves; the flag adds a small scheduler accounting
