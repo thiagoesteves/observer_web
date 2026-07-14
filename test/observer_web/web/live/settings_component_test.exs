@@ -100,7 +100,7 @@ defmodule Observer.Web.SettingsComponentLiveTest do
       status: fn -> %ObserverWeb.Version.Server{} end do
       {:ok, _index_live, html} = live(conn, "/observer/tracing")
 
-      refute html =~ "Version mismatch across nodes:"
+      refute html =~ "Version mismatch across nodes"
     end
   end
 
@@ -119,9 +119,14 @@ defmodule Observer.Web.SettingsComponentLiveTest do
       end do
       {:ok, _index_live, html} = live(conn, "/observer/tracing")
 
-      assert html =~ "Version mismatch across nodes:"
+      assert html =~ "Version mismatch across nodes"
       assert html =~ "#{node1}"
       assert html =~ "#{node2}"
+
+      # The local version and each node's version are shown as chips
+      assert html =~ "v0.1.0"
+      assert html =~ "v0.1.2"
+      assert html =~ "v0.1.4"
     end
   end
 end

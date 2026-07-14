@@ -1,5 +1,17 @@
 # CHANGELOG (v0.2.X)
 
+## 0.2.7 🚀 (2026-07-14)
+
+### ⚠️ Backwards incompatible changes for 0.2.6
+ * None
+
+### Bug fixes
+ * None
+
+### Enhancements
+ * [[`PR-61`](https://github.com/thiagoesteves/observer_web/pull/61)] Improvements for the applications process read
+ * [[`PR-62`](https://github.com/thiagoesteves/observer_web/pull/62)] Improve version mismatch UX
+
 ## 0.2.6 🚀 (2026-07-13)
 
 ### ⚠️ Backwards incompatible changes for 0.2.5
