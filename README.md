@@ -135,6 +135,14 @@ To verify everything is working properly:
 You can now explore the `observer` mode, checking that the data is persisted even if the other app in
 broadcast mode restarts.
 
+## ☕ Support the project
+
+ObserverWeb is free and open source. If it's useful to you, consider supporting its development:
+
+ * **GitHub Sponsors:** [github.com/sponsors/thiagoesteves](https://github.com/sponsors/thiagoesteves)
+ * **BTC Wallet Address:** `bc1q3f5eyg2qlun6dc4l597yuyygmkh2qvklwecw8r`
+ * **ETH Wallet Address:** `0x151C3A7AE305b3fF385c7EEce72C6c4E23dE05Fa`
+
 [dye]: https://github.com/thiagoesteves/deployex
 [edb]: https://www.erlang.org/doc/apps/runtime_tools/dbg.html
 [liv]: https://github.com/phoenixframework/phoenix_live_view
