@@ -208,6 +208,29 @@ config :observer_web,
   scheduler_utilization_poller_interval_ms: :timer.seconds(5)
 ```
 
+#### Host application metrics (opt-in)
+
+Beyond the built-in VM and Phoenix series, Observer Web can chart any `Telemetry.Metrics` definition from your application.
+Configure the `:telemetry_metrics` option with a list of definitions:
+
+```elixir
+config :observer_web,
+  telemetry_metrics: [
+    Telemetry.Metrics.summary("my_app.repo.query.total_time", unit: {:native, :millisecond}),
+    Telemetry.Metrics.last_value("my_app.orders.queue.length")
+  ]
+```
+
+If your definitions are only available at runtime, or you want to reuse the same list your other reporters consume, point to a function instead:
+
+```elixir
+config :observer_web,
+  telemetry_metrics: {MyAppWeb.Telemetry, :metrics, []}
+```
+
+Each configured series appears on the Metrics page under its metric name as soon as events are emitted, using a generic time-series chart.
+They follow the same storage, retention and Metric Hub rules as the built-in series.
+
 #### 2. Configuration
 
 Observer Web can operate in two distinct metrics configurations: `Standalone` and `Metric Hub`.

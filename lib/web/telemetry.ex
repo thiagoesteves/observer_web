@@ -1,7 +1,38 @@
 defmodule Observer.Web.Telemetry do
+  @moduledoc """
+  Supervises the telemetry pollers and the reporter that feeds the Metrics page.
+
+  ## Host application metrics
+
+  Beyond the built-in VM and Phoenix series, any `Telemetry.Metrics` definition from the host
+  application can be charted by configuring `:telemetry_metrics`:
+
+  ```elixir
+  config :observer_web,
+    telemetry_metrics: [
+      Telemetry.Metrics.summary("my_app.repo.query.total_time", unit: {:native, :millisecond}),
+      Telemetry.Metrics.last_value("my_app.orders.queue.length")
+    ]
+  ```
+
+  When the definitions are only available at runtime (or you want to share the same list used
+  by `telemetry_metrics` reporters), point to a function instead:
+
+  ```elixir
+  config :observer_web, telemetry_metrics: {MyAppWeb.Telemetry, :metrics, []}
+  ```
+
+  The metrics are attached when the `:observer_web` application starts, and each series shows
+  up on the Metrics page under its metric name once events are emitted. Entries that are not
+  `Telemetry.Metrics` structs are ignored with a warning.
+  """
+
   use Supervisor
+
   import Telemetry.Metrics
   import ObserverWeb.Macros
+
+  require Logger
 
   def start_link(arg) do
     Supervisor.start_link(__MODULE__, arg, name: __MODULE__)
@@ -56,6 +87,56 @@ defmodule Observer.Web.Telemetry do
   end
 
   def metrics do
+    default_metrics() ++ custom_metrics()
+  end
+
+  @doc """
+  Host application metrics configured under `config :observer_web, :telemetry_metrics` -
+  either a list of `Telemetry.Metrics` structs or a `{module, function, args}` returning one.
+  """
+  def custom_metrics do
+    :observer_web
+    |> Application.get_env(:telemetry_metrics, [])
+    |> resolve_custom_metrics()
+    |> Enum.filter(&valid_metric?/1)
+  end
+
+  defp resolve_custom_metrics({module, function, args})
+       when is_atom(module) and is_atom(function) and is_list(args) do
+    module |> apply(function, args) |> List.wrap()
+  end
+
+  defp resolve_custom_metrics(metrics) when is_list(metrics), do: metrics
+
+  defp resolve_custom_metrics(invalid) do
+    Logger.warning(
+      "Ignoring :observer_web, :telemetry_metrics - expected a list of Telemetry.Metrics " <>
+        "or a {module, function, args} tuple, got: #{inspect(invalid)}"
+    )
+
+    []
+  end
+
+  @metric_types [
+    Telemetry.Metrics.Counter,
+    Telemetry.Metrics.Distribution,
+    Telemetry.Metrics.LastValue,
+    Telemetry.Metrics.Sum,
+    Telemetry.Metrics.Summary
+  ]
+
+  defp valid_metric?(%struct{}) when struct in @metric_types, do: true
+
+  defp valid_metric?(invalid) do
+    Logger.warning(
+      "Ignoring invalid entry in :observer_web, :telemetry_metrics - expected a " <>
+        "Telemetry.Metrics struct, got: #{inspect(invalid)}"
+    )
+
+    false
+  end
+
+  defp default_metrics do
     [
       # Phoenix Metrics
       summary("phoenix.endpoint.start.system_time",
