@@ -46,6 +46,38 @@ defmodule Observer.Web.System.PageLiveTest do
     assert render(index_live) =~ "Memory Allocators"
   end
 
+  test "GET /system hints at :os_mon when it is not running", %{conn: conn} do
+    Application.stop(:os_mon)
+
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/system")
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "extra_applications"
+    refute html =~ "Operating System"
+  end
+
+  test "GET /system renders OS data when os_mon is running", %{conn: conn} do
+    {:ok, _apps} = Application.ensure_all_started(:os_mon)
+    on_exit(fn -> Application.stop(:os_mon) end)
+
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/system")
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "Operating System"
+    assert html =~ "OS:"
+    refute html =~ "extra_applications"
+  end
+
   test "Snapshot failures are reported instead of crashing", %{conn: conn} do
     test_pid = self()
 

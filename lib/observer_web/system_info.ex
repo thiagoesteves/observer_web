@@ -31,6 +31,21 @@ defmodule ObserverWeb.SystemInfo do
           carriers_size: non_neg_integer(),
           utilization_percent: float() | nil
         }
+  @type os_data :: %{
+          os: String.t() | nil,
+          load: %{avg1: float(), avg5: float(), avg15: float()} | nil,
+          cpus: [%{id: non_neg_integer(), busy_percent: float()}],
+          memory:
+            %{
+              total_bytes: non_neg_integer(),
+              available_bytes: non_neg_integer(),
+              used_percent: float()
+            }
+            | nil,
+          disks: [
+            %{mount: String.t(), total_kbytes: non_neg_integer(), capacity_percent: integer()}
+          ]
+        }
 
   @doc """
   General runtime information for the node.
@@ -162,6 +177,114 @@ defmodule ObserverWeb.SystemInfo do
       {^key, current, _last_max, _max} when is_integer(current) -> current
       {^key, current} when is_integer(current) -> current
       _missing -> 0
+    end
+  end
+
+  @doc """
+  Operating system level data - load averages, per-CPU utilization, OS memory and disk usage -
+  collected through the `os_mon` probes (`:cpu_sup`, `:memsup`, `:disksup`), the same source the
+  observer GUI's load charts and LiveDashboard's OS Data page read from.
+
+  Requires the `:os_mon` application to be running on the target node; returns
+  `{:error, :os_mon_not_started}` otherwise so callers can hint at adding it to
+  `extra_applications`. Individual probes vary per platform, so each section degrades to `nil`
+  (or an empty list) instead of failing the whole snapshot.
+  """
+  @spec os_data(node()) :: {:ok, os_data()} | {:error, :os_mon_not_started | term()}
+  def os_data(node) do
+    case Rpc.call(node, :erlang, :whereis, [:os_mon_sup], @rpc_timeout) do
+      pid when is_pid(pid) ->
+        {:ok,
+         %{
+           os: os_name(node),
+           load: load_averages(node),
+           cpus: per_cpu_utilization(node),
+           memory: os_memory(node),
+           disks: disks(node)
+         }}
+
+      :undefined ->
+        {:error, :os_mon_not_started}
+
+      error ->
+        {:error, error}
+    end
+  end
+
+  defp os_name(node) do
+    with {family, name} when family not in [:badrpc, :error] <-
+           Rpc.call(node, :os, :type, [], @rpc_timeout),
+         version when is_tuple(version) or is_list(version) <-
+           Rpc.call(node, :os, :version, [], @rpc_timeout) do
+      "#{family}/#{name} #{format_os_version(version)}"
+    else
+      _unavailable -> nil
+    end
+  end
+
+  defp format_os_version({major, minor, patch}), do: "#{major}.#{minor}.#{patch}"
+  defp format_os_version(version) when is_list(version), do: to_string(version)
+
+  # `:cpu_sup.avg1/0` and friends report the load average multiplied by 256.
+  defp load_averages(node) do
+    with avg1 when is_integer(avg1) <- Rpc.call(node, :cpu_sup, :avg1, [], @rpc_timeout),
+         avg5 when is_integer(avg5) <- Rpc.call(node, :cpu_sup, :avg5, [], @rpc_timeout),
+         avg15 when is_integer(avg15) <- Rpc.call(node, :cpu_sup, :avg15, [], @rpc_timeout) do
+      %{avg1: load_value(avg1), avg5: load_value(avg5), avg15: load_value(avg15)}
+    else
+      _unavailable -> nil
+    end
+  end
+
+  defp load_value(value), do: Float.round(value / 256, 2)
+
+  defp per_cpu_utilization(node) do
+    case Rpc.call(node, :cpu_sup, :util, [[:per_cpu]], @rpc_timeout) do
+      cpus when is_list(cpus) ->
+        Enum.flat_map(cpus, fn
+          {id, busy, _non_busy, _misc} when is_number(busy) ->
+            [%{id: id, busy_percent: Float.round(busy * 1.0, 2)}]
+
+          _unexpected ->
+            []
+        end)
+
+      _unavailable ->
+        []
+    end
+  end
+
+  defp os_memory(node) do
+    with data when is_list(data) <-
+           Rpc.call(node, :memsup, :get_system_memory_data, [], @rpc_timeout),
+         total when is_integer(total) and total > 0 <-
+           data[:system_total_memory] || data[:total_memory],
+         available when is_integer(available) <-
+           data[:available_memory] || data[:free_memory] do
+      %{
+        total_bytes: total,
+        available_bytes: available,
+        used_percent: Float.round((total - available) / total * 100, 2)
+      }
+    else
+      _unavailable -> nil
+    end
+  end
+
+  defp disks(node) do
+    case Rpc.call(node, :disksup, :get_disk_data, [], @rpc_timeout) do
+      disks when is_list(disks) ->
+        Enum.flat_map(disks, fn
+          {mount, total_kbytes, capacity}
+          when is_integer(total_kbytes) and is_integer(capacity) ->
+            [%{mount: to_string(mount), total_kbytes: total_kbytes, capacity_percent: capacity}]
+
+          _unexpected ->
+            []
+        end)
+
+      _unavailable ->
+        []
     end
   end
 

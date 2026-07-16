@@ -41,9 +41,16 @@ defmodule ObserverWeb.MixProject do
   def application do
     [
       mod: {ObserverWeb.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: extra_applications(Mix.env())
     ]
   end
+
+  # :os_mon is only forced into dev/test so the System page's OS data can be exercised;
+  # host applications opt in by adding :os_mon to their own extra_applications.
+  defp extra_applications(env) when env in [:dev, :test],
+    do: [:logger, :runtime_tools, :os_mon]
+
+  defp extra_applications(_env), do: [:logger, :runtime_tools]
 
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]

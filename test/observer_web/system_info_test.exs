@@ -120,4 +120,128 @@ defmodule ObserverWeb.SystemInfoTest do
                SystemInfo.allocator_utilization(:weird_alloc, instances)
     end
   end
+
+  describe "os_data/1" do
+    test "reports an error when os_mon is not running" do
+      Application.stop(:os_mon)
+
+      assert {:error, :os_mon_not_started} = SystemInfo.os_data(Node.self())
+    end
+
+    test "reports rpc failures as errors" do
+      stub(ObserverWeb.RpcMock, :call, fn _node, _module, _function, _args, _timeout ->
+        {:badrpc, :nodedown}
+      end)
+
+      assert {:error, {:badrpc, :nodedown}} = SystemInfo.os_data(:unreachable@nohost)
+    end
+
+    test "collects OS data from a running os_mon" do
+      {:ok, _apps} = Application.ensure_all_started(:os_mon)
+      on_exit(fn -> Application.stop(:os_mon) end)
+
+      assert {:ok, os_data} = SystemInfo.os_data(Node.self())
+
+      assert is_binary(os_data.os)
+      assert is_list(os_data.cpus)
+      assert is_list(os_data.disks)
+
+      if os_data.load do
+        assert os_data.load.avg1 >= 0.0
+        assert os_data.load.avg5 >= 0.0
+        assert os_data.load.avg15 >= 0.0
+      end
+
+      if os_data.memory do
+        assert os_data.memory.total_bytes > 0
+        assert os_data.memory.available_bytes <= os_data.memory.total_bytes
+        assert os_data.memory.used_percent >= 0.0 and os_data.memory.used_percent <= 100.0
+      end
+    end
+
+    test "normalizes every probe from stubbed rpc responses" do
+      stub(ObserverWeb.RpcMock, :call, fn
+        _node, :erlang, :whereis, [:os_mon_sup], _timeout -> self()
+        _node, :os, :type, [], _timeout -> {:unix, :linux}
+        _node, :os, :version, [], _timeout -> {6, 1, 0}
+        _node, :cpu_sup, :avg1, [], _timeout -> 512
+        _node, :cpu_sup, :avg5, [], _timeout -> 256
+        _node, :cpu_sup, :avg15, [], _timeout -> 128
+        _node, :cpu_sup, :util, [[:per_cpu]], _timeout -> [{0, 75.5, 24.5, []}, {1, 10, 90, []}]
+        _node, :memsup, :get_system_memory_data, [], _timeout -> mem_data()
+        _node, :disksup, :get_disk_data, [], _timeout -> [{~c"/", 1_000_000, 45}]
+      end)
+
+      assert {:ok, os_data} = SystemInfo.os_data(:fake@node)
+
+      assert os_data.os == "unix/linux 6.1.0"
+      assert os_data.load == %{avg1: 2.0, avg5: 1.0, avg15: 0.5}
+
+      assert os_data.cpus == [
+               %{id: 0, busy_percent: 75.5},
+               %{id: 1, busy_percent: 10.0}
+             ]
+
+      assert os_data.memory == %{
+               total_bytes: 1_000,
+               available_bytes: 250,
+               used_percent: 75.0
+             }
+
+      assert os_data.disks == [%{mount: "/", total_kbytes: 1_000_000, capacity_percent: 45}]
+    end
+
+    test "degrades each probe individually when unsupported" do
+      stub(ObserverWeb.RpcMock, :call, fn
+        _node, :erlang, :whereis, [:os_mon_sup], _timeout -> self()
+        _node, :os, :type, [], _timeout -> {:badrpc, :nodedown}
+        _node, :os, :version, [], _timeout -> {6, 1, 0}
+        _node, :cpu_sup, :avg1, [], _timeout -> {:error, :not_supported}
+        _node, :cpu_sup, :avg5, [], _timeout -> 256
+        _node, :cpu_sup, :avg15, [], _timeout -> 128
+        _node, :cpu_sup, :util, [[:per_cpu]], _timeout -> {:badrpc, {:EXIT, :noproc}}
+        _node, :memsup, :get_system_memory_data, [], _timeout -> {:badrpc, {:EXIT, :noproc}}
+        _node, :disksup, :get_disk_data, [], _timeout -> {:badrpc, {:EXIT, :noproc}}
+      end)
+
+      assert {:ok, os_data} = SystemInfo.os_data(:fake@node)
+
+      assert os_data.os == nil
+      assert os_data.load == nil
+      assert os_data.cpus == []
+      assert os_data.memory == nil
+      assert os_data.disks == []
+    end
+
+    test "skips malformed cpu and disk entries and charlist os versions are supported" do
+      stub(ObserverWeb.RpcMock, :call, fn
+        _node, :erlang, :whereis, [:os_mon_sup], _timeout -> self()
+        _node, :os, :type, [], _timeout -> {:win32, :nt}
+        _node, :os, :version, [], _timeout -> ~c"10.0"
+        _node, :cpu_sup, :avg1, [], _timeout -> 0
+        _node, :cpu_sup, :avg5, [], _timeout -> 0
+        _node, :cpu_sup, :avg15, [], _timeout -> 0
+        _node, :cpu_sup, :util, [[:per_cpu]], _timeout -> [{0, :bad, 0, []}, :garbage]
+        _node, :memsup, :get_system_memory_data, [], _timeout -> [free_memory: 10]
+        _node, :disksup, :get_disk_data, [], _timeout -> [{~c"none", :na, 0}, :garbage]
+      end)
+
+      assert {:ok, os_data} = SystemInfo.os_data(:fake@node)
+
+      assert os_data.os == "win32/nt 10.0"
+      assert os_data.load == %{avg1: 0.0, avg5: 0.0, avg15: 0.0}
+      assert os_data.cpus == []
+      assert os_data.memory == nil
+      assert os_data.disks == []
+    end
+  end
+
+  defp mem_data do
+    [
+      system_total_memory: 1_000,
+      total_memory: 900,
+      available_memory: 250,
+      free_memory: 100
+    ]
+  end
 end
