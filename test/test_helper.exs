@@ -37,6 +37,24 @@ defmodule LimitedResolver do
   def resolve_access(_user), do: :all
 end
 
+defmodule Observer.Web.Test.FruitsPage do
+  use Observer.Web.Page
+
+  @impl Phoenix.LiveComponent
+  def render(assigns) do
+    ~H"""
+    <div id="fruits-page" class="min-h-screen bg-white dark:bg-gray-800 p-4">
+      Bananas and apples for {inspect(@access)}
+    </div>
+    """
+  end
+
+  @impl Observer.Web.Page
+  def handle_mount(socket) do
+    Phoenix.Component.assign(socket, :page_title, "Fruits")
+  end
+end
+
 defmodule Observer.Web.Test.Router do
   use Phoenix.Router
 
@@ -50,7 +68,7 @@ defmodule Observer.Web.Test.Router do
   scope "/", ThisWontBeUsed, as: :this_wont_be_used do
     pipe_through :browser
 
-    observer_dashboard("/observer")
+    observer_dashboard("/observer", pages: [fruits: Observer.Web.Test.FruitsPage])
     observer_dashboard("/observer-limited", as: :observer_limited, resolver: LimitedResolver)
   end
 end

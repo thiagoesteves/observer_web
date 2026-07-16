@@ -27,7 +27,9 @@ defmodule Observer.Web.IndexLive do
     %{"user" => user, "access" => access, "csp_nonces" => csp_nonces} = session
     %{"logo_path" => logo_path} = session
 
-    page = resolve_page(params)
+    custom_pages = Map.get(session, "pages") || []
+
+    page = resolve_page(params, custom_pages)
     theme = restore_state(socket, "theme", "system")
     version = Version.status()
 
@@ -35,7 +37,7 @@ defmodule Observer.Web.IndexLive do
 
     socket =
       socket
-      |> assign(params: params, page: page)
+      |> assign(params: params, page: page, custom_pages: custom_pages)
       |> assign(live_path: live_path, live_transport: live_transport, logo_path: logo_path)
       |> assign(access: access, csp_nonces: csp_nonces, resolver: resolver, user: user)
       |> assign(theme: theme, version: version)
@@ -97,15 +99,35 @@ defmodule Observer.Web.IndexLive do
 
   ## Render Helpers
 
-  defp resolve_page(%{"page" => "applications"}), do: %{name: :applications, comp: AppsPage}
-  defp resolve_page(%{"page" => "crashdump"}), do: %{name: :crashdump, comp: CrashdumpPage}
-  defp resolve_page(%{"page" => "ets"}), do: %{name: :ets, comp: EtsPage}
-  defp resolve_page(%{"page" => "logs"}), do: %{name: :logs, comp: LogsPage}
-  defp resolve_page(%{"page" => "metrics"}), do: %{name: :metrics, comp: MetricsPage}
-  defp resolve_page(%{"page" => "network"}), do: %{name: :network, comp: NetworkPage}
-  defp resolve_page(%{"page" => "processes"}), do: %{name: :processes, comp: ProcessesPage}
-  defp resolve_page(%{"page" => "profiling"}), do: %{name: :profiling, comp: ProfilingPage}
-  defp resolve_page(%{"page" => "system"}), do: %{name: :system, comp: SystemPage}
-  defp resolve_page(%{"page" => "tracing"}), do: %{name: :tracing, comp: TracingPage}
-  defp resolve_page(_params), do: %{name: :system, comp: SystemPage}
+  defp resolve_page(%{"page" => "applications"}, _pages),
+    do: %{name: :applications, comp: AppsPage}
+
+  defp resolve_page(%{"page" => "crashdump"}, _pages),
+    do: %{name: :crashdump, comp: CrashdumpPage}
+
+  defp resolve_page(%{"page" => "ets"}, _pages), do: %{name: :ets, comp: EtsPage}
+  defp resolve_page(%{"page" => "logs"}, _pages), do: %{name: :logs, comp: LogsPage}
+  defp resolve_page(%{"page" => "metrics"}, _pages), do: %{name: :metrics, comp: MetricsPage}
+  defp resolve_page(%{"page" => "network"}, _pages), do: %{name: :network, comp: NetworkPage}
+
+  defp resolve_page(%{"page" => "processes"}, _pages),
+    do: %{name: :processes, comp: ProcessesPage}
+
+  defp resolve_page(%{"page" => "profiling"}, _pages),
+    do: %{name: :profiling, comp: ProfilingPage}
+
+  defp resolve_page(%{"page" => "system"}, _pages), do: %{name: :system, comp: SystemPage}
+  defp resolve_page(%{"page" => "tracing"}, _pages), do: %{name: :tracing, comp: TracingPage}
+
+  defp resolve_page(%{"page" => name}, custom_pages) do
+    resolve_custom_page(name, custom_pages) || %{name: :system, comp: SystemPage}
+  end
+
+  defp resolve_page(_params, _custom_pages), do: %{name: :system, comp: SystemPage}
+
+  defp resolve_custom_page(name, custom_pages) do
+    Enum.find_value(custom_pages, fn {page_name, comp} ->
+      if Atom.to_string(page_name) == name, do: %{name: page_name, comp: comp}
+    end)
+  end
 end

@@ -91,6 +91,22 @@ defmodule Observer.Web.Router do
   end
   ```
 
+  ### Custom Pages
+
+  Beyond the built-in pillars, the dashboard can host custom pages implementing the
+  `Observer.Web.Page` behaviour. Pages are registered with a route name and show up at the end
+  of the navigation bar:
+
+  ```elixir
+  scope "/" do
+    pipe_through :browser
+
+    observer_dashboard "/observer", pages: [queue: MyApp.ObserverQueuePage]
+  end
+  ```
+
+  See the `Observer.Web.Page` docs for how to build a page.
+
   ### Content Security Policy
 
   To secure the dashboard, or comply with an existing CSP within your application, you can specify
@@ -122,12 +138,17 @@ defmodule Observer.Web.Router do
   alias Observer.Web.Resolver
 
   @default_opts [
+    pages: [],
     resolver: Resolver,
     socket_path: "/live",
     transport: "websocket"
   ]
 
   @transport_values ~w(longpoll websocket)
+
+  @reserved_page_names ~w(
+    applications crashdump ets metrics network processes profiling root system tracing
+  )a
 
   @doc """
   Defines an observer dashboard route.
@@ -146,6 +167,10 @@ defmodule Observer.Web.Router do
     another page in your application instead of the Oban dashboard root. Defaults to the jobs page.
 
   * `:on_mount` — declares additional module callbacks to be invoked when the dashboard mounts
+
+  * `:pages` — a keyword list of additional pages, where each key is the route name and each
+    value a module implementing the `Observer.Web.Page` behaviour, e.g.
+    `pages: [queue: MyApp.ObserverQueuePage]`. Defaults to `[]`.
 
   * `:resolver` — an `Observer.Web.Resolver` implementation used to customize the dashboard's
     functionality.
@@ -221,7 +246,8 @@ defmodule Observer.Web.Router do
       opts[:socket_path],
       opts[:transport],
       opts[:csp_nonce_assign_key],
-      opts[:logo_path]
+      opts[:logo_path],
+      opts[:pages]
     ]
 
     session_opts = [
@@ -236,7 +262,7 @@ defmodule Observer.Web.Router do
   end
 
   @doc false
-  def __session__(conn, prefix, resolver, live_path, live_transport, csp_key, logo_path) do
+  def __session__(conn, prefix, resolver, live_path, live_transport, csp_key, logo_path, pages) do
     user = Resolver.call_with_fallback(resolver, :resolve_user, [conn])
 
     csp_keys = expand_csp_nonce_keys(csp_key)
@@ -249,6 +275,7 @@ defmodule Observer.Web.Router do
       "live_path" => live_path,
       "live_transport" => live_transport,
       "logo_path" => logo_path,
+      "pages" => pages,
       "csp_nonces" => %{
         img: conn.assigns[csp_keys[:img]],
         style: conn.assigns[csp_keys[:style]],
@@ -275,6 +302,25 @@ defmodule Observer.Web.Router do
       raise ArgumentError, """
       invalid :logo_path, expected nil or a non-empty binary path,
       got: #{inspect(path)}
+      """
+    end
+  end
+
+  defp validate_opt!({:pages, pages}) do
+    valid? =
+      Keyword.keyword?(pages) and
+        Enum.all?(pages, fn {_name, comp} -> is_atom(comp) and not is_nil(comp) end)
+
+    unless valid? do
+      raise ArgumentError, """
+      invalid :pages, expected a keyword list of `name: PageModule` entries where each module
+      implements the Observer.Web.Page behaviour, got: #{inspect(pages)}
+      """
+    end
+
+    for {name, _comp} <- pages, name in @reserved_page_names do
+      raise ArgumentError, """
+      invalid :pages, the name #{inspect(name)} conflicts with a built-in dashboard page
       """
     end
   end
