@@ -226,6 +226,68 @@ defmodule Observer.Web.Router do
     end
   end
 
+  @doc """
+  Defines read-only JSON API routes over the Observer Web collectors, aimed at automation and
+  AI agents. See `Observer.Web.Api` for the available endpoints.
+
+  Unlike `observer_dashboard/2`, no session or LiveView is involved - mount it inside whatever
+  pipeline carries your API authentication:
+
+      defmodule MyAppWeb.Router do
+        use Phoenix.Router
+
+        import Observer.Web.Router
+
+        pipeline :api_auth do
+          plug MyAppWeb.ApiAuth
+        end
+
+        scope "/" do
+          pipe_through [:api_auth]
+
+          observer_api "/observer/api"
+        end
+      end
+
+  ## Options
+
+  * `:resolver` — an `Observer.Web.Resolver` implementation used to resolve access; a
+    `{:forbidden, _}` access renders a 403. Defaults to `Observer.Web.Resolver`.
+  """
+  defmacro observer_api(path, opts \\ []) do
+    opts =
+      if Macro.quoted_literal?(opts) do
+        Macro.prewalk(opts, &expand_alias(&1, __CALLER__))
+      else
+        opts
+      end
+
+    quote bind_quoted: binding() do
+      resolver = Observer.Web.Router.__api_resolver__(opts)
+
+      scope path, alias: false, as: false do
+        get "/", Observer.Web.Api, [action: :index, resolver: resolver], as: false
+
+        get "/system", Observer.Web.Api, [action: :system, resolver: resolver], as: false
+
+        get "/processes", Observer.Web.Api, [action: :processes, resolver: resolver], as: false
+
+        get "/ets", Observer.Web.Api, [action: :ets, resolver: resolver], as: false
+
+        get "/apps", Observer.Web.Api, [action: :apps, resolver: resolver], as: false
+      end
+    end
+  end
+
+  @doc false
+  def __api_resolver__(opts) do
+    resolver = Keyword.get(opts, :resolver, Resolver)
+
+    validate_opt!({:resolver, resolver})
+
+    resolver
+  end
+
   defp expand_alias({:__aliases__, _, _} = alias, env) do
     Macro.expand(alias, %{env | function: {:observer_dashboard, 2}})
   end

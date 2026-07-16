@@ -71,6 +71,11 @@ defmodule Observer.Web.Test.Router do
     observer_dashboard("/observer", pages: [fruits: Observer.Web.Test.FruitsPage])
     observer_dashboard("/observer-limited", as: :observer_limited, resolver: LimitedResolver)
   end
+
+  scope "/", ThisWontBeUsed, as: :this_wont_be_used do
+    observer_api("/observer-api")
+    observer_api("/observer-api-limited", resolver: LimitedResolver)
+  end
 end
 
 defmodule Observer.Web.Endpoint do
