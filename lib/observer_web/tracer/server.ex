@@ -302,7 +302,14 @@ defmodule ObserverWeb.Tracer.Server do
 
     node = origin_pid && :erlang.node(origin_pid)
 
-    if node in monitored_nodes do
+    # For the live display, never trace the requesting LiveView's own calls: rendering a trace
+    # message executes library code (Enum, ObserverWeb.Common, ...), so a session tracing any
+    # module the dashboard itself uses would otherwise feed back on itself - every rendered
+    # message generating the next one until max_messages aborts the session. Tool sessions only
+    # render at the end, so they keep the requester's calls.
+    self_feedback? = tool == :display and origin_pid == request_pid
+
+    if node in monitored_nodes and not self_feedback? do
       if tool == :display do
         send(request_pid, {:new_trace_message, session_id, node, index, type, message})
       else
