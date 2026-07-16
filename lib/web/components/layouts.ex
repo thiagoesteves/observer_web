@@ -154,6 +154,7 @@ defmodule Observer.Web.Layouts do
       :network,
       :ets,
       :metrics,
+      :logs,
       :crashdump
     ]
   end
@@ -169,6 +170,7 @@ defmodule Observer.Web.Layouts do
       :network,
       :ets,
       :metrics,
+      :logs,
       :crashdump
     ]
   end
