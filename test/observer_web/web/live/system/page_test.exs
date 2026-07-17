@@ -78,6 +78,60 @@ defmodule Observer.Web.System.PageLiveTest do
     refute html =~ "extra_applications"
   end
 
+  test "auto refresh re-collects the snapshot at the selected interval", %{conn: conn} do
+    test_pid = self()
+
+    ObserverWeb.RpcMock
+    |> stub(:call, fn node, module, function, args, timeout ->
+      if function == :system_info and args == [:otp_release] do
+        send(test_pid, :snapshot_tick)
+      end
+
+      :rpc.call(node, module, function, args, timeout)
+    end)
+    |> stub(:pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
+
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/system")
+
+    # Initial tick from mount
+    assert_receive :snapshot_tick, 1_000
+
+    index_live
+    |> element("#system-update-form")
+    |> render_change(%{"service" => to_string(Node.self()), "refresh_seconds" => "2"})
+
+    # Immediate tick from restarting the chain, then a scheduled one ~2s later
+    assert_receive :snapshot_tick, 1_000
+    assert_receive :snapshot_tick, 3_000
+  end
+
+  test "ticks from a cancelled chain are ignored", %{conn: conn} do
+    test_pid = self()
+
+    ObserverWeb.RpcMock
+    |> stub(:call, fn node, module, function, args, timeout ->
+      if function == :system_info and args == [:otp_release] do
+        send(test_pid, {:snapshot_tick, self()})
+      end
+
+      :rpc.call(node, module, function, args, timeout)
+    end)
+    |> stub(:pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
+
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/system")
+
+    assert_receive {:snapshot_tick, lv_pid}, 1_000
+
+    send(lv_pid, {:system_tick, 999_999})
+
+    refute_receive {:snapshot_tick, _pid}, 300
+    assert render(index_live) =~ "Memory Allocators"
+  end
+
   test "Snapshot failures are reported instead of crashing", %{conn: conn} do
     test_pid = self()
 

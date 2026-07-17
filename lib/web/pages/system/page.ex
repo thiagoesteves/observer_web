@@ -33,6 +33,12 @@ defmodule Observer.Web.System.Page do
             phx-change="form-update"
           >
             <Core.input field={@form[:service]} type="select" label="Service" options={@services} />
+            <Core.input
+              field={@form[:refresh_seconds]}
+              type="select"
+              label="Refresh"
+              options={[{"Paused", "0"}, {"2s", "2"}, {"5s", "5"}, {"10s", "10"}]}
+            />
           </.form>
         </:inner_form>
         <:inner_button>
@@ -211,9 +217,9 @@ defmodule Observer.Web.System.Page do
   def handle_mount(socket) when is_connected?(socket) do
     :net_kernel.monitor_nodes(true)
 
-    send(self(), :system_refresh)
-
-    assign_defaults(socket)
+    socket
+    |> assign_defaults()
+    |> restart_tick_chain()
   end
 
   def handle_mount(socket) do
@@ -228,7 +234,11 @@ defmodule Observer.Web.System.Page do
     |> assign(:allocators, [])
     |> assign(:os_data, nil)
     |> assign(:snapshot_error, nil)
-    |> assign(:form, to_form(%{"service" => to_string(Node.self())}))
+    |> assign(:tick_gen, 0)
+    |> assign(
+      :form,
+      to_form(%{"service" => to_string(Node.self()), "refresh_seconds" => "5"})
+    )
   end
 
   @impl Page
@@ -242,34 +252,55 @@ defmodule Observer.Web.System.Page do
 
   @impl Page
   def handle_parent_event("form-update", params, socket) do
-    send(self(), :system_refresh)
-
-    {:noreply, assign(socket, :form, to_form(params))}
+    {:noreply,
+     socket
+     |> assign(:form, to_form(params))
+     |> restart_tick_chain()}
   end
 
   def handle_parent_event("system-refresh", _params, socket) do
-    send(self(), :system_refresh)
+    {:noreply, restart_tick_chain(socket)}
+  end
+
+  # Refresh ticks carry a generation counter (same pattern as the Network and Logs pillars):
+  # changing any control bumps the generation and starts a new timer chain, so a tick from a
+  # cancelled chain that was already in flight is ignored instead of spawning a second chain.
+  defp restart_tick_chain(socket) do
+    tick_gen = socket.assigns.tick_gen + 1
+    send(self(), {:system_tick, tick_gen})
+
+    assign(socket, :tick_gen, tick_gen)
+  end
+
+  @impl Page
+  def handle_info({:system_tick, gen}, %{assigns: %{tick_gen: gen}} = socket) do
+    node = selected_service(socket)
+
+    socket =
+      case SystemInfo.node_info(node) do
+        {:ok, node_info} ->
+          socket
+          |> assign(:node_info, node_info)
+          |> assign(:limits, SystemInfo.limits(node))
+          |> assign(:allocators, SystemInfo.allocators(node))
+          |> assign(:os_data, fetch_os_data(node))
+          |> assign(:snapshot_error, nil)
+
+        {:error, reason} ->
+          assign(socket, :snapshot_error, reason)
+      end
+
+    refresh_seconds = positive_int(socket.assigns.form.params["refresh_seconds"], 0)
+
+    if refresh_seconds > 0 do
+      Process.send_after(self(), {:system_tick, gen}, refresh_seconds * 1_000)
+    end
 
     {:noreply, socket}
   end
 
-  @impl Page
-  def handle_info(:system_refresh, socket) do
-    node = selected_service(socket)
-
-    case SystemInfo.node_info(node) do
-      {:ok, node_info} ->
-        {:noreply,
-         socket
-         |> assign(:node_info, node_info)
-         |> assign(:limits, SystemInfo.limits(node))
-         |> assign(:allocators, SystemInfo.allocators(node))
-         |> assign(:os_data, fetch_os_data(node))
-         |> assign(:snapshot_error, nil)}
-
-      {:error, reason} ->
-        {:noreply, assign(socket, :snapshot_error, reason)}
-    end
+  def handle_info({:system_tick, _stale_gen}, socket) do
+    {:noreply, socket}
   end
 
   def handle_info({:nodeup, _node}, socket) do
@@ -280,11 +311,19 @@ defmodule Observer.Web.System.Page do
     socket = assign(socket, :services, services())
 
     if to_string(node) == form.params["service"] do
-      send(self(), :system_refresh)
-
-      {:noreply, assign(socket, :form, to_form(%{"service" => to_string(Node.self())}))}
+      {:noreply,
+       socket
+       |> assign(:form, to_form(Map.put(form.params, "service", to_string(Node.self()))))
+       |> restart_tick_chain()}
     else
       {:noreply, socket}
+    end
+  end
+
+  defp positive_int(value, default) do
+    case Integer.parse(value || "") do
+      {int, ""} when int >= 0 -> int
+      _invalid -> default
     end
   end
 
@@ -315,8 +354,9 @@ defmodule Observer.Web.System.Page do
     ~H"""
     A read-only snapshot of the selected service: runtime information, resource usage against the
     VM limits, memory allocator carrier utilization (low utilization on a busy allocator is a
-    sign of fragmentation) and operating system data when :os_mon is running. Data is collected
-    on demand - press REFRESH to update.
+    sign of fragmentation) and operating system data when :os_mon is running. The snapshot
+    refreshes automatically at the selected interval - press REFRESH to update immediately, or
+    pause the interval.
     """
   end
 
