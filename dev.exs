@@ -84,6 +84,48 @@ Application.put_env(:observer_web, :crashdump_dirs, ["/path/to/dumps/"])
 Application.put_env(:phoenix, :serve_endpoints, true)
 Application.put_env(:phoenix, :persistent, true)
 
+# Logs page: attach a file-backed :logger handler so the Logs pillar has something to tail.
+# Every instance writes to its own random file under the system tmp dir, since multiple nodes
+# (e.g. observer + broadcast) are commonly run side by side - the node name keeps the files
+# recognizable and the random suffix keeps restarts apart. A heartbeat keeps appending lines so
+# REFRESH always has new content; set OBSERVER_WEB_DEV_LOG_HEARTBEAT_MS=0 to silence it, or
+# OBSERVER_WEB_DEV_LOG_FILE=false to skip the handler entirely.
+if System.get_env("OBSERVER_WEB_DEV_LOG_FILE", "true") == "true" do
+  require Logger
+
+  node_slug = node() |> to_string() |> String.replace(~r/[^A-Za-z0-9]+/, "-")
+  random_suffix = 3 |> :crypto.strong_rand_bytes() |> Base.encode16(case: :lower)
+
+  # Literally /tmp (not System.tmp_dir!/0): on macOS the latter resolves to a per-user
+  # /var/folders/... path, and a predictable location makes the files easy to find and clean.
+  log_file = Path.join("/tmp", "observer_web_dev_#{node_slug}_#{random_suffix}.log")
+
+  :ok =
+    :logger.add_handler(:observer_web_dev_file_log, :logger_std_h, %{
+      config: %{file: to_charlist(log_file)},
+      formatter: Logger.Formatter.new()
+    })
+
+  Logger.info("Observer Web dev file logger attached, writing to #{log_file}")
+
+  heartbeat_ms =
+    "OBSERVER_WEB_DEV_LOG_HEARTBEAT_MS" |> System.get_env("5000") |> String.to_integer()
+
+  if heartbeat_ms > 0 do
+    Task.start(fn ->
+      heartbeat_ms
+      |> Stream.interval()
+      |> Enum.each(fn beat ->
+        case rem(beat, 10) do
+          9 -> Logger.error("dev log heartbeat ##{beat} from #{node()} (sample error)")
+          n when n in [3, 6] -> Logger.warning("dev log heartbeat ##{beat} from #{node()}")
+          _info -> Logger.info("dev log heartbeat ##{beat} from #{node()}")
+        end
+      end)
+    end)
+  end
+end
+
 Task.async(fn ->
   # Stop the default Telemetry server to start a new one with new defaults
   mode = "OBSERVER_WEB_TELEMETRY_MODE" |> System.get_env("local") |> String.to_atom()
