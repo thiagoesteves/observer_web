@@ -33,6 +33,12 @@ defmodule Observer.Web.System.Page do
             phx-change="form-update"
           >
             <Core.input field={@form[:service]} type="select" label="Service" options={@services} />
+            <Core.input
+              field={@form[:refresh_seconds]}
+              type="select"
+              label="Refresh"
+              options={[{"Paused", "0"}, {"2s", "2"}, {"5s", "5"}, {"10s", "10"}]}
+            />
           </.form>
         </:inner_form>
         <:inner_button>
@@ -97,6 +103,97 @@ defmodule Observer.Web.System.Page do
           </Core.table_tracing>
         </div>
 
+        <div
+          :if={@os_data == :os_mon_not_started}
+          class="p-4 mb-4 text-sm text-gray-500 dark:text-gray-400"
+        >
+          Operating system data (load averages, CPU, OS memory and disks) requires the
+          <span class="font-mono font-semibold">:os_mon</span>
+          application on the selected service. Add
+          <span class="font-mono font-semibold">:os_mon</span>
+          to your <span class="font-mono font-semibold">extra_applications</span>
+          to enable it.
+        </div>
+
+        <div :if={is_map(@os_data)} class="bg-white dark:bg-gray-800 w-full shadow-lg rounded mb-4">
+          <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+            Operating System
+          </h2>
+
+          <div class="flex flex-wrap gap-2 px-4 py-2 text-xs">
+            <span
+              :if={@os_data.os}
+              class="px-2 py-1 rounded-full bg-teal-50 border border-teal-300 text-teal-700"
+            >
+              OS: {@os_data.os}
+            </span>
+            <span
+              :for={
+                {label, value} <-
+                  if(@os_data.load,
+                    do: [
+                      {"Load 1m", @os_data.load.avg1},
+                      {"Load 5m", @os_data.load.avg5},
+                      {"Load 15m", @os_data.load.avg15}
+                    ],
+                    else: []
+                  )
+              }
+              class="px-2 py-1 rounded-full bg-teal-50 border border-teal-300 text-teal-700"
+            >
+              {label}: {value}
+            </span>
+          </div>
+
+          <div :if={@os_data.memory} class="px-4 pb-2 text-xs text-gray-700 dark:text-gray-200">
+            <div class="flex items-center gap-2">
+              <span class="font-semibold">OS Memory</span>
+              <div class="w-40 h-2 rounded bg-gray-200 dark:bg-gray-600 overflow-hidden">
+                <div
+                  class={["h-2 rounded", usage_color(@os_data.memory.used_percent)]}
+                  style={"width: #{min(@os_data.memory.used_percent, 100)}%"}
+                />
+              </div>
+              <span>
+                {@os_data.memory.used_percent}% of {format_bytes(@os_data.memory.total_bytes)} used ({format_bytes(
+                  @os_data.memory.available_bytes
+                )} available)
+              </span>
+            </div>
+          </div>
+
+          <Core.table_tracing :if={@os_data.cpus != []} id="system-os-cpus" rows={@os_data.cpus}>
+            <:col :let={cpu} label="CPU">{cpu.id}</:col>
+            <:col :let={cpu} label="UTILIZATION">
+              <div class="flex items-center gap-2">
+                <div class="w-40 h-2 rounded bg-gray-200 dark:bg-gray-600 overflow-hidden">
+                  <div
+                    class={["h-2 rounded", usage_color(cpu.busy_percent)]}
+                    style={"width: #{min(cpu.busy_percent, 100)}%"}
+                  />
+                </div>
+                <span>{cpu.busy_percent}%</span>
+              </div>
+            </:col>
+          </Core.table_tracing>
+
+          <Core.table_tracing :if={@os_data.disks != []} id="system-os-disks" rows={@os_data.disks}>
+            <:col :let={disk} label="DISK">{disk.mount}</:col>
+            <:col :let={disk} label="SIZE">{format_bytes(disk.total_kbytes * 1_024)}</:col>
+            <:col :let={disk} label="USED">
+              <div class="flex items-center gap-2">
+                <div class="w-40 h-2 rounded bg-gray-200 dark:bg-gray-600 overflow-hidden">
+                  <div
+                    class={["h-2 rounded", usage_color(disk.capacity_percent)]}
+                    style={"width: #{min(disk.capacity_percent, 100)}%"}
+                  />
+                </div>
+                <span>{disk.capacity_percent}%</span>
+              </div>
+            </:col>
+          </Core.table_tracing>
+        </div>
+
         <div :if={@allocators != []} class="bg-white dark:bg-gray-800 w-full shadow-lg rounded">
           <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
             Memory Allocators
@@ -120,9 +217,9 @@ defmodule Observer.Web.System.Page do
   def handle_mount(socket) when is_connected?(socket) do
     :net_kernel.monitor_nodes(true)
 
-    send(self(), :system_refresh)
-
-    assign_defaults(socket)
+    socket
+    |> assign_defaults()
+    |> restart_tick_chain()
   end
 
   def handle_mount(socket) do
@@ -135,8 +232,13 @@ defmodule Observer.Web.System.Page do
     |> assign(:node_info, nil)
     |> assign(:limits, [])
     |> assign(:allocators, [])
+    |> assign(:os_data, nil)
     |> assign(:snapshot_error, nil)
-    |> assign(:form, to_form(%{"service" => to_string(Node.self())}))
+    |> assign(:tick_gen, 0)
+    |> assign(
+      :form,
+      to_form(%{"service" => to_string(Node.self()), "refresh_seconds" => "5"})
+    )
   end
 
   @impl Page
@@ -150,33 +252,55 @@ defmodule Observer.Web.System.Page do
 
   @impl Page
   def handle_parent_event("form-update", params, socket) do
-    send(self(), :system_refresh)
-
-    {:noreply, assign(socket, :form, to_form(params))}
+    {:noreply,
+     socket
+     |> assign(:form, to_form(params))
+     |> restart_tick_chain()}
   end
 
   def handle_parent_event("system-refresh", _params, socket) do
-    send(self(), :system_refresh)
+    {:noreply, restart_tick_chain(socket)}
+  end
+
+  # Refresh ticks carry a generation counter (same pattern as the Network and Logs pillars):
+  # changing any control bumps the generation and starts a new timer chain, so a tick from a
+  # cancelled chain that was already in flight is ignored instead of spawning a second chain.
+  defp restart_tick_chain(socket) do
+    tick_gen = socket.assigns.tick_gen + 1
+    send(self(), {:system_tick, tick_gen})
+
+    assign(socket, :tick_gen, tick_gen)
+  end
+
+  @impl Page
+  def handle_info({:system_tick, gen}, %{assigns: %{tick_gen: gen}} = socket) do
+    node = selected_service(socket)
+
+    socket =
+      case SystemInfo.node_info(node) do
+        {:ok, node_info} ->
+          socket
+          |> assign(:node_info, node_info)
+          |> assign(:limits, SystemInfo.limits(node))
+          |> assign(:allocators, SystemInfo.allocators(node))
+          |> assign(:os_data, fetch_os_data(node))
+          |> assign(:snapshot_error, nil)
+
+        {:error, reason} ->
+          assign(socket, :snapshot_error, reason)
+      end
+
+    refresh_seconds = positive_int(socket.assigns.form.params["refresh_seconds"], 0)
+
+    if refresh_seconds > 0 do
+      Process.send_after(self(), {:system_tick, gen}, refresh_seconds * 1_000)
+    end
 
     {:noreply, socket}
   end
 
-  @impl Page
-  def handle_info(:system_refresh, socket) do
-    node = selected_service(socket)
-
-    case SystemInfo.node_info(node) do
-      {:ok, node_info} ->
-        {:noreply,
-         socket
-         |> assign(:node_info, node_info)
-         |> assign(:limits, SystemInfo.limits(node))
-         |> assign(:allocators, SystemInfo.allocators(node))
-         |> assign(:snapshot_error, nil)}
-
-      {:error, reason} ->
-        {:noreply, assign(socket, :snapshot_error, reason)}
-    end
+  def handle_info({:system_tick, _stale_gen}, socket) do
+    {:noreply, socket}
   end
 
   def handle_info({:nodeup, _node}, socket) do
@@ -187,11 +311,27 @@ defmodule Observer.Web.System.Page do
     socket = assign(socket, :services, services())
 
     if to_string(node) == form.params["service"] do
-      send(self(), :system_refresh)
-
-      {:noreply, assign(socket, :form, to_form(%{"service" => to_string(Node.self())}))}
+      {:noreply,
+       socket
+       |> assign(:form, to_form(Map.put(form.params, "service", to_string(Node.self()))))
+       |> restart_tick_chain()}
     else
       {:noreply, socket}
+    end
+  end
+
+  defp positive_int(value, default) do
+    case Integer.parse(value || "") do
+      {int, ""} when int >= 0 -> int
+      _invalid -> default
+    end
+  end
+
+  defp fetch_os_data(node) do
+    case SystemInfo.os_data(node) do
+      {:ok, os_data} -> os_data
+      {:error, :os_mon_not_started} -> :os_mon_not_started
+      {:error, _reason} -> nil
     end
   end
 
@@ -213,8 +353,10 @@ defmodule Observer.Web.System.Page do
 
     ~H"""
     A read-only snapshot of the selected service: runtime information, resource usage against the
-    VM limits and memory allocator carrier utilization (low utilization on a busy allocator is a
-    sign of fragmentation). Data is collected on demand - press REFRESH to update.
+    VM limits, memory allocator carrier utilization (low utilization on a busy allocator is a
+    sign of fragmentation) and operating system data when :os_mon is running. The snapshot
+    refreshes automatically at the selected interval - press REFRESH to update immediately, or
+    pause the interval.
     """
   end
 

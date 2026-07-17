@@ -276,6 +276,27 @@ config :observer_web,
 >
 > When using DeployEx, the BEAM VM statistics polling is also used to monitor and, if necessary, restart the application. The polling interval directly affects how quickly these actions are performed. While ports, atoms, and processes are configured via Observer Web, the memory check interval (also used by [DeployEx][dye]) is configured separately—refer to the relevant [documentation][mtc] for details.
 
+### OS data on the System page (opt-in)
+
+The System page always shows the runtime snapshot, VM limits and memory allocator utilization.
+It can additionally show operating system data - load averages (1m/5m/15m), per-CPU utilization, OS memory and per-disk usage - collected through OTP's `os_mon` probes (`:cpu_sup`, `:memsup`, `:disksup`), the same source the observer GUI's load charts read from.
+
+This requires the `:os_mon` application to be running on the observed node.
+Since `os_mon` starts OS polling processes and can emit system alarms, Observer Web does not start it for you - opt in by adding it to your application's `extra_applications`:
+
+```elixir
+# mix.exs of the observed application
+def application do
+  [
+    mod: {MyApp.Application, []},
+    extra_applications: [:logger, :os_mon]
+  ]
+end
+```
+
+When `os_mon` is not running, the System page simply shows a hint instead of the OS data section - everything else keeps working.
+Individual probes vary per platform (e.g. per-CPU utilization is not available everywhere), and each section degrades gracefully when unsupported.
+
 ### Table content inspection (opt-in)
 
 The ETS page always shows table metadata (owner, protection/storage, type, size, memory) for

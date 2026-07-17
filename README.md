@@ -21,7 +21,7 @@ library is part of the [DeployEx][dye] project.
 ### Busiest processes ranked by reductions, memory or message queue (etop style)
 ![Processes Dashboard](./guides/static/processes_dash.png)
 
-### System snapshot with VM limits and memory allocator utilization
+### System snapshot with VM limits, memory allocator utilization and OS data (os_mon)
 ![System Dashboard](./guides/static/system_dash.png)
 
 ### ETS and Mnesia table browser with optional bounded content previews

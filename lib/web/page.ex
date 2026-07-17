@@ -45,7 +45,7 @@ defmodule Observer.Web.Page do
   ## Callback flow
 
   * `c:handle_mount/1` - called from the parent LiveView on mount and before page changes.
-  * `c:handle_params/3` - called on every `Phoenix.LiveView.handle_params/3`.
+  * `c:handle_params/3` - called on every `c:Phoenix.LiveView.handle_params/3`.
   * `c:handle_info/2` - called for any message the parent LiveView does not handle itself.
   * `c:handle_parent_event/3` - called for any `phx-` event the parent does not handle itself.
   """
