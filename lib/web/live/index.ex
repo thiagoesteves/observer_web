@@ -11,6 +11,7 @@ defmodule Observer.Web.IndexLive do
   alias Observer.Web.Apps.Page, as: AppsPage
   alias Observer.Web.Crashdump.Page, as: CrashdumpPage
   alias Observer.Web.Ets.Page, as: EtsPage
+  alias Observer.Web.Logs.Page, as: LogsPage
   alias Observer.Web.Metrics.Page, as: MetricsPage
   alias Observer.Web.Network.Page, as: NetworkPage
   alias Observer.Web.Processes.Page, as: ProcessesPage
@@ -99,6 +100,7 @@ defmodule Observer.Web.IndexLive do
   defp resolve_page(%{"page" => "applications"}), do: %{name: :applications, comp: AppsPage}
   defp resolve_page(%{"page" => "crashdump"}), do: %{name: :crashdump, comp: CrashdumpPage}
   defp resolve_page(%{"page" => "ets"}), do: %{name: :ets, comp: EtsPage}
+  defp resolve_page(%{"page" => "logs"}), do: %{name: :logs, comp: LogsPage}
   defp resolve_page(%{"page" => "metrics"}), do: %{name: :metrics, comp: MetricsPage}
   defp resolve_page(%{"page" => "network"}), do: %{name: :network, comp: NetworkPage}
   defp resolve_page(%{"page" => "processes"}), do: %{name: :processes, comp: ProcessesPage}

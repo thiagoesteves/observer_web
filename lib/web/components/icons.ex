@@ -115,6 +115,20 @@ defmodule Observer.Web.Components.Icons do
         >
           <path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" /><path d="M8 15l2-3 2 4 2-5 2 4" />
         </svg>
+      <% :logs -> %>
+        <svg
+          class="flex-shrink-0 w-5 h-5 mr-4 text-gray-900 dark:text-white"
+          width="24px"
+          height="24px"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" /><path d="M9 9h1" /><path d="M9 13h6" /><path d="M9 17h6" />
+        </svg>
       <% :network -> %>
         <svg
           class="flex-shrink-0 w-5 h-5 mr-4 text-gray-900 dark:text-white"

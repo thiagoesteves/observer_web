@@ -1,0 +1,284 @@
+defmodule Observer.Web.Logs.PageLiveTest do
+  use Observer.Web.ConnCase, async: false
+
+  import Mox
+
+  alias Observer.Web.Mocks.RpcStubber
+  alias Observer.Web.Mocks.TelemetryStubber
+
+  setup [
+    :set_mox_global,
+    :verify_on_exit!
+  ]
+
+  test "GET /logs hints when no file-backed logger handlers exist", %{conn: conn} do
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/logs")
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "No file-backed logger handlers found"
+    assert html =~ "logger_std_h"
+  end
+
+  test "GET /logs tails the first file handler by default", %{conn: conn} do
+    path = stub_file_handler!("first line\nsecond line\nlast line\n")
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/logs")
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "File size:"
+    assert html =~ "first line"
+    assert html =~ "last line"
+    refute html =~ "No file-backed logger handlers found"
+
+    assert html =~ Phoenix.HTML.html_escape(path) |> Phoenix.HTML.safe_to_string()
+  end
+
+  test "REFRESH re-reads the tail", %{conn: conn} do
+    path = stub_file_handler!("before refresh\n")
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/logs")
+
+    :timer.sleep(50)
+
+    File.write!(path, "after refresh\n")
+
+    index_live
+    |> element("#logs-refresh", "REFRESH")
+    |> render_click()
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "after refresh"
+    refute html =~ "before refresh"
+  end
+
+  test "form updates change the tail size and re-read", %{conn: conn} do
+    content = Enum.map_join(1..2_000, "", &"log line number #{&1}\n")
+    path = stub_file_handler!(content)
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/logs")
+
+    :timer.sleep(50)
+
+    index_live
+    |> form("#logs-update-form", %{
+      "service" => to_string(Node.self()),
+      "file" => path,
+      "max_bytes" => "16384"
+    })
+    |> render_change()
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "Showing the last 16.0 KB"
+    assert html =~ "log line number 2000"
+    refute html =~ "log line number 1\n"
+  end
+
+  test "switching services while no file handlers exist does not crash", %{conn: conn} do
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/logs")
+
+    :timer.sleep(50)
+
+    assert render(index_live) =~ "No file-backed logger handlers found"
+
+    # With no file handlers the file select renders empty, so a service change submits a
+    # payload without any "file" key - this used to KeyError in handle_info(:logs_refresh, ...).
+    index_live
+    |> element("#logs-update-form")
+    |> render_change(%{"service" => to_string(Node.self()), "max_bytes" => "65536"})
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "No file-backed logger handlers found"
+    refute html =~ "File size:"
+  end
+
+  test "ANSI escape sequences are stripped from the tail pane", %{conn: conn} do
+    stub_file_handler!("\e[33m10:29:38 [warning] colored heartbeat\e[0m\nplain line\n")
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/logs")
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "10:29:38 [warning] colored heartbeat"
+    assert html =~ "plain line"
+    refute html =~ "\e[33m"
+    refute html =~ "[0m"
+  end
+
+  test "entries render one line each, multi-line entries collapse behind an arrow", %{
+    conn: conn
+  } do
+    content = """
+    10:29:38.113 [info] single line entry
+
+    10:29:39.114 [error] crash ahead
+        ** (RuntimeError) boom
+            (my_app 0.1.0) lib/my_app.ex:10: MyApp.run/0
+
+    10:29:40.115 [warning] another single line
+    """
+
+    stub_file_handler!(content)
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/logs")
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+
+    assert html =~ "Entries: 3"
+
+    # Only the multi-line entry is a real disclosure (filled arrow); short single-line
+    # entries render as inert rows with the hollow marker
+    assert html |> parsed() |> Floki.find("details") |> length() == 1
+    assert length(String.split(html, "▶")) == 2
+    assert length(String.split(html, "▷")) == 3
+
+    summaries = html |> parsed() |> Floki.find("details summary") |> Enum.map(&Floki.text/1)
+
+    # The multi-line error entry advertises hidden content with an ellipsis marker and
+    # expands to the full report
+    assert [crash_summary] = summaries
+    assert crash_summary =~ "crash ahead"
+    assert crash_summary =~ "…"
+
+    assert html |> parsed() |> Floki.find("details pre") |> Floki.text() =~ "RuntimeError"
+
+    # Inert rows still show their line
+    assert html =~ "single line entry"
+    assert html =~ "another single line"
+
+    # Level coloring on the summaries
+    assert html =~ "text-red-600"
+    assert html =~ "text-yellow-600"
+  end
+
+  test "long single-line entries stay expandable", %{conn: conn} do
+    long_line = "10:29:41.116 [info] long entry " <> String.duplicate("lorem ipsum ", 30)
+    stub_file_handler!(long_line <> "\n10:29:42.117 [info] short entry\n")
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/logs")
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+
+    # The long line gets a filled, expandable disclosure; the short one stays inert
+    assert [{"details", _attrs, _children}] = html |> parsed() |> Floki.find("details")
+    assert html |> parsed() |> Floki.find("details summary") |> Floki.text() =~ "long entry"
+    assert html =~ "▷"
+  end
+
+  test "read failures are reported instead of crashing", %{conn: conn} do
+    path = stub_file_handler!("data\n")
+    TelemetryStubber.defaults()
+
+    File.rm!(path)
+
+    {:ok, index_live, _html} = live(conn, "/observer/logs")
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "Could not read"
+    assert html =~ "enoent"
+  end
+
+  test "auto refresh picks up new content at the selected interval", %{conn: conn} do
+    path = stub_file_handler!("first content line\n")
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/logs")
+
+    :timer.sleep(50)
+
+    assert render(index_live) =~ "first content line"
+
+    index_live
+    |> element("#logs-update-form")
+    |> render_change(%{
+      "service" => to_string(Node.self()),
+      "file" => path,
+      "max_bytes" => "65536",
+      "refresh_seconds" => "2"
+    })
+
+    File.write!(path, "auto refreshed line\n")
+
+    :timer.sleep(2_300)
+
+    html = render(index_live)
+    assert html =~ "auto refreshed line"
+    refute html =~ "first content line"
+  end
+
+  test "ticks from a cancelled chain are ignored", %{conn: conn} do
+    path = stub_file_handler!("original content\n")
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/logs")
+
+    assert_receive {:logs_lv_pid, lv_pid}, 1_000
+    :timer.sleep(50)
+
+    File.write!(path, "changed content\n")
+
+    send(lv_pid, {:logs_tick, 999_999})
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "original content"
+    refute html =~ "changed content"
+  end
+
+  defp parsed(html), do: Floki.parse_document!(html)
+
+  defp stub_file_handler!(content) do
+    dir = Path.join(System.tmp_dir!(), "observer_web_logs_page_test")
+    File.mkdir_p!(dir)
+
+    path = Path.join(dir, "#{System.unique_integer([:positive])}_page.log")
+    File.write!(path, content)
+
+    on_exit(fn -> File.rm(path) end)
+
+    test_pid = self()
+
+    ObserverWeb.RpcMock
+    |> stub(:call, fn
+      _node, :logger, :get_handler_config, [], _timeout ->
+        # The refresh runs inside the LiveView process; expose its pid for tick tests
+        send(test_pid, {:logs_lv_pid, self()})
+
+        [%{id: :file_handler, module: :logger_std_h, config: %{file: to_charlist(path)}}]
+
+      node, module, function, args, timeout ->
+        :rpc.call(node, module, function, args, timeout)
+    end)
+    |> stub(:pinfo, fn pid, information -> :rpc.pinfo(pid, information) end)
+
+    path
+  end
+end
