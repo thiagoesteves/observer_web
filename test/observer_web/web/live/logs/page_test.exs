@@ -206,6 +206,53 @@ defmodule Observer.Web.Logs.PageLiveTest do
     assert html =~ "enoent"
   end
 
+  test "auto refresh picks up new content at the selected interval", %{conn: conn} do
+    path = stub_file_handler!("first content line\n")
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/logs")
+
+    :timer.sleep(50)
+
+    assert render(index_live) =~ "first content line"
+
+    index_live
+    |> element("#logs-update-form")
+    |> render_change(%{
+      "service" => to_string(Node.self()),
+      "file" => path,
+      "max_bytes" => "65536",
+      "refresh_seconds" => "2"
+    })
+
+    File.write!(path, "auto refreshed line\n")
+
+    :timer.sleep(2_300)
+
+    html = render(index_live)
+    assert html =~ "auto refreshed line"
+    refute html =~ "first content line"
+  end
+
+  test "ticks from a cancelled chain are ignored", %{conn: conn} do
+    path = stub_file_handler!("original content\n")
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/logs")
+
+    assert_receive {:logs_lv_pid, lv_pid}, 1_000
+    :timer.sleep(50)
+
+    File.write!(path, "changed content\n")
+
+    send(lv_pid, {:logs_tick, 999_999})
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "original content"
+    refute html =~ "changed content"
+  end
+
   defp parsed(html), do: Floki.parse_document!(html)
 
   defp stub_file_handler!(content) do
@@ -217,9 +264,14 @@ defmodule Observer.Web.Logs.PageLiveTest do
 
     on_exit(fn -> File.rm(path) end)
 
+    test_pid = self()
+
     ObserverWeb.RpcMock
     |> stub(:call, fn
       _node, :logger, :get_handler_config, [], _timeout ->
+        # The refresh runs inside the LiveView process; expose its pid for tick tests
+        send(test_pid, {:logs_lv_pid, self()})
+
         [%{id: :file_handler, module: :logger_std_h, config: %{file: to_charlist(path)}}]
 
       node, module, function, args, timeout ->

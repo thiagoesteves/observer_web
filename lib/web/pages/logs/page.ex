@@ -46,6 +46,12 @@ defmodule Observer.Web.Logs.Page do
               label="Tail Size"
               options={Enum.map(tail_sizes(), fn {label, bytes} -> {label, to_string(bytes)} end)}
             />
+            <Core.input
+              field={@form[:refresh_seconds]}
+              type="select"
+              label="Refresh"
+              options={[{"Paused", "0"}, {"2s", "2"}, {"5s", "5"}, {"10s", "10"}]}
+            />
           </.form>
         </:inner_form>
         <:inner_button>
@@ -96,6 +102,7 @@ defmodule Observer.Web.Logs.Page do
           <div
             :if={@log_entries != []}
             id="logs-tail-content"
+            phx-hook="ScrollBottom"
             class="mx-2 mb-2 p-3 rounded bg-gray-50 dark:bg-gray-900 text-xs text-gray-800 dark:text-gray-200 font-mono max-h-[70vh] overflow-y-auto"
           >
             <Core.disclosure
@@ -122,9 +129,9 @@ defmodule Observer.Web.Logs.Page do
   def handle_mount(socket) when is_connected?(socket) do
     :net_kernel.monitor_nodes(true)
 
-    send(self(), :logs_refresh)
-
-    assign_defaults(socket)
+    socket
+    |> assign_defaults()
+    |> restart_tick_chain()
   end
 
   def handle_mount(socket) do
@@ -138,12 +145,14 @@ defmodule Observer.Web.Logs.Page do
     |> assign(:tail, nil)
     |> assign(:log_entries, [])
     |> assign(:tail_error, nil)
+    |> assign(:tick_gen, 0)
     |> assign(
       :form,
       to_form(%{
         "service" => to_string(Node.self()),
         "file" => "",
-        "max_bytes" => "65536"
+        "max_bytes" => "65536",
+        "refresh_seconds" => "5"
       })
     )
   end
@@ -159,19 +168,61 @@ defmodule Observer.Web.Logs.Page do
 
   @impl Page
   def handle_parent_event("form-update", params, socket) do
-    send(self(), :logs_refresh)
-
-    {:noreply, assign(socket, :form, to_form(params))}
+    {:noreply,
+     socket
+     |> assign(:form, to_form(params))
+     |> restart_tick_chain()}
   end
 
   def handle_parent_event("logs-refresh", _params, socket) do
-    send(self(), :logs_refresh)
+    {:noreply, restart_tick_chain(socket)}
+  end
+
+  # Refresh ticks carry a generation counter (same pattern as the Network pillar): changing any
+  # control bumps the generation and starts a new timer chain, so a tick from a cancelled chain
+  # that was already in flight is ignored instead of spawning a second chain.
+  defp restart_tick_chain(socket) do
+    tick_gen = socket.assigns.tick_gen + 1
+    send(self(), {:logs_tick, tick_gen})
+
+    assign(socket, :tick_gen, tick_gen)
+  end
+
+  @impl Page
+  def handle_info({:logs_tick, gen}, %{assigns: %{tick_gen: gen}} = socket) do
+    socket = refresh_tail(socket)
+
+    refresh_seconds = positive_int(socket.assigns.form.params["refresh_seconds"], 0)
+
+    if refresh_seconds > 0 do
+      Process.send_after(self(), {:logs_tick, gen}, refresh_seconds * 1_000)
+    end
 
     {:noreply, socket}
   end
 
-  @impl Page
-  def handle_info(:logs_refresh, %{assigns: %{form: form}} = socket) do
+  def handle_info({:logs_tick, _stale_gen}, socket) do
+    {:noreply, socket}
+  end
+
+  def handle_info({:nodeup, _node}, socket) do
+    {:noreply, assign(socket, :services, services())}
+  end
+
+  def handle_info({:nodedown, node}, %{assigns: %{form: form}} = socket) do
+    socket = assign(socket, :services, services())
+
+    if to_string(node) == form.params["service"] do
+      {:noreply,
+       socket
+       |> assign(:form, to_form(Map.put(form.params, "service", to_string(Node.self()))))
+       |> restart_tick_chain()}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  defp refresh_tail(%{assigns: %{form: form}} = socket) do
     node = selected_service(socket)
     handlers = Logs.list_handlers(node)
 
@@ -195,42 +246,29 @@ defmodule Observer.Web.Logs.Page do
       {:ok, tail} ->
         tail = %{tail | content: strip_ansi(tail.content)}
 
-        {:noreply,
-         socket
-         |> assign(:tail, tail)
-         |> assign(:log_entries, parse_entries(tail.content))
-         |> assign(:tail_error, nil)}
+        socket
+        |> assign(:tail, tail)
+        |> assign(:log_entries, parse_entries(tail.content))
+        |> assign(:tail_error, nil)
 
       {:error, reason} ->
-        {:noreply,
-         socket
-         |> assign(:tail, nil)
-         |> assign(:log_entries, [])
-         |> assign(:tail_error, reason)}
+        socket
+        |> assign(:tail, nil)
+        |> assign(:log_entries, [])
+        |> assign(:tail_error, reason)
 
       nil ->
-        {:noreply,
-         socket
-         |> assign(:tail, nil)
-         |> assign(:log_entries, [])
-         |> assign(:tail_error, nil)}
+        socket
+        |> assign(:tail, nil)
+        |> assign(:log_entries, [])
+        |> assign(:tail_error, nil)
     end
   end
 
-  def handle_info({:nodeup, _node}, socket) do
-    {:noreply, assign(socket, :services, services())}
-  end
-
-  def handle_info({:nodedown, node}, %{assigns: %{form: form}} = socket) do
-    socket = assign(socket, :services, services())
-
-    if to_string(node) == form.params["service"] do
-      send(self(), :logs_refresh)
-
-      {:noreply,
-       assign(socket, :form, to_form(Map.put(form.params, "service", to_string(Node.self()))))}
-    else
-      {:noreply, socket}
+  defp positive_int(value, default) do
+    case Integer.parse(value || "") do
+      {int, ""} when int >= 0 -> int
+      _invalid -> default
     end
   end
 
@@ -333,7 +371,9 @@ defmodule Observer.Web.Logs.Page do
     ~H"""
     A bounded, read-only tail of the selected service's file-backed logger handlers. Only files
     configured on the node's :logger handlers can be read, and never more than the selected tail
-    size. Data is collected on demand - press REFRESH to update.
+    size. The tail refreshes automatically at the selected interval (press REFRESH to update
+    immediately, or pause the interval) and follows the newest entries unless you scroll away
+    from the bottom.
     """
   end
 
