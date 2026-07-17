@@ -110,6 +110,21 @@ defmodule Observer.Web.Logs.PageLiveTest do
     refute html =~ "File size:"
   end
 
+  test "ANSI escape sequences are stripped from the tail pane", %{conn: conn} do
+    stub_file_handler!("\e[33m10:29:38 [warning] colored heartbeat\e[0m\nplain line\n")
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/logs")
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "10:29:38 [warning] colored heartbeat"
+    assert html =~ "plain line"
+    refute html =~ "\e[33m"
+    refute html =~ "[0m"
+  end
+
   test "read failures are reported instead of crashing", %{conn: conn} do
     path = stub_file_handler!("data\n")
     TelemetryStubber.defaults()

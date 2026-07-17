@@ -103,7 +103,9 @@ if System.get_env("OBSERVER_WEB_DEV_LOG_FILE", "true") == "true" do
   :ok =
     :logger.add_handler(:observer_web_dev_file_log, :logger_std_h, %{
       config: %{file: to_charlist(log_file)},
-      formatter: Logger.Formatter.new()
+      # No ANSI colors in the file: the default formatter enables them when the dev server
+      # runs in a terminal, which would land escape codes in the log.
+      formatter: Logger.Formatter.new(colors: [enabled: false])
     })
 
   Logger.info("Observer Web dev file logger attached, writing to #{log_file}")

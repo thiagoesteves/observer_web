@@ -168,6 +168,8 @@ defmodule Observer.Web.Logs.Page do
 
     case file && Logs.tail(node, file, max_bytes) do
       {:ok, tail} ->
+        tail = %{tail | content: strip_ansi(tail.content)}
+
         {:noreply, socket |> assign(:tail, tail) |> assign(:tail_error, nil)}
 
       {:error, reason} ->
@@ -194,6 +196,10 @@ defmodule Observer.Web.Logs.Page do
       {:noreply, socket}
     end
   end
+
+  # Log files written by color-enabled formatters (Logger's default when attached in a
+  # terminal) are full of ANSI escape sequences that render as garbage in the pane.
+  defp strip_ansi(content), do: String.replace(content, ~r/\e\[[0-9;]*[a-zA-Z]/, "")
 
   defp tail_sizes, do: @tail_sizes
 
