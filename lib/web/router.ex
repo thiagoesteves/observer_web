@@ -147,7 +147,7 @@ defmodule Observer.Web.Router do
   @transport_values ~w(longpoll websocket)
 
   @reserved_page_names ~w(
-    applications crashdump ets metrics network processes profiling root system tracing
+    applications crashdump ets logs metrics network processes profiling root system tracing
   )a
 
   @doc """

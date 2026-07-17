@@ -115,6 +115,10 @@ defmodule Observer.Web.RouterTest do
       assert_raise ArgumentError, ~r/conflicts with a built-in/, fn ->
         Router.__options__("/observer", pages: [tracing: My.FruitsPage])
       end
+
+      assert_raise ArgumentError, ~r/conflicts with a built-in/, fn ->
+        Router.__options__("/observer", pages: [logs: My.FruitsPage])
+      end
     end
   end
 
