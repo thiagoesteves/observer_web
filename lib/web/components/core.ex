@@ -117,6 +117,54 @@ defmodule Observer.Web.Components.Core do
   end
 
   @doc ~S"""
+  Renders a disclosure row: a single truncated line preceded by a triangle marker that is
+  filled when there is more content to expand and hollow (and non-interactive) when the line
+  is all there is - so a list of rows reads at a glance which entries hide detail.
+
+  Used by the Logs pillar; any table listing collapsible rows can adopt it.
+
+  ## Examples
+
+      <.disclosure id="log-entry-1" expandable?={entry.expandable?} title={entry.summary}>
+        <:summary>{entry.summary}</:summary>
+        <pre>{entry.content}</pre>
+      </.disclosure>
+  """
+  attr :id, :string, required: true
+  attr :expandable?, :boolean, default: true
+  attr :summary_class, :any, default: nil
+  attr :title, :string, default: nil
+
+  slot :summary, required: true
+  slot :inner_block
+
+  def disclosure(assigns) do
+    ~H"""
+    <div :if={not @expandable?} id={@id} class="flex items-start gap-1">
+      <span class="shrink-0 w-4 text-center select-none text-gray-300 dark:text-gray-600">
+        ▷
+      </span>
+      <span class={["min-w-0 flex-1 truncate", @summary_class]} title={@title}>
+        {render_slot(@summary)}
+      </span>
+    </div>
+    <details :if={@expandable?} id={@id} class="group">
+      <summary class="flex items-start gap-1 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+        <span class="shrink-0 w-4 text-center select-none inline-block text-gray-700 dark:text-gray-200 transition-transform group-open:rotate-90">
+          ▶
+        </span>
+        <span class={["min-w-0 flex-1 truncate", @summary_class]} title={@title}>
+          {render_slot(@summary)}
+        </span>
+      </summary>
+      <div class="pl-5">
+        {render_slot(@inner_block)}
+      </div>
+    </details>
+    """
+  end
+
+  @doc ~S"""
   Renders a table with process styling.
 
   ## Examples

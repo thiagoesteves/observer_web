@@ -125,6 +125,72 @@ defmodule Observer.Web.Logs.PageLiveTest do
     refute html =~ "[0m"
   end
 
+  test "entries render one line each, multi-line entries collapse behind an arrow", %{
+    conn: conn
+  } do
+    content = """
+    10:29:38.113 [info] single line entry
+
+    10:29:39.114 [error] crash ahead
+        ** (RuntimeError) boom
+            (my_app 0.1.0) lib/my_app.ex:10: MyApp.run/0
+
+    10:29:40.115 [warning] another single line
+    """
+
+    stub_file_handler!(content)
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/logs")
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+
+    assert html =~ "Entries: 3"
+
+    # Only the multi-line entry is a real disclosure (filled arrow); short single-line
+    # entries render as inert rows with the hollow marker
+    assert html |> parsed() |> Floki.find("details") |> length() == 1
+    assert length(String.split(html, "▶")) == 2
+    assert length(String.split(html, "▷")) == 3
+
+    summaries = html |> parsed() |> Floki.find("details summary") |> Enum.map(&Floki.text/1)
+
+    # The multi-line error entry advertises hidden content with an ellipsis marker and
+    # expands to the full report
+    assert [crash_summary] = summaries
+    assert crash_summary =~ "crash ahead"
+    assert crash_summary =~ "…"
+
+    assert html |> parsed() |> Floki.find("details pre") |> Floki.text() =~ "RuntimeError"
+
+    # Inert rows still show their line
+    assert html =~ "single line entry"
+    assert html =~ "another single line"
+
+    # Level coloring on the summaries
+    assert html =~ "text-red-600"
+    assert html =~ "text-yellow-600"
+  end
+
+  test "long single-line entries stay expandable", %{conn: conn} do
+    long_line = "10:29:41.116 [info] long entry " <> String.duplicate("lorem ipsum ", 30)
+    stub_file_handler!(long_line <> "\n10:29:42.117 [info] short entry\n")
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/logs")
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+
+    # The long line gets a filled, expandable disclosure; the short one stays inert
+    assert [{"details", _attrs, _children}] = html |> parsed() |> Floki.find("details")
+    assert html |> parsed() |> Floki.find("details summary") |> Floki.text() =~ "long entry"
+    assert html =~ "▷"
+  end
+
   test "read failures are reported instead of crashing", %{conn: conn} do
     path = stub_file_handler!("data\n")
     TelemetryStubber.defaults()
@@ -139,6 +205,8 @@ defmodule Observer.Web.Logs.PageLiveTest do
     assert html =~ "Could not read"
     assert html =~ "enoent"
   end
+
+  defp parsed(html), do: Floki.parse_document!(html)
 
   defp stub_file_handler!(content) do
     dir = Path.join(System.tmp_dir!(), "observer_web_logs_page_test")

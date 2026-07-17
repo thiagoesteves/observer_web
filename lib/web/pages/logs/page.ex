@@ -77,6 +77,9 @@ defmodule Observer.Web.Logs.Page do
             <span class="px-2 py-1 rounded-full bg-teal-50 border border-teal-300 text-teal-700">
               File size: {format_bytes(@tail.size)}
             </span>
+            <span class="px-2 py-1 rounded-full bg-teal-50 border border-teal-300 text-teal-700">
+              Entries: {length(@log_entries)}
+            </span>
             <span
               :if={@tail.truncated?}
               class="px-2 py-1 rounded-full bg-yellow-50 border border-yellow-300 text-yellow-700"
@@ -84,10 +87,31 @@ defmodule Observer.Web.Logs.Page do
               Showing the last {@form.params["max_bytes"] |> String.to_integer() |> format_bytes()}
             </span>
           </div>
-          <pre
+          <div
+            :if={@log_entries == []}
+            class="mx-2 mb-2 p-3 text-xs text-gray-500 dark:text-gray-400"
+          >
+            The file is empty.
+          </div>
+          <div
+            :if={@log_entries != []}
             id="logs-tail-content"
-            class="mx-2 mb-2 p-3 rounded bg-gray-50 dark:bg-gray-900 text-xs text-gray-800 dark:text-gray-200 font-mono whitespace-pre-wrap break-all overflow-x-auto max-h-[70vh] overflow-y-auto"
-          >{@tail.content}</pre>
+            class="mx-2 mb-2 p-3 rounded bg-gray-50 dark:bg-gray-900 text-xs text-gray-800 dark:text-gray-200 font-mono max-h-[70vh] overflow-y-auto"
+          >
+            <Core.disclosure
+              :for={{entry, index} <- Enum.with_index(@log_entries)}
+              id={"log-entry-#{index}"}
+              expandable?={entry.expandable?}
+              summary_class={level_class(entry.level)}
+              title={entry.summary}
+            >
+              <:summary>
+                {entry.summary}
+                <span :if={entry.multiline?} class="text-gray-400 dark:text-gray-500">…</span>
+              </:summary>
+              <pre class="mt-1 mb-2 whitespace-pre-wrap break-all text-gray-700 dark:text-gray-300">{entry.content}</pre>
+            </Core.disclosure>
+          </div>
         </div>
       </div>
     </div>
@@ -112,6 +136,7 @@ defmodule Observer.Web.Logs.Page do
     |> assign(:services, services())
     |> assign(:handlers, [])
     |> assign(:tail, nil)
+    |> assign(:log_entries, [])
     |> assign(:tail_error, nil)
     |> assign(
       :form,
@@ -170,13 +195,25 @@ defmodule Observer.Web.Logs.Page do
       {:ok, tail} ->
         tail = %{tail | content: strip_ansi(tail.content)}
 
-        {:noreply, socket |> assign(:tail, tail) |> assign(:tail_error, nil)}
+        {:noreply,
+         socket
+         |> assign(:tail, tail)
+         |> assign(:log_entries, parse_entries(tail.content))
+         |> assign(:tail_error, nil)}
 
       {:error, reason} ->
-        {:noreply, socket |> assign(:tail, nil) |> assign(:tail_error, reason)}
+        {:noreply,
+         socket
+         |> assign(:tail, nil)
+         |> assign(:log_entries, [])
+         |> assign(:tail_error, reason)}
 
       nil ->
-        {:noreply, socket |> assign(:tail, nil) |> assign(:tail_error, nil)}
+        {:noreply,
+         socket
+         |> assign(:tail, nil)
+         |> assign(:log_entries, [])
+         |> assign(:tail_error, nil)}
     end
   end
 
@@ -200,6 +237,63 @@ defmodule Observer.Web.Logs.Page do
   # Log files written by color-enabled formatters (Logger's default when attached in a
   # terminal) are full of ANSI escape sequences that render as garbage in the pane.
   defp strip_ansi(content), do: String.replace(content, ~r/\e\[[0-9;]*[a-zA-Z]/, "")
+
+  # A new entry starts at a line that looks like a log head: a time (Elixir's default
+  # formatter), a date, or an Erlang report banner. Anything else (stack traces, wrapped
+  # output, blank separators) is a continuation of the previous entry, so multi-line entries
+  # collapse behind their first line - same disclosure pattern as the tracing results.
+  @entry_start ~r/^(\d{4}-\d{2}-\d{2}[T ]|\d{2}:\d{2}:\d{2}|=[A-Z ]+ REPORT====)/
+
+  defp parse_entries(content) do
+    content
+    |> String.split("\n")
+    |> Enum.chunk_while(
+      [],
+      fn line, acc ->
+        cond do
+          acc == [] -> {:cont, [line]}
+          String.match?(line, @entry_start) -> {:cont, Enum.reverse(acc), [line]}
+          true -> {:cont, [line | acc]}
+        end
+      end,
+      fn
+        [] -> {:cont, []}
+        acc -> {:cont, Enum.reverse(acc), []}
+      end
+    )
+    |> Enum.map(&build_entry/1)
+    |> Enum.reject(&(&1.summary == ""))
+  end
+
+  # Beyond this length a single-line entry is almost certainly clipped by the summary's
+  # truncate, so it stays expandable even without continuation lines.
+  @long_line_threshold 160
+
+  defp build_entry(lines) do
+    meaningful_lines = Enum.reject(lines, &(String.trim(&1) == ""))
+    summary = List.first(meaningful_lines) || ""
+    multiline? = length(meaningful_lines) > 1
+
+    %{
+      summary: summary,
+      content: Enum.join(meaningful_lines, "\n"),
+      multiline?: multiline?,
+      expandable?: multiline? or String.length(summary) > @long_line_threshold,
+      level: detect_level(summary)
+    }
+  end
+
+  defp detect_level(summary) do
+    cond do
+      summary =~ ~r/\[(error|critical|alert|emergency)\]|=(ERROR|CRASH) REPORT/ -> :error
+      summary =~ ~r/\[warn(ing)?\]|=WARNING REPORT/ -> :warning
+      true -> nil
+    end
+  end
+
+  defp level_class(:error), do: "text-red-600 dark:text-red-300"
+  defp level_class(:warning), do: "text-yellow-600 dark:text-yellow-300"
+  defp level_class(nil), do: nil
 
   defp tail_sizes, do: @tail_sizes
 

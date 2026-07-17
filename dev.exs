@@ -100,6 +100,13 @@ if System.get_env("OBSERVER_WEB_DEV_LOG_FILE", "true") == "true" do
   # /var/folders/... path, and a predictable location makes the files easy to find and clean.
   log_file = Path.join("/tmp", "observer_web_dev_#{node_slug}_#{random_suffix}.log")
 
+  # config.exs pins the primary logger level to :warning, which would filter info entries
+  # before any handler sees them. Lower the primary level for the dev server and pin the
+  # console (default handler) back to :warning, so the terminal stays as quiet as before
+  # while the file receives the full info/warning/error mix.
+  Logger.configure(level: :info)
+  :ok = :logger.set_handler_config(:default, :level, :warning)
+
   :ok =
     :logger.add_handler(:observer_web_dev_file_log, :logger_std_h, %{
       config: %{file: to_charlist(log_file)},
@@ -108,7 +115,7 @@ if System.get_env("OBSERVER_WEB_DEV_LOG_FILE", "true") == "true" do
       formatter: Logger.Formatter.new(colors: [enabled: false])
     })
 
-  Logger.info("Observer Web dev file logger attached, writing to #{log_file}")
+  IO.puts("Observer Web dev file logger attached, writing to #{log_file}")
 
   heartbeat_ms =
     "OBSERVER_WEB_DEV_LOG_HEARTBEAT_MS" |> System.get_env("5000") |> String.to_integer()
@@ -119,9 +126,29 @@ if System.get_env("OBSERVER_WEB_DEV_LOG_FILE", "true") == "true" do
       |> Stream.interval()
       |> Enum.each(fn beat ->
         case rem(beat, 10) do
-          9 -> Logger.error("dev log heartbeat ##{beat} from #{node()} (sample error)")
-          n when n in [3, 6] -> Logger.warning("dev log heartbeat ##{beat} from #{node()}")
-          _info -> Logger.info("dev log heartbeat ##{beat} from #{node()}")
+          # Multi-line entry: exercises the collapse-behind-an-arrow rendering
+          9 ->
+            Logger.error("""
+            dev log heartbeat ##{beat} from #{node()} (sample error)
+                ** (RuntimeError) sample multi-line report for the Logs page
+                    (observer_web) lib/fake/worker.ex:42: Fake.Worker.run/0
+                    (observer_web) lib/fake/server.ex:87: Fake.Server.handle_info/2
+                    (stdlib) gen_server.erl:2345: :gen_server.try_handle_info/3
+            """)
+
+          # Long single-line entry: exercises truncation and the hover tooltip
+          7 ->
+            Logger.info(
+              "dev log heartbeat ##{beat} from #{node()} with a deliberately long single-line " <>
+                "message to check truncation in the Logs page - " <>
+                String.duplicate("lorem ipsum dolor sit amet ", 12)
+            )
+
+          n when n in [3, 6] ->
+            Logger.warning("dev log heartbeat ##{beat} from #{node()}")
+
+          _info ->
+            Logger.info("dev log heartbeat ##{beat} from #{node()}")
         end
       end)
     end)
