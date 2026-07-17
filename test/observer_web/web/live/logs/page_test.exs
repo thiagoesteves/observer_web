@@ -87,6 +87,29 @@ defmodule Observer.Web.Logs.PageLiveTest do
     refute html =~ "log line number 1\n"
   end
 
+  test "switching services while no file handlers exist does not crash", %{conn: conn} do
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/logs")
+
+    :timer.sleep(50)
+
+    assert render(index_live) =~ "No file-backed logger handlers found"
+
+    # With no file handlers the file select renders empty, so a service change submits a
+    # payload without any "file" key - this used to KeyError in handle_info(:logs_refresh, ...).
+    index_live
+    |> element("#logs-update-form")
+    |> render_change(%{"service" => to_string(Node.self()), "max_bytes" => "65536"})
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "No file-backed logger handlers found"
+    refute html =~ "File size:"
+  end
+
   test "read failures are reported instead of crashing", %{conn: conn} do
     path = stub_file_handler!("data\n")
     TelemetryStubber.defaults()

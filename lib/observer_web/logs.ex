@@ -12,6 +12,30 @@ defmodule ObserverWeb.Logs do
   file on the remote node, `pread`s at most `max_bytes` from the end and closes it. Nothing is
   required on the target node beyond OTP itself, matching how `ObserverWeb.SystemInfo` keeps
   remote calls version-independent.
+
+  ## Making logs visible
+
+  Elixir applications log to the console by default, in which case there is nothing to tail.
+  Add a file handler to the observed application (standard Elixir 1.15+ configuration):
+
+  ```elixir
+  # config/config.exs
+  config :my_app, :logger, [
+    {:handler, :file_log, :logger_std_h,
+     %{config: %{file: ~c"/var/log/my_app/my_app.log"}, formatter: Logger.Formatter.new()}}
+  ]
+
+  # lib/my_app/application.ex - in start/2
+  Logger.add_handlers(:my_app)
+  ```
+
+  Or attach one at runtime without restarting:
+
+  ```elixir
+  :logger.add_handler(:file_log, :logger_std_h, %{config: %{file: ~c"/var/log/my_app.log"}})
+  ```
+
+  See the installation guide's "Logs" section for rotation options and Erlang release notes.
   """
 
   alias ObserverWeb.Rpc

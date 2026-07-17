@@ -294,6 +294,52 @@ config :observer_web,
 > this where dashboard access is appropriately restricted (see the authentication resolver
 > section).
 
+### Logs (requires file-backed logger handlers)
+
+The Logs page shows a bounded, read-only tail of the selected node's log files.
+It discovers its sources from the node's `:logger` handlers, so it only works when at least one handler writes to a file - nothing else needs to be configured on the Observer Web side.
+
+Elixir applications log to the console by default, which is why the page may report "No file-backed logger handlers found".
+To add a file handler, use the standard Elixir 1.15+ logger handler configuration:
+
+```elixir
+# config/config.exs (or runtime.exs)
+config :my_app, :logger, [
+  {:handler, :file_log, :logger_std_h,
+   %{
+     config: %{
+       file: ~c"/var/log/my_app/my_app.log",
+       # Optional built-in rotation
+       max_no_bytes: 10_485_760,
+       max_no_files: 5
+     },
+     formatter: Logger.Formatter.new()
+   }}
+]
+```
+
+And attach the configured handlers when your application starts:
+
+```elixir
+# lib/my_app/application.ex
+@impl true
+def start(_type, _args) do
+  Logger.add_handlers(:my_app)
+  ...
+end
+```
+
+You can also attach a handler at runtime (e.g. from a remote console) without restarting:
+
+```elixir
+:logger.add_handler(:file_log, :logger_std_h, %{config: %{file: ~c"/var/log/my_app/my_app.log"}})
+```
+
+For Erlang releases, the equivalent `logger` entry in `sys.config` works the same way.
+Once a file handler exists on a node, the Logs page lists it in the Log File selector for that node.
+
+Reads are always bounded (16 KB to 1 MB per request) and restricted to the files exposed by the logger handlers - the dashboard never accepts free-form paths.
+
 ### Crash dump browser
 
 The Crashdump page opens `erl_crash.dump` files with OTP's own `crashdump_viewer` parser (part

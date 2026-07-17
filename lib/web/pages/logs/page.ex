@@ -153,8 +153,13 @@ defmodule Observer.Web.Logs.Page do
     file = selected_file(form.params["file"], handlers)
     max_bytes = selected_max_bytes(form.params["max_bytes"])
 
+    # Map.put instead of the %{map | key} update syntax: a node without file handlers renders
+    # an empty file select, so the phx-change payload arrives without a "file" key at all.
     form =
-      to_form(%{form.params | "file" => file || "", "max_bytes" => to_string(max_bytes)})
+      form.params
+      |> Map.put("file", file || "")
+      |> Map.put("max_bytes", to_string(max_bytes))
+      |> to_form()
 
     socket =
       socket
@@ -184,7 +189,7 @@ defmodule Observer.Web.Logs.Page do
       send(self(), :logs_refresh)
 
       {:noreply,
-       assign(socket, :form, to_form(%{form.params | "service" => to_string(Node.self())}))}
+       assign(socket, :form, to_form(Map.put(form.params, "service", to_string(Node.self()))))}
     else
       {:noreply, socket}
     end
