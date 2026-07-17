@@ -9,7 +9,7 @@
       <.logo path={@logo_path} params={@params} />
     </div>
 
-    <.nav socket={@socket} page={@page.name} params={@params} />
+    <.nav socket={@socket} page={@page.name} params={@params} custom_pages={@custom_pages} />
 
     <div class="ml-auto shrink-0 flex items-center space-x-3">
       <.live_component

@@ -91,6 +91,35 @@ defmodule Observer.Web.RouterTest do
         Router.__options__("/observer", resolver: nil)
       end
     end
+
+    test "passing custom pages through to the session" do
+      assert %{"pages" => [fruits: My.FruitsPage]} =
+               options_to_session(pages: [fruits: My.FruitsPage])
+
+      assert %{"pages" => []} = options_to_session([])
+    end
+
+    test "validating pages values" do
+      assert_raise ArgumentError, ~r/invalid :pages/, fn ->
+        Router.__options__("/observer", pages: [{"fruits", My.FruitsPage}])
+      end
+
+      assert_raise ArgumentError, ~r/invalid :pages/, fn ->
+        Router.__options__("/observer", pages: :fruits)
+      end
+
+      assert_raise ArgumentError, ~r/invalid :pages/, fn ->
+        Router.__options__("/observer", pages: [fruits: nil])
+      end
+
+      assert_raise ArgumentError, ~r/conflicts with a built-in/, fn ->
+        Router.__options__("/observer", pages: [tracing: My.FruitsPage])
+      end
+
+      assert_raise ArgumentError, ~r/conflicts with a built-in/, fn ->
+        Router.__options__("/observer", pages: [logs: My.FruitsPage])
+      end
+    end
   end
 
   defp options_to_session(opts) do

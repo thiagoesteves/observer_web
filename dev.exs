@@ -9,6 +9,59 @@ Mix.ensure_application!(:observer)
 
 # Phoenix
 
+# A deliberately simple custom page exercising the public page API end to end: registered via
+# the :pages router option below, it shows up as DEMO in the nav, receives the standard
+# dashboard assigns and proves the event flow with a counter button.
+defmodule WebDev.DemoPage do
+  use Observer.Web.Page
+
+  @impl Phoenix.LiveComponent
+  def render(assigns) do
+    ~H"""
+    <div class="min-h-screen bg-white dark:bg-gray-800 p-6 text-gray-900 dark:text-white">
+      <h2 class="text-xl font-bold mb-2">Demo custom page</h2>
+      <div class="text-sm mb-4 text-gray-600 dark:text-gray-300">
+        Registered with
+        <span class="font-mono">observer_dashboard "/observer", pages: [demo: WebDev.DemoPage]</span>
+      </div>
+
+      <div class="flex flex-wrap gap-2 text-xs mb-6">
+        <span class="px-2 py-1 rounded-full bg-teal-50 border border-teal-300 text-teal-700">
+          Node: {Node.self()}
+        </span>
+        <span class="px-2 py-1 rounded-full bg-teal-50 border border-teal-300 text-teal-700">
+          Access: {inspect(@access)}
+        </span>
+        <span class="px-2 py-1 rounded-full bg-teal-50 border border-teal-300 text-teal-700">
+          Theme: {@theme}
+        </span>
+      </div>
+
+      <button
+        phx-click="demo-increment"
+        class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-600 text-white text-sm font-semibold"
+      >
+        Clicked {@counter} times
+      </button>
+    </div>
+    """
+  end
+
+  @impl Observer.Web.Page
+  def handle_mount(socket) do
+    socket
+    |> Phoenix.Component.assign(:page_title, "Demo")
+    |> Phoenix.Component.assign_new(:counter, fn -> 0 end)
+  end
+
+  @impl Observer.Web.Page
+  def handle_parent_event("demo-increment", _value, socket) do
+    {:noreply, Phoenix.Component.assign(socket, :counter, socket.assigns.counter + 1)}
+  end
+
+  def handle_parent_event(_event, _value, socket), do: {:noreply, socket}
+end
+
 defmodule WebDev.Router do
   use Phoenix.Router, helpers: false
 
@@ -21,7 +74,7 @@ defmodule WebDev.Router do
   scope "/" do
     pipe_through(:browser)
 
-    observer_dashboard("/observer")
+    observer_dashboard("/observer", pages: [demo: WebDev.DemoPage])
   end
 end
 

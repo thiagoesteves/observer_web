@@ -50,13 +50,14 @@ defmodule Observer.Web.Layouts do
   attr :params, :map, required: true
   attr :page, :atom, required: true
   attr :socket, :map, required: true
+  attr :custom_pages, :list, default: []
 
   def nav(assigns) do
     ~H"""
     <nav id="main-nav" phx-hook="NavOverflow" class="relative flex-1 min-w-0">
       <div data-nav-items class="flex items-center gap-1 overflow-hidden">
         <.link
-          :for={page <- list_pages_by_params(@params)}
+          :for={page <- list_pages_by_params(@params) ++ Keyword.keys(@custom_pages)}
           class={link_class(@page, page)}
           data-shortcut={JS.navigate(observer_path(page, @params))}
           id={"nav-#{page}"}
