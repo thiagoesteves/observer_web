@@ -92,7 +92,7 @@ defmodule ObserverWeb.TracerTest do
 
       assert state == Tracer.state()
 
-      TracerFixtures.testing_fun([true, true, true])
+      run_traced(fn -> TracerFixtures.testing_fun([true, true, true]) end)
 
       assert_receive {:new_trace_message, ^session_id, ^node, _index, :call, msg}, 1_000
 
@@ -117,7 +117,7 @@ defmodule ObserverWeb.TracerTest do
       assert {:ok, %{session_id: session_id}} =
                Tracer.start_trace(functions, %{max_messages: 1})
 
-      TracerFixtures.testing_adding_fun(50, 50)
+      run_traced(fn -> TracerFixtures.testing_adding_fun(50, 50) end)
 
       assert_receive {:new_trace_message, ^session_id, ^node, _index, :call, msg}, 1_000
 
@@ -143,7 +143,7 @@ defmodule ObserverWeb.TracerTest do
       assert {:ok, %{session_id: session_id}} =
                Tracer.start_trace(functions, %{max_messages: 2})
 
-      TracerFixtures.testing_adding_fun(253, 200)
+      run_traced(fn -> TracerFixtures.testing_adding_fun(253, 200) end)
 
       assert_receive {:new_trace_message, ^session_id, ^node, _index, :return_from, msg}, 1_000
 
@@ -170,13 +170,14 @@ defmodule ObserverWeb.TracerTest do
       assert {:ok, %{session_id: session_id}} =
                Tracer.start_trace(functions, %{max_messages: 2})
 
-      TracerFixtures.testing_adding_fun(255, 200)
+      run_traced(fn -> TracerFixtures.testing_adding_fun(255, 200) end)
 
       assert_receive {:new_trace_message, ^session_id, ^node, _index, :call, msg}, 1_000
 
       assert msg =~ "TracerFixtures"
       assert msg =~ "testing_adding_fun"
-      assert msg =~ "caller: {ObserverWeb.TracerTest"
+      # The traced call runs inside a Task (see run_traced/1), so that is the captured caller.
+      assert msg =~ "caller: {Task.Supervised"
 
       terminate_tracing(session_id)
     end
@@ -252,7 +253,7 @@ defmodule ObserverWeb.TracerTest do
       assert {:ok, %{session_id: session_id}} =
                Tracer.start_trace(functions, %{max_messages: 1})
 
-      TracerFixtures.testing_adding_fun(1, 1)
+      run_traced(fn -> TracerFixtures.testing_adding_fun(1, 1) end)
 
       assert_receive {:new_trace_message, ^session_id, ^node, 1, :call, _msg}, 1_000
       assert_receive {:stop_tracing, ^session_id}, 1_000
@@ -341,18 +342,51 @@ defmodule ObserverWeb.TracerTest do
       }
     ]
 
+    test_pid = self()
+
     spawn(fn ->
-      {:ok, %{session_id: _session_id}} =
+      {:ok, %{session_id: session_id}} =
         Tracer.start_trace(functions, %{max_messages: 20})
+
+      send(test_pid, {:trace_started, session_id})
     end)
 
-    :timer.sleep(50)
+    # Synchronize on the session actually starting, then wait for the tracer to process the
+    # requester's :DOWN and reset - polling idle alone could pass before the session exists.
+    assert_receive {:trace_started, _session_id}, 1_000
 
-    assert %Tracer{status: :idle} = Tracer.state()
+    assert :ok = wait_until(fn -> match?(%Tracer{status: :idle}, Tracer.state()) end)
   end
 
   defp terminate_tracing(session_id) do
     :ok = Tracer.stop_trace(session_id)
     :timer.sleep(50)
+  end
+
+  defp wait_until(fun, timeout_ms \\ 2_000) do
+    deadline = System.monotonic_time(:millisecond) + timeout_ms
+
+    wait_until_loop(fun, deadline)
+  end
+
+  defp wait_until_loop(fun, deadline) do
+    cond do
+      fun.() -> :ok
+      System.monotonic_time(:millisecond) >= deadline -> :timeout
+      true -> tick_and_retry(fun, deadline)
+    end
+  end
+
+  defp tick_and_retry(fun, deadline) do
+    Process.sleep(20)
+
+    wait_until_loop(fun, deadline)
+  end
+
+  # Display sessions drop trace events originating from the requesting process itself (the
+  # dashboard LiveView in production - see Tracer.Server.handle_trace/2), so traced calls must
+  # come from a different process.
+  defp run_traced(fun) do
+    fun |> Task.async() |> Task.await()
   end
 end

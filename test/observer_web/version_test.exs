@@ -123,14 +123,20 @@ defmodule ObserverWeb.Version.ServerTest do
   describe "version checking logic" do
     test "reports :ok status when all nodes have same version" do
       local = Application.spec(:observer_web, :vsn)
+      test_pid = self()
 
       expect(ObserverWeb.RpcMock, :call, fn
         _node, Application, :spec, [:observer_web, :vsn], _timeout ->
+          send(test_pid, :version_rpc)
           local
       end)
 
-      {:ok, _pid} = Server.start_link([])
-      Process.sleep(100)
+      {:ok, pid} = Server.start_link([])
+
+      # The version check runs in a handle_continue; wait for its RPC and synchronize on the
+      # server so the ETS state is updated before reading it.
+      assert_receive :version_rpc, 1_000
+      _synchronize = :sys.get_state(pid)
 
       status = Version.status()
       assert status.status == :ok
@@ -140,36 +146,44 @@ defmodule ObserverWeb.Version.ServerTest do
     end
 
     test "reports :warning status when nodes have different versions" do
+      test_pid = self()
+
       expect(ObserverWeb.RpcMock, :call, fn
-        node, Application, :spec, [:observer_web, :vsn], _timeout ->
-          case node do
-            n when n == :nonode@nohost -> ~c"1.0.0"
-            _ -> ~c"2.0.0"
-          end
+        _node, Application, :spec, [:observer_web, :vsn], _timeout ->
+          send(test_pid, :version_rpc)
+          ~c"0.0.0-not-the-local-version"
       end)
 
-      {:ok, _pid} = Server.start_link([])
-      Process.sleep(100)
+      {:ok, pid} = Server.start_link([])
 
-      # Manually trigger an update with multiple nodes
-      # This would need Node.list() to return nodes, which is hard to test
-      # So we test the logic directly
+      assert_receive :version_rpc, 1_000
+      _synchronize = :sys.get_state(pid)
+
+      status = Version.status()
+      assert status.status == :warning
+      assert status.nodes == %{Node.self() => "0.0.0-not-the-local-version"}
 
       GenServer.stop(Server)
     end
 
     test "handles RPC errors gracefully" do
+      test_pid = self()
+
       expect(ObserverWeb.RpcMock, :call, fn
         _node, Application, :spec, [:observer_web, :vsn], _timeout ->
+          send(test_pid, :version_rpc)
           {:error, :timeout}
       end)
 
-      {:ok, _pid} = Server.start_link([])
-      Process.sleep(100)
+      {:ok, pid} = Server.start_link([])
+
+      assert_receive :version_rpc, 1_000
+      _synchronize = :sys.get_state(pid)
 
       status = Version.status()
       # Should still work, just with fewer nodes in the result
       assert %Server{} = status
+      assert status.nodes == %{}
 
       GenServer.stop(Server)
     end

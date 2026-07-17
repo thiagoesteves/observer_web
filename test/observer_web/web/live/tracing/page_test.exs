@@ -251,6 +251,10 @@ defmodule Observer.Web.Tracing.PageLiveTest do
 
     ObserverWeb.Common.uuid4()
 
+    # The trace message travels dbg -> Tracer.Server -> PubSub -> LiveView asynchronously;
+    # wait for it to land before stopping the session.
+    assert :ok = wait_until(fn -> render(index_live) =~ "ObserverWeb.Common.uuid4" end)
+
     html =
       index_live
       |> element("#tracing-multi-select-stop", "STOP")
@@ -304,9 +308,7 @@ defmodule Observer.Web.Tracing.PageLiveTest do
 
     ObserverWeb.Common.uuid4()
 
-    :timer.sleep(50)
-
-    assert render(index_live) =~ "ObserverWeb.Common.uuid4"
+    assert :ok = wait_until(fn -> render(index_live) =~ "ObserverWeb.Common.uuid4" end)
     assert render(index_live) =~ "caller: {Observer.Web.Tracing.PageLiveTest"
   end
 
@@ -389,7 +391,9 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     |> element("#tracing-multi-select-run", "RUN")
     |> render_click()
 
-    :timer.sleep(50)
+    # session_timeout_seconds: 0 stops the session asynchronously; wait for the page to flip
+    # back from STOP to RUN.
+    assert :ok = wait_until(fn -> not (render(index_live) =~ "STOP") end)
 
     assert html = render(index_live)
     assert html =~ "RUN"
@@ -486,5 +490,27 @@ defmodule Observer.Web.Tracing.PageLiveTest do
     assert html = render(index_live)
     assert html =~ "services:#{node}"
     assert html =~ "modules:Elixir.ObserverWeb.Common"
+  end
+
+  # Polls `fun` until it returns a truthy value, giving asynchronous trace plumbing
+  # (dbg -> Tracer.Server -> PubSub -> LiveView) time to deliver without a fixed sleep.
+  defp wait_until(fun, timeout_ms \\ 2_000) do
+    deadline = System.monotonic_time(:millisecond) + timeout_ms
+
+    wait_until_loop(fun, deadline)
+  end
+
+  defp wait_until_loop(fun, deadline) do
+    cond do
+      fun.() -> :ok
+      System.monotonic_time(:millisecond) >= deadline -> :timeout
+      true -> tick_and_retry(fun, deadline)
+    end
+  end
+
+  defp tick_and_retry(fun, deadline) do
+    Process.sleep(20)
+
+    wait_until_loop(fun, deadline)
   end
 end
