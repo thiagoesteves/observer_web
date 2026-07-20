@@ -114,7 +114,7 @@ jobs:
         run: mix deps.audit
 
       - name: Mix Sobelow
-        run: mix sobelow --exit --threshold medium
+        run: mix sobelow --exit --threshold medium --skip
 
       - name: Formatted
         run: mix format --check-formatted

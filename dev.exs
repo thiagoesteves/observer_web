@@ -62,6 +62,37 @@ defmodule WebDev.DemoPage do
   def handle_parent_event(_event, _value, socket), do: {:noreply, socket}
 end
 
+defmodule WebDev.ApiAuth do
+  @moduledoc """
+  Minimal bearer-token auth guarding the dev server's `observer_api/2` mount, standing in for
+  the "pipe_through your own auth" flow described in the JSON API installation guide. This is a
+  fixed, printed-to-console dev token only - never reuse this plug outside local development.
+  """
+
+  @behaviour Plug
+
+  import Plug.Conn
+
+  @impl Plug
+  def init(opts), do: opts
+
+  @impl Plug
+  def call(conn, _opts) do
+    token = Application.fetch_env!(:observer_web, :dev_api_token)
+
+    with ["Bearer " <> provided] <- get_req_header(conn, "authorization"),
+         true <- Plug.Crypto.secure_compare(provided, token) do
+      conn
+    else
+      _unauthorized ->
+        conn
+        |> put_resp_header("content-type", "application/json; charset=utf-8")
+        |> send_resp(401, Jason.encode!(%{error: "unauthorized"}))
+        |> halt()
+    end
+  end
+end
+
 defmodule WebDev.Router do
   use Phoenix.Router, helpers: false
 
@@ -71,10 +102,23 @@ defmodule WebDev.Router do
     plug(:fetch_session)
   end
 
+  pipeline :api do
+    plug(WebDev.ApiAuth)
+  end
+
   scope "/" do
     pipe_through(:browser)
 
     observer_dashboard("/observer", pages: [demo: WebDev.DemoPage])
+  end
+
+  # A distinct top-level segment, not nested under "/observer": the dashboard mount above owns
+  # `/observer/:page` as a catch-all LiveView route, which would otherwise shadow anything
+  # placed under "/observer/*" and never reach this pipeline at all.
+  scope "/" do
+    pipe_through(:api)
+
+    observer_api("/observer-api")
   end
 end
 
@@ -107,6 +151,18 @@ end
 # Configuration
 
 port = "PORT" |> System.get_env("4000") |> String.to_integer()
+
+# JSON API auth: WebDev.ApiAuth checks incoming requests against this fixed dev token so the
+# /observer/api mount (opt-in, see the installation guide) can be exercised locally with curl.
+# Override with OBSERVER_WEB_DEV_API_TOKEN; this pattern is dev-only, never reuse it for a real
+# deployment.
+api_token = System.get_env("OBSERVER_WEB_DEV_API_TOKEN", "observer-dev-token")
+Application.put_env(:observer_web, :dev_api_token, api_token)
+
+IO.puts("""
+Observer Web dev JSON API token: #{api_token}
+  curl -H "Authorization: Bearer #{api_token}" http://localhost:#{port}/observer-api
+""")
 
 Application.put_env(:observer_web, WebDev.Endpoint,
   adapter: Bandit.PhoenixAdapter,

@@ -164,6 +164,10 @@ defmodule Observer.Web.Api do
     end
   end
 
+  # sobelow_skip ["XSS.SendResp"]
+  # Sobelow flags any send_resp/2 body as potential XSS since it can't verify the response is
+  # non-HTML. The content-type is explicitly "application/json" above and every payload is
+  # Jason-encoded, so there's no HTML for a browser to sniff or render.
   defp send_json(conn, status, payload) do
     conn
     |> put_resp_header("content-type", "application/json; charset=utf-8")
