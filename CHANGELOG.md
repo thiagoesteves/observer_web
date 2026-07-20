@@ -6,10 +6,13 @@
  * None
 
 ### Bug fixes
- * None
+ * [[`PR-68`](https://github.com/thiagoesteves/observer_web/pull/68)] Stop display trace sessions from feeding back on the dashboard itself
 
 ### Enhancements
- * None
+ * [[`PR-64`](https://github.com/thiagoesteves/observer_web/pull/64)] Add Logs pillar with bounded log tails
+ * [[`PR-66`](https://github.com/thiagoesteves/observer_web/pull/66)] Add public custom page API
+ * [[`PR-63`](https://github.com/thiagoesteves/observer_web/pull/63)] Add OS data via os_mon to the System page
+ * [[`PR-67`](https://github.com/thiagoesteves/observer_web/pull/67)] Add read-only JSON API for automation and AI agents
 
 ## 0.2.7 🚀 (2026-07-14)
 
