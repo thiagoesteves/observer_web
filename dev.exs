@@ -7,6 +7,20 @@
 Mix.ensure_application!(:mnesia)
 Mix.ensure_application!(:observer)
 
+# Distributed Erlang: auto-connect to a remote node on boot, so a plain `elixir --sname observer
+# --cookie <cookie> -S mix run --no-halt dev.exs` (no iex, nothing to type) still reaches it.
+# Requires this VM to be started distributed itself (--sname/--name) and to share the target
+# node's cookie (--cookie, or Node.set_cookie/1 beforehand).
+if connect_node = System.get_env("OBSERVER_WEB_DEV_CONNECT_NODE") do
+  node = String.to_atom(connect_node)
+
+  case Node.connect(node) do
+    true -> IO.puts("Observer Web dev: connected to #{connect_node}")
+    false -> IO.puts("Observer Web dev: failed to connect to #{connect_node} (check cookie/network)")
+    :ignored -> IO.puts("Observer Web dev: not distributed - pass --sname/--name to elixir/iex")
+  end
+end
+
 # Phoenix
 
 # A deliberately simple custom page exercising the public page API end to end: registered via
@@ -199,7 +213,7 @@ Application.put_env(:phoenix, :persistent, true)
 # recognizable and the random suffix keeps restarts apart. A heartbeat keeps appending lines so
 # REFRESH always has new content; set OBSERVER_WEB_DEV_LOG_HEARTBEAT_MS=0 to silence it, or
 # OBSERVER_WEB_DEV_LOG_FILE=false to skip the handler entirely.
-if System.get_env("OBSERVER_WEB_DEV_LOG_FILE", "true") == "true" do
+if System.get_env("OBSERVER_WEB_DEV_LOG_FILE", "false") == "true" do
   require Logger
 
   node_slug = node() |> to_string() |> String.replace(~r/[^A-Za-z0-9]+/, "-")

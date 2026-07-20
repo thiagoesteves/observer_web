@@ -135,6 +135,27 @@ To verify everything is working properly:
 You can now explore the `observer` mode, checking that the data is persisted even if the other app in
 broadcast mode restarts.
 
+### Connecting to a remote node (e.g. a device on the network)
+
+To observe a remote node - for example a Nerves device - rather than another local dev instance,
+set `OBSERVER_WEB_DEV_CONNECT_NODE` to that node's full name before starting the dev server.
+`dev.exs` connects to it automatically on boot, so no interactive shell is needed:
+
+```console
+OBSERVER_WEB_DEV_CONNECT_NODE=<remote-node>@<remote-hostname> elixir --name observer@<your-hostname> --cookie cookie -S mix run --no-halt dev.exs
+```
+
+A few things this depends on:
+
+- The target's node name must match exactly, including its hostname suffix - a mismatch (e.g.
+  a different domain suffix, or an IP address instead of the registered hostname) silently
+  connects to a nonexistent node and fails.
+- `--name` (not `--sname`) is required whenever either side has a dotted hostname, since Erlang
+  distribution requires both nodes to use the same short-name/long-name mode.
+- `--cookie` must match the cookie the remote node is actually running with; check it there via
+  `Node.get_cookie()`.
+- Both sides need network access to each other's `epmd` (port `4369` by default).
+
 ## ☕ Support the project
 
 ObserverWeb is free and open source. If it's useful to you, consider supporting its development:
