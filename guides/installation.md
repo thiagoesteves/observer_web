@@ -360,6 +360,37 @@ For Erlang releases, the equivalent `logger` entry in `sys.config` works the sam
 Once a file handler exists on a node, the Logs page lists it in the Log File selector for that node.
 
 Reads are always bounded (16 KB to 1 MB per request) and restricted to the files exposed by the logger handlers - the dashboard never accepts free-form paths.
+### Machine-readable JSON API (opt-in)
+
+For automation and AI agents, Observer Web can expose a read-only JSON API over the same collectors the dashboard pages use.
+The API is a separate mount, so you place it inside whatever pipeline carries your API authentication:
+
+```elixir
+# lib/my_app_web/router.ex
+import Observer.Web.Router
+
+scope "/" do
+  pipe_through [:api, :my_api_auth]
+
+  observer_api "/observer/api"
+end
+```
+
+Available endpoints (all accept an optional `?node=` parameter):
+
+- `GET /observer/api` - available endpoints and visible nodes
+- `GET /observer/api/system` - runtime info, VM limits and allocator utilization
+- `GET /observer/api/processes?sort_by=memory&limit=50` - etop-style process ranking
+- `GET /observer/api/ets` - ETS tables with size/memory/owner metadata
+- `GET /observer/api/apps` - running applications
+
+See `Observer.Web.Api` for details.
+Access control uses the same `Observer.Web.Resolver` behaviour as the dashboard.
+
+> #### Protect the API {: .warning}
+>
+> The API exposes runtime details of your system. Mount it behind authentication, exactly as
+> you protect the dashboard itself.
 
 ### Crash dump browser
 

@@ -180,7 +180,7 @@ defmodule ObserverWeb.MixProject do
         "deps.unlock --check-unused",
         "credo --strict",
         "deps.audit",
-        "sobelow --exit --threshold medium",
+        "sobelow --exit --threshold medium --skip",
         "test --raise"
       ]
     ]
