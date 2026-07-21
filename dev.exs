@@ -15,9 +15,14 @@ if connect_node = System.get_env("OBSERVER_WEB_DEV_CONNECT_NODE") do
   node = String.to_atom(connect_node)
 
   case Node.connect(node) do
-    true -> IO.puts("Observer Web dev: connected to #{connect_node}")
-    false -> IO.puts("Observer Web dev: failed to connect to #{connect_node} (check cookie/network)")
-    :ignored -> IO.puts("Observer Web dev: not distributed - pass --sname/--name to elixir/iex")
+    true ->
+      IO.puts("Observer Web dev: connected to #{connect_node}")
+
+    false ->
+      IO.puts("Observer Web dev: failed to connect to #{connect_node} (check cookie/network)")
+
+    :ignored ->
+      IO.puts("Observer Web dev: not distributed - pass --sname/--name to elixir/iex")
   end
 end
 

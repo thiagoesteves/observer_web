@@ -13,6 +13,7 @@
  * [[`PR-66`](https://github.com/thiagoesteves/observer_web/pull/66)] Add public custom page API
  * [[`PR-63`](https://github.com/thiagoesteves/observer_web/pull/63)] Add OS data via os_mon to the System page
  * [[`PR-67`](https://github.com/thiagoesteves/observer_web/pull/67)] Add read-only JSON API for automation and AI agents
+ * [[`PR-69`](https://github.com/thiagoesteves/observer_web/pull/69)] Use Core.disclosure for the Tracing results CONTENT column
 
 ## 0.2.7 🚀 (2026-07-14)
 
