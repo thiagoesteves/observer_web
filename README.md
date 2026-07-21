@@ -137,8 +137,9 @@ broadcast mode restarts.
 
 ### Connecting to a remote node (e.g. a device on the network)
 
-To observe a remote node - for example a Nerves device - rather than another local dev instance,
-set `OBSERVER_WEB_DEV_CONNECT_NODE` to that node's full name before starting the dev server.
+To observe any remote node - a Nerves device, a server, or another machine on the network -
+rather than another local dev instance, set `OBSERVER_WEB_DEV_CONNECT_NODE` to that node's full
+name before starting the dev server.
 `dev.exs` connects to it automatically on boot, so no interactive shell is needed:
 
 ```console
