@@ -15,6 +15,10 @@ defmodule Observer.Web.Tracing.Page do
   alias Observer.Web.Tracing.Selection
   alias ObserverWeb.Tracer
 
+  # Beyond this length a single-line message is almost certainly clipped by the summary's
+  # truncate, so it stays expandable - same threshold as the Logs pillar.
+  @long_content_threshold 160
+
   @impl Phoenix.LiveComponent
   def render(assigns) do
     unselected_services_keys =
@@ -179,21 +183,21 @@ defmodule Observer.Web.Tracing.Page do
               <span>{tracing_message.type}</span>
             </:col>
             <:col :let={{id, tracing_message}} label="CONTENT">
-              <details>
-                <summary class="cursor-pointer truncate">
+              <Core.disclosure
+                id={"tracing-content-#{id}"}
+                expandable?={expandable_content?(tracing_message.content)}
+                title={tracing_message.content}
+              >
+                <:summary>{tracing_message.content}</:summary>
+                <div class="mt-1 mb-2 flex items-center justify-between gap-2 break-words">
                   {tracing_message.content}
-                </summary>
-                <div class="mt-5 break-words">
-                  <div class="flex items-center justify-between gap-2">
-                    {tracing_message.content}
 
-                    <CopyToClipboard.content
-                      id={"tracing-functions-messages-#{id}"}
-                      message={tracing_message.content}
-                    />
-                  </div>
+                  <CopyToClipboard.content
+                    id={"tracing-functions-messages-#{id}"}
+                    message={tracing_message.content}
+                  />
                 </div>
-              </details>
+              </Core.disclosure>
             </:col>
           </Core.table_tracing>
         </div>
@@ -495,6 +499,8 @@ defmodule Observer.Web.Tracing.Page do
      |> assign(:trace_session_id, nil)
      |> assign(:show_tracing_options, false)}
   end
+
+  defp expandable_content?(content), do: String.length(content) > @long_content_threshold
 
   defp default_form_options do
     %{
