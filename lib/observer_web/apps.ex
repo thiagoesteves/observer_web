@@ -7,6 +7,7 @@ defmodule ObserverWeb.Apps do
   """
 
   alias ObserverWeb.Apps.Helper
+  alias ObserverWeb.ProcessLabel
   alias ObserverWeb.Rpc
 
   @link_line_color "#CCC"
@@ -266,18 +267,36 @@ defmodule ObserverWeb.Apps do
 
   # coveralls-ignore-stop
 
+  # Registered name first, then the `Process.set_label/1` label, then the bare pid. The
+  # `proc_lib` initial call step of `ObserverWeb.ProcessLabel`'s chain is deliberately skipped
+  # here: the tree already conveys supervisor/worker/application through node symbols, and an
+  # MFA on every unlabelled node would crowd the graph without adding much.
+  #
+  # Both items come back in a single `pinfo` call, so labelled nodes cost no extra round trip
+  # over the registered-name-only lookup this replaces.
   defp name(pid) when is_pid(pid) do
-    case Rpc.pinfo(pid, :registered_name) do
-      {_, registered_name} -> to_string(registered_name) |> String.trim_leading("Elixir.")
-      _ -> pid |> inspect |> String.trim_leading("#PID")
+    case Rpc.pinfo(pid, [:registered_name, :dictionary]) do
+      [{:registered_name, registered_name}, {:dictionary, dictionary}] ->
+        registered_name(registered_name) || ProcessLabel.from_dictionary(dictionary) ||
+          inspect_id(pid, "#PID")
+
+      _dead ->
+        inspect_id(pid, "#PID")
     end
   end
 
   # coveralls-ignore-start
-  defp name(port) when is_port(port), do: port |> inspect |> String.trim_leading("#Port")
+  defp name(port) when is_port(port), do: inspect_id(port, "#Port")
 
-  defp name(reference) when is_reference(reference),
-    do: reference |> inspect |> String.trim_leading("#Reference")
+  defp name(reference) when is_reference(reference), do: inspect_id(reference, "#Reference")
 
   # coveralls-ignore-stop
+
+  # An alive-but-unregistered process reports [] as its registered name.
+  defp registered_name(name) when is_atom(name) and name != nil,
+    do: name |> to_string() |> String.trim_leading("Elixir.")
+
+  defp registered_name(_unregistered), do: nil
+
+  defp inspect_id(id, prefix), do: id |> inspect() |> String.trim_leading(prefix)
 end

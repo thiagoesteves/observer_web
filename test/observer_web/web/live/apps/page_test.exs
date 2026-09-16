@@ -244,6 +244,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
         data = %{
           pid: self(),
           registered_name: "name",
+          label: ~s({:user, "a@b.com"}),
           priority: nil,
           trap_exit: nil,
           message_queue_len: 0,
