@@ -47,8 +47,8 @@ defmodule ObserverWeb.Version.ServerTest do
     test "initializes with empty state" do
       {:ok, pid} = Server.start_link([])
 
-      # Allow time for continue callback
-      Process.sleep(50)
+      # handle_continue is processed before any later message, so this call is a barrier for it.
+      _synchronize = :sys.get_state(pid)
 
       state = Server.status()
       assert %Server{} = state
@@ -58,7 +58,7 @@ defmodule ObserverWeb.Version.ServerTest do
 
     test "stores initial state in ETS" do
       {:ok, pid} = Server.start_link([])
-      Process.sleep(50)
+      _synchronize = :sys.get_state(pid)
 
       [{_, state}] = :ets.lookup(@table_name, @key)
       assert %Server{} = state
@@ -69,8 +69,8 @@ defmodule ObserverWeb.Version.ServerTest do
 
   describe "status/0" do
     test "returns current state from ETS" do
-      {:ok, _pid} = Server.start_link([])
-      Process.sleep(50)
+      {:ok, pid} = Server.start_link([])
+      _synchronize = :sys.get_state(pid)
 
       status = Server.status()
       assert %Server{} = status
@@ -88,9 +88,12 @@ defmodule ObserverWeb.Version.ServerTest do
 
   describe "handle_continue(:check_versions, state)" do
     setup do
-      # Mock Application.spec to return a version
+      # `setup` runs in the test process, so this is the pid to signal back to.
+      test_pid = self()
+
       expect(ObserverWeb.RpcMock, :call, fn
         _node, Application, :spec, [:observer_web, :vsn], _timeout ->
+          send(test_pid, :version_rpc)
           ~c"1.0.0"
       end)
 
@@ -99,7 +102,9 @@ defmodule ObserverWeb.Version.ServerTest do
 
     test "updates versions on continue" do
       {:ok, pid} = Server.start_link([])
-      Process.sleep(100)
+
+      assert_receive :version_rpc, 1_000
+      _synchronize = :sys.get_state(pid)
 
       status = Version.status()
       assert status.local != nil
@@ -109,11 +114,12 @@ defmodule ObserverWeb.Version.ServerTest do
 
     test "schedules next update" do
       {:ok, pid} = Server.start_link([])
-      Process.sleep(100)
 
-      # Check that a message is scheduled
-      _info = Process.info(pid, :messages)
-      # The message might already be processed, so we just verify the server is still alive
+      assert_receive :version_rpc, 1_000
+      _synchronize = :sys.get_state(pid)
+
+      # The next :check_versions is scheduled a minute out, so it is still pending here - all
+      # this asserts is that scheduling it left the server healthy.
       assert Process.alive?(pid)
 
       GenServer.stop(pid)
@@ -192,8 +198,10 @@ defmodule ObserverWeb.Version.ServerTest do
       # When Application.spec returns nil
       :ok = Application.put_env(:observer_web, :test_mode, true)
 
-      {:ok, _pid} = Server.start_link([])
-      Process.sleep(100)
+      {:ok, pid} = Server.start_link([])
+
+      # handle_continue is processed before any later message, so this call is a barrier for it.
+      _synchronize = :sys.get_state(pid)
 
       status = Version.status()
       assert status.local == "" or is_binary(status.local)
@@ -206,24 +214,27 @@ defmodule ObserverWeb.Version.ServerTest do
   describe "handle_info(:check_versions, state)" do
     test "updates versions periodically" do
       local = Application.spec(:observer_web, :vsn)
+      test_pid = self()
 
       expect(ObserverWeb.RpcMock, :call, 2, fn
         _node, Application, :spec, [:observer_web, :vsn], _timeout ->
+          send(test_pid, :version_rpc)
           local
       end)
 
       {:ok, pid} = Server.start_link([])
-      Process.sleep(50)
 
+      # First check: the handle_continue out of init/1.
+      assert_receive :version_rpc, 1_000
+      _synchronize = :sys.get_state(pid)
       initial_status = Version.status()
 
-      # Send check_versions message manually
+      # Second check: the periodic handle_info, driven directly rather than waiting a minute.
       send(pid, :check_versions)
-      Process.sleep(50)
-
+      assert_receive :version_rpc, 1_000
+      _synchronize = :sys.get_state(pid)
       updated_status = Version.status()
 
-      # Both should have valid data
       assert initial_status.local != nil
       assert updated_status.local != nil
 
