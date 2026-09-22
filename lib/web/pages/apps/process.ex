@@ -56,6 +56,7 @@ defmodule Observer.Web.Apps.Process do
           overview: [
             %{name: "Id", value: "#{inspect(info.pid)}"},
             %{name: "Registered name", value: "#{info.registered_name}"},
+            %{name: "Label", value: "#{info.label}"},
             %{name: "Status", value: "#{info.meta.status}"},
             %{name: "Class", value: "#{info.meta.class}"},
             %{name: "Message Queue Length", value: "#{info.message_queue_len}"},

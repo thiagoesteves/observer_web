@@ -7,6 +7,7 @@ defmodule ObserverWeb.Apps.Process do
   """
 
   alias ObserverWeb.Apps.Helper
+  alias ObserverWeb.ProcessLabel
   alias ObserverWeb.Rpc
 
   @default_get_state_timeout 100
@@ -14,6 +15,7 @@ defmodule ObserverWeb.Apps.Process do
   @type t :: %{
           pid: pid(),
           registered_name: atom() | nil,
+          label: String.t() | nil,
           priority: :low | :normal | :high | :max,
           trap_exit: boolean(),
           message_queue_len: non_neg_integer(),
@@ -47,6 +49,7 @@ defmodule ObserverWeb.Apps.Process do
   defstruct [
     :pid,
     :registered_name,
+    :label,
     :priority,
     :trap_exit,
     :message_queue_len,
@@ -171,6 +174,8 @@ defmodule ObserverWeb.Apps.Process do
     %__MODULE__{
       pid: pid,
       registered_name: Keyword.get(data, :registered_name, nil),
+      # `:dictionary` is already part of @process_full, so the label costs no extra round trip.
+      label: ProcessLabel.from_dictionary(dictionary),
       priority: Keyword.get(data, :priority, :normal),
       trap_exit: Keyword.get(data, :trap_exit, false),
       message_queue_len: Keyword.get(data, :message_queue_len, 0),
